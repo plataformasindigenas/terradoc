@@ -22,7 +22,7 @@
 }
 article header {
     text-align: left;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 2px solid var(--td-color-border);
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
 }
@@ -31,20 +31,20 @@ article header h1 {
     margin: 0 0 0.5rem 0;
 }
 .article-abstract {
-    color: #555;
+    color: var(--td-color-text-secondary);
     font-size: 1.05rem;
     line-height: 1.6;
     margin: 0.5rem 0;
 }
 .article-variants {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--td-color-text-secondary);
     margin-bottom: 0.5rem;
 }
 .variant-tag {
     background: var(--td-color-border);
     padding: 0.1rem 0.5rem;
-    border-radius: 3px;
+    border-radius: var(--td-radius);
     margin-right: 0.3rem;
     font-style: italic;
 }
@@ -59,7 +59,7 @@ article header h1 {
     font-size: 0.88rem;
 }
 .infobox-header {
-    background: #E8DFD5;
+    background: var(--td-color-accent-light);
     padding: 0.6rem 0.75rem;
     font-weight: 600;
     color: var(--td-color-primary);
@@ -69,18 +69,18 @@ article header h1 {
 .infobox-image {
     text-align: center;
     padding: 0.75rem;
-    background: white;
+    background: var(--td-color-surface);
     border-bottom: 1px solid var(--td-color-border-dark);
 }
 .infobox-image img {
     max-width: 100%;
     max-height: 200px;
     object-fit: contain;
-    border-radius: 2px;
+    border-radius: var(--td-radius);
 }
 .infobox-image-credit {
     font-size: 0.75rem;
-    color: #888;
+    color: var(--td-color-text-muted);
     margin-top: 0.35rem;
 }
 .infobox-row {
@@ -92,7 +92,7 @@ article header h1 {
 }
 .infobox-label {
     font-weight: 500;
-    color: #666;
+    color: var(--td-color-text-secondary);
     font-size: 0.8rem;
     margin-bottom: 0.2rem;
 }
@@ -107,12 +107,12 @@ article header h1 {
 .infobox-keyword {
     font-size: 0.75rem;
     background: var(--td-color-border);
-    color: #555;
+    color: var(--td-color-text-secondary);
     padding: 0.15rem 0.4rem;
-    border-radius: 3px;
+    border-radius: var(--td-radius);
 }
 .infobox-keyword a {
-    color: #555;
+    color: var(--td-color-text-secondary);
     text-decoration: none;
 }
 .infobox-keyword a:hover {
@@ -202,7 +202,7 @@ article header h1 {
 }
 .article-content strong {
     font-weight: 600;
-    color: #2D2520;
+    color: var(--td-color-primary);
 }
 .article-content hr {
     border: none;
@@ -210,7 +210,7 @@ article header h1 {
     margin: 1.25rem 0;
 }
 .broken-link {
-    color: #cc0000;
+    color: var(--td-color-error);
     text-decoration: underline wavy;
 }
 .examples-section {
@@ -223,11 +223,11 @@ article header h1 {
     margin-bottom: 0.75rem;
 }
 .example-block {
-    background: linear-gradient(to right, #F5F0EB, var(--td-color-bg-infobox));
+    background: linear-gradient(to right, var(--td-color-bg-light), var(--td-color-bg-infobox));
     border-left: 4px solid var(--td-color-accent);
     padding: 0.9rem 1rem;
     margin: 0.6rem 0;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 var(--td-radius) var(--td-radius) 0;
 }
 .example-bororo {
     font-size: 1.05rem;
@@ -238,9 +238,9 @@ article header h1 {
 }
 .example-translation {
     font-size: 0.92rem;
-    color: #666;
+    color: var(--td-color-text-secondary);
     padding-left: 0.5rem;
-    border-left: 2px solid #DDD;
+    border-left: 2px solid var(--td-color-border-dark);
     margin-left: 0.25rem;
 }
 .references-section {
@@ -260,10 +260,10 @@ article header h1 {
     margin: 0.5rem 0;
     font-size: 0.9rem;
     line-height: 1.5;
-    color: #444;
+    color: var(--td-color-text-secondary);
 }
 .ref-error {
-    color: #cc0000;
+    color: var(--td-color-error);
 }
 .see-also-section {
     margin-top: 1.5rem;
@@ -287,12 +287,12 @@ article header h1 {
     background: var(--td-color-bg-light);
     color: var(--td-color-accent-muted);
     padding: 0.3rem 0.75rem;
-    border-radius: 4px;
+    border-radius: var(--td-radius);
     text-decoration: none;
     font-size: 0.9rem;
 }
 .see-also-section li a:hover {
-    background: #E8DFD5;
+    background: var(--td-color-accent-light);
     text-decoration: underline;
 }
 .cross-links-section {
@@ -318,7 +318,7 @@ article header h1 {
     padding-top: 1rem;
     border-top: 1px solid var(--td-color-border);
     font-size: 0.85rem;
-    color: #888;
+    color: var(--td-color-text-muted);
 }
 .article-footer .category-breadcrumbs {
     margin-top: 0.5rem;

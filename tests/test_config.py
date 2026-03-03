@@ -35,7 +35,7 @@ def test_theme_colors_defaults():
     """Theme colors have correct defaults."""
     colors = ThemeColors()
     assert colors.primary == "#3D352F"
-    assert colors.accent == "#C75B39"
+    assert colors.accent == "#B7522C"
     assert colors.bg == "#F9F6F2"
 
 
@@ -117,9 +117,9 @@ def test_theme_to_dict():
     """ThemeColors.to_dict returns all color values."""
     colors = ThemeColors()
     d = colors.to_dict()
-    assert len(d) == 12
+    assert len(d) == 19
     assert d["primary"] == "#3D352F"
-    assert d["accent"] == "#C75B39"
+    assert d["accent"] == "#B7522C"
 
 
 def test_theme_config_to_dict_includes_assets():

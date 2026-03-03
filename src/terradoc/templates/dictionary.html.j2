@@ -6,16 +6,16 @@
         .dict-header {
             text-align: center;
             padding: 1rem 0;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 2px solid var(--td-color-border);
             margin-bottom: 1rem;
         }
         .dict-header h1 {
             margin: 0 0 0.5rem 0;
         }
         .dict-controls {
-            background: white;
+            background: var(--td-color-surface);
             padding: 0.75rem 1rem;
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             border: 1px solid var(--td-color-border);
             margin-bottom: 0.75rem;
         }
@@ -30,20 +30,20 @@
             padding: 0.6rem 0.75rem;
             font-size: 0.95rem;
             border: 1px solid var(--td-color-border);
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             outline: none;
             transition: border-color 0.2s;
         }
         .dict-controls .search-input:focus {
             border-color: var(--td-color-accent);
-            box-shadow: 0 0 0 2px rgba(199, 91, 57, 0.2);
+            box-shadow: 0 0 0 2px var(--td-color-accent-ring);
         }
         .dict-controls .filter-select {
             padding: 0.6rem;
             font-size: 0.95rem;
             border: 1px solid var(--td-color-border);
-            border-radius: 4px;
-            background: white;
+            border-radius: var(--td-radius);
+            background: var(--td-color-surface);
             cursor: pointer;
         }
         .dict-stats {
@@ -54,8 +54,8 @@
         .dict-layout {
             display: flex;
             gap: 0;
-            background: white;
-            border-radius: 4px;
+            background: var(--td-color-surface);
+            border-radius: var(--td-radius);
             border: 1px solid var(--td-color-border);
             overflow: hidden;
             min-height: 70vh;
@@ -68,7 +68,7 @@
             gap: 0.25rem;
             padding: 0.5rem;
             border-bottom: 1px solid var(--td-color-border);
-            background: #FDFCFB;
+            background: var(--td-color-bg-light);
             position: sticky;
             top: 0;
             z-index: 2;
@@ -80,7 +80,7 @@
             width: 2rem;
             height: 2rem;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             background: var(--td-color-bg-light);
             color: var(--td-color-primary);
             font-weight: 600;
@@ -144,7 +144,7 @@
             transition: background 0.1s;
         }
         .word-item:hover {
-            background: #f0ebe7;
+            background: var(--td-color-accent-light);
         }
         .word-item.selected {
             background: var(--td-color-accent);
@@ -188,7 +188,7 @@
         }
         .detail-ipa {
             color: var(--td-color-text-muted);
-            font-family: 'Lucida Sans Unicode', 'DejaVu Sans', sans-serif;
+            font-family: var(--td-font-mono);
             font-size: 1.1rem;
         }
         .detail-pos {
@@ -196,7 +196,7 @@
             background: var(--td-color-bg-light);
             color: var(--td-color-accent-muted);
             padding: 0.2rem 0.6rem;
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             font-weight: 500;
         }
         .detail-definition {
@@ -208,11 +208,11 @@
         .detail-example {
             padding: 0.75rem 1rem;
             border-left: 4px solid var(--td-color-accent);
-            background: #fdf8f6;
-            color: #555;
+            background: var(--td-color-accent-light);
+            color: var(--td-color-text-secondary);
             font-style: italic;
             margin-bottom: 1rem;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 var(--td-radius) var(--td-radius) 0;
         }
         .detail-scientific {
             font-style: italic;
@@ -223,7 +223,7 @@
         .detail-comment {
             padding: 0.75rem;
             background: var(--td-color-warning-bg);
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             font-size: 0.9rem;
             color: var(--td-color-text-muted);
             margin-bottom: 1rem;
@@ -239,7 +239,7 @@
         }
         .detail-audio .audio-speaker {
             font-size: 0.82rem;
-            color: #666;
+            color: var(--td-color-text-secondary);
             min-width: 5em;
         }
         .detail-audio audio {
@@ -253,7 +253,7 @@
         .detail-media img {
             max-width: 200px;
             max-height: 150px;
-            border-radius: 4px;
+            border-radius: var(--td-radius);
             object-fit: cover;
         }
         .detail-links {
@@ -262,7 +262,7 @@
             gap: 0.5rem;
             margin-top: 1rem;
             padding-top: 1rem;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--td-color-border-light);
         }
         .detail-links a {
             color: var(--td-color-accent);
@@ -284,7 +284,7 @@
         .loading-state {
             padding: 3rem;
             text-align: center;
-            color: #888;
+            color: var(--td-color-text-muted);
         }
 
         /* Mobile */

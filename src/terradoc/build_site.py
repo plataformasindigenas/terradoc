@@ -173,7 +173,7 @@ def build_language_picker(config: TerradocConfig):
     <style>
         * {{ box-sizing: border-box; }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: {theme.font_family};
             line-height: 1.6;
             max-width: 600px;
             margin: 0 auto;
@@ -183,7 +183,7 @@ def build_language_picker(config: TerradocConfig):
             text-align: center;
         }}
         h1 {{ color: {colors.primary}; font-size: 2.5rem; margin-bottom: 0.5rem; }}
-        .subtitle {{ color: #666; font-size: 1.2rem; margin-bottom: 2rem; }}
+        .subtitle {{ color: {colors.text_secondary}; font-size: 1.2rem; margin-bottom: 2rem; }}
         .logo {{
             width: 88px;
             height: 88px;
@@ -199,9 +199,9 @@ def build_language_picker(config: TerradocConfig):
         }}
         .lang-card {{
             display: block;
-            background: white;
+            background: {colors.surface};
             border: 1px solid {colors.border};
-            border-radius: 4px;
+            border-radius: {theme.border_radius};
             padding: 2rem 3rem;
             text-decoration: none;
             color: inherit;
