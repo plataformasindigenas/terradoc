@@ -7,5 +7,6 @@ build/
 .eggs/
 *.so
 .venv/
+.uv-cache/
 .pytest_cache/
 .mypy_cache/
