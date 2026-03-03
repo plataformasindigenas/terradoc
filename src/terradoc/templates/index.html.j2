@@ -5,22 +5,33 @@
 {% block extra_styles %}
         .hero {
             text-align: center;
-            padding: 2.5rem 1rem;
+            padding: 3rem 1.5rem;
             background: var(--td-color-primary);
             color: white;
             border-radius: var(--td-radius);
             margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
         }
+        {% if theme.hero_image %}
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                        url('{{ base_path | default('') }}{{ theme.hero_image }}') center/cover no-repeat;
+            padding: 4rem 1.5rem;
+        }
+        {% endif %}
         .hero h1 {
             color: white;
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
+            position: relative;
         }
         .hero p {
             font-size: 1.2rem;
-            opacity: 0.85;
+            opacity: 0.9;
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
         }
         .platforms {
             display: grid;
@@ -31,38 +42,52 @@
         .platform-card {
             background: var(--td-color-surface);
             border-radius: var(--td-radius);
-            padding: 1.5rem;
+            padding: 1.75rem;
             border: 1px solid var(--td-color-border);
             text-decoration: none;
             color: inherit;
-            transition: border-color 0.2s;
-            display: block;
+            display: flex;
+            flex-direction: column;
         }
         .platform-card:hover {
             border-color: var(--td-color-accent);
+            transform: translateY(-2px);
         }
         .platform-card h2 {
             margin: 0 0 0.5rem 0;
             color: var(--td-color-primary);
             font-size: 1.4rem;
         }
-        .platform-card p {
+        .platform-card .card-desc {
             margin: 0 0 1rem 0;
             color: var(--td-color-text-secondary);
+            flex: 1;
         }
-        .platform-card .count {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--td-color-accent);
+        .platform-card .card-footer {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--td-color-border-light);
         }
-        .platform-card .label {
+        .platform-card .card-count {
             font-size: 0.9rem;
             color: var(--td-color-text-muted);
+        }
+        .platform-card .card-count strong {
+            font-size: 1.1rem;
+            color: var(--td-color-accent);
+        }
+        .platform-card .card-cta {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--td-color-accent);
         }
         .about {
             background: var(--td-color-surface);
             border-radius: var(--td-radius);
-            padding: 1.5rem;
+            padding: 2rem;
             border: 1px solid var(--td-color-border);
         }
         .about h2 {
@@ -81,9 +106,11 @@
         {% for mod in modules %}
         <a href="{{ mod.slug }}.html" class="platform-card">
             <h2>{{ t['card_' + mod.slug + '_title'] | default(mod.name) }}</h2>
-            <p>{{ t['card_' + mod.slug + '_desc'] | default('') }}</p>
-            <div class="count">{{ data[0][mod.slug + '_count'] }}</div>
-            <div class="label">{{ t['card_' + mod.slug + '_label'] | default('') }}</div>
+            <p class="card-desc">{{ t['card_' + mod.slug + '_desc'] | default('') }}</p>
+            <div class="card-footer">
+                <span class="card-count"><strong>{{ data[0][mod.slug + '_count'] }}</strong> {{ t['card_' + mod.slug + '_label'] | default('') }}</span>
+                <span class="card-cta">{{ t.card_cta | default('Explorar') }} &rarr;</span>
+            </div>
         </a>
         {% endfor %}
     </div>
