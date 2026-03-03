@@ -1,0 +1,43 @@
+[project]
+name = "terradoc"
+version = "0.1.0"
+description = "Reusable engine for indigenous documentation platforms"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [
+    { name = "Plataformas Indigenas" },
+]
+keywords = ["indigenous", "linguistics", "dictionary", "documentation", "cultural-heritage"]
+
+dependencies = [
+    "aptoro",
+    "kodudo",
+    "bibtexparser>=1.4.0",
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "markdown-it-py>=3.0",
+    "mdit-py-plugins>=0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+terradoc = "terradoc.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/plataformasindigenas/terradoc"
+Repository = "https://github.com/plataformasindigenas/terradoc"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+terradoc = ["templates/*.j2", "static/js/*.js", "schemas/*.yaml"]

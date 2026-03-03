@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="{{ t.html_lang | default('pt-BR') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title }}{% endblock %} - Boe Eno Moto</title>
+    <style>
+        :root {
+            --td-color-primary: {{ theme.colors.primary | default('var(--td-color-primary)') }};
+            --td-color-accent: {{ theme.colors.accent | default('var(--td-color-accent)') }};
+            --td-color-accent-muted: {{ theme.colors.accent_muted | default('var(--td-color-accent-muted)') }};
+            --td-color-bg: {{ theme.colors.bg | default('var(--td-color-bg)') }};
+            --td-color-bg-light: {{ theme.colors.bg_light | default('var(--td-color-bg-light)') }};
+            --td-color-bg-infobox: {{ theme.colors.bg_infobox | default('#FAF8F5') }};
+            --td-color-border: {{ theme.colors.border | default('var(--td-color-border)') }};
+            --td-color-border-dark: {{ theme.colors.border_dark | default('#C8B8A8') }};
+            --td-color-text: {{ theme.colors.text | default('#333333') }};
+            --td-color-text-muted: {{ theme.colors.text_muted | default('var(--td-color-text-muted)') }};
+            --td-color-highlight: {{ theme.colors.highlight | default('var(--td-color-highlight)') }};
+            --td-color-warning-bg: {{ theme.colors.warning_bg | default('var(--td-color-warning-bg)') }};
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1rem;
+            background: var(--td-color-bg);
+            color: var(--td-color-text);
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--td-color-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            z-index: 100;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+        nav {
+            background: var(--td-color-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        nav a:hover, nav a.active {
+            background: rgba(255,255,255,0.15);
+        }
+        nav .brand {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        nav .lang-switch {
+            margin-left: auto;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        nav .lang-switch:hover {
+            opacity: 1;
+        }
+        header {
+            text-align: center;
+            padding: 1rem 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+        }
+        h1 {
+            margin: 0 0 0.5rem 0;
+            color: var(--td-color-primary);
+        }
+        .subtitle {
+            color: var(--td-color-text-muted);
+            font-size: 0.95rem;
+        }
+        .search-container {
+            background: white;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid var(--td-color-border);
+            margin-bottom: 1rem;
+        }
+        .search-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border: 1px solid var(--td-color-border);
+            border-radius: 4px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--td-color-accent);
+            box-shadow: 0 0 0 2px rgba(199, 91, 57, 0.2);
+        }
+        .filter-select {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid var(--td-color-border);
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        .stats {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--td-color-text-muted);
+        }
+        .results-container {
+            background: white;
+            border-radius: 4px;
+            border: 1px solid var(--td-color-border);
+            overflow: hidden;
+        }
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--td-color-text-muted);
+        }
+        .empty-state h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--td-color-text-muted);
+        }
+        .entry {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .entry:last-child {
+            border-bottom: none;
+        }
+        .entry:hover {
+            background: #f8f9fa;
+        }
+        .entry-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.25rem;
+        }
+        .entry-word {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--td-color-primary);
+        }
+        .entry-secondary {
+            color: var(--td-color-text-muted);
+            font-size: 1rem;
+        }
+        .entry-ipa {
+            color: var(--td-color-text-muted);
+            font-family: 'Lucida Sans Unicode', 'DejaVu Sans', sans-serif;
+        }
+        .entry-tag {
+            font-size: 0.75rem;
+            background: var(--td-color-bg-light);
+            color: var(--td-color-accent-muted);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .entry-definition {
+            margin: 0.5rem 0;
+            color: #444;
+        }
+        .entry-example {
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+            border-left: 3px solid var(--td-color-accent);
+            color: #555;
+            font-style: italic;
+        }
+        .entry-scientific {
+            font-style: italic;
+            color: var(--td-color-text-muted);
+            font-size: 0.9rem;
+        }
+        .entry-comment {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--td-color-warning-bg);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--td-color-text-muted);
+        }
+        .entry-media {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            align-items: flex-start;
+        }
+        .entry-thumbnail {
+            max-width: 120px;
+            max-height: 90px;
+            border-radius: 4px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .entry-thumbnail:hover {
+            transform: scale(1.05);
+        }
+        .entry-links {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .entry-links a {
+            font-size: 0.85rem;
+            color: var(--td-color-accent);
+            text-decoration: none;
+        }
+        .entry-links a:hover {
+            text-decoration: underline;
+        }
+        .highlight {
+            background: var(--td-color-highlight);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        footer {
+            margin-top: 2rem;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--td-color-text-muted);
+            border-top: 1px solid #e0e0e0;
+        }
+        footer a {
+            color: var(--td-color-accent);
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .search-row {
+                flex-direction: column;
+            }
+            .search-input, .filter-select {
+                width: 100%;
+            }
+            .entry-thumbnail {
+                max-width: 80px;
+            }
+            nav {
+                justify-content: center;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">{{ t.skip_link | default('Pular para conteúdo') }}</a>
+
+    {% set np = nav_prefix | default('') %}
+    <nav aria-label="{{ t.nav_label | default('Navegação principal') }}">
+        <a href="{{ np }}index.html" class="brand">{{ t.nav_brand | default('Boe Eno Moto') }}</a>
+        {% for mod in modules %}
+        <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
+        {% endfor %}
+        {% if other_locale %}
+        <a href="{{ base_path | default('') }}{{ other_locale }}/{{ page | default('index') }}.html" class="lang-switch">{{ other_locale | upper }}</a>
+        {% endif %}
+    </nav>
+
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>{{ t.footer_generated | default('Gerado com') }} <a href="https://github.com/plataformasindigenas/aptoro">aptoro</a> {{ t.footer_and | default('e') }} <a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></p>
+        {% if meta and meta.version %}<p>Schema v{{ meta.version }}</p>{% endif %}
+    </footer>
+
+    <script src="{{ base_path | default('') }}js/common.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

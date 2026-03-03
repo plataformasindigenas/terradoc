@@ -1,0 +1,520 @@
+"""Data converters for terradoc projects."""
+
+import csv
+import json
+import sys
+from dataclasses import asdict, is_dataclass
+from pathlib import Path
+
+import aptoro
+from bibtexparser import bparser
+import yaml
+
+from terradoc.config import TerradocConfig
+from terradoc.markdown_utils import (
+    assert_no_html,
+    build_category_tree,
+    build_markdown_renderer,
+    html_to_text,
+    process_wikilinks,
+)
+
+csv.field_size_limit(sys.maxsize)
+
+
+def _normalize_records(records) -> list[dict]:
+    """Convert aptoro records to plain dicts."""
+    result = []
+    for record in records:
+        entry = asdict(record) if is_dataclass(record) else dict(record)
+        result.append(entry)
+    return result
+
+
+def convert_dictionary(config: TerradocConfig) -> int:
+    """Convert dictionary TSV to JSON."""
+    print("=== Converting Dictionary ===")
+
+    schema = aptoro.load_schema(str(config.data_dir / "dictionary_schema.yaml"))
+    data = aptoro.read(str(config.data_dir / "dictionary.tsv"), format="csv", delimiter="\t")
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_dictionary",
+            "description": f"{config.culture_name} Dictionary Entries",
+            "version": "1.0",
+            "record_count": len(normalized_records),
+        },
+        "data": normalized_records,
+    }
+
+    output_file = config.data_dir / "dictionary.json"
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
+def convert_fauna(config: TerradocConfig) -> int:
+    """Convert fauna YAML to JSON."""
+    print("=== Converting Fauna ===")
+
+    schema = aptoro.load_schema(str(config.data_dir / "fauna_schema.yaml"))
+    data = aptoro.read(str(config.data_dir / "fauna.yaml"), format="yaml")
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_fauna",
+            "description": f"{config.culture_name} Fauna Dictionary",
+            "version": "1.0",
+            "record_count": len(normalized_records),
+        },
+        "data": normalized_records,
+    }
+
+    output_file = config.data_dir / "fauna.json"
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
+def convert_bibliography(config: TerradocConfig) -> int:
+    """Convert bibliography BibTeX to JSON."""
+    print("=== Converting Bibliography ===")
+
+    bib_file = config.data_dir / config.bib_file
+    if not bib_file.exists():
+        print(f"  BibTeX file not found: {bib_file}")
+        return 0
+
+    with open(bib_file, "r", encoding="utf-8") as f:
+        bib_database = bparser.parse(f.read())
+
+    schema = aptoro.load_schema(str(config.data_dir / "bibliography_schema.yaml"))
+
+    data = []
+    for entry in bib_database.entries:
+        record = {"id": entry.get("ID", "")}
+        bibtex_type = entry.get("ENTRYTYPE", "misc")
+        if bibtex_type.startswith("@"):
+            bibtex_type = bibtex_type[1:]
+        record["type"] = bibtex_type
+
+        field_mapping = {
+            "author": "author", "title": "title", "year": "year",
+            "journal": "journal", "volume": "volume", "number": "number",
+            "pages": "pages", "doi": "doi", "url": "url",
+            "publisher": "publisher", "address": "address", "school": "school",
+            "note": "note", "editor": "editor", "booktitle": "booktitle",
+        }
+
+        for bib_field, schema_field in field_mapping.items():
+            if bib_field in entry:
+                record[schema_field] = entry[bib_field]
+
+        data.append(record)
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_bibliography",
+            "description": f"{config.culture_name} Bibliography References",
+            "version": "1.0",
+            "record_count": len(normalized_records),
+        },
+        "data": normalized_records,
+    }
+
+    output_file = config.data_dir / "bibliography.json"
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
+def _load_encyclopedia_entries(data_dir: Path) -> list[dict]:
+    """Load and normalize encyclopedia markdown entries."""
+    entries_dir = data_dir / "encyclopedia"
+    if not entries_dir.exists():
+        raise FileNotFoundError(f"Missing encyclopedia directory: {entries_dir}")
+
+    md_files = sorted(
+        p for p in entries_dir.rglob("*.md") if p.name != "README.md"
+    )
+    if not md_files:
+        raise FileNotFoundError(f"No markdown entries found in {entries_dir}")
+
+    raw_entries = []
+    for path in md_files:
+        raw_entries.extend(
+            aptoro.read(str(path), format="frontmatter", body_key="content_md")
+        )
+
+    entries: list[dict] = []
+    seen_ids: set[str] = set()
+
+    field_renames = {
+        "headword": "title",
+        "summary": "abstract",
+        "updated_at": "date",
+        "keywords": "categories",
+    }
+
+    for entry in raw_entries:
+        for old_name, new_name in field_renames.items():
+            if old_name in entry and new_name not in entry:
+                entry[new_name] = entry.pop(old_name)
+
+        entry_id = entry.get("id")
+        if not entry_id:
+            raise ValueError("Missing required front matter field 'id'")
+        if entry_id in seen_ids:
+            raise ValueError(f"Duplicate encyclopedia id: {entry_id}")
+        seen_ids.add(entry_id)
+
+        entries.append(entry)
+
+    return entries
+
+
+def _load_bib_data(data_dir: Path, bib_filename: str) -> dict:
+    """Load BibTeX data and return {bib_key: entry_dict}."""
+    bib_file = data_dir / bib_filename
+    if not bib_file.exists():
+        return {}
+
+    with open(bib_file, "r", encoding="utf-8") as f:
+        bib_database = bparser.parse(f.read())
+
+    bib_data = {}
+    for entry in bib_database.entries:
+        key = entry.get("ID", "")
+        if key:
+            bib_data[key] = entry
+    return bib_data
+
+
+def _format_citation(entry: dict) -> str:
+    """Format a BibTeX entry as a readable citation string."""
+    bib_type = entry.get("ENTRYTYPE", "misc")
+    author = entry.get("author", "")
+    year = entry.get("year", "")
+    title = entry.get("title", "")
+
+    if bib_type == "article":
+        journal = entry.get("journal", "")
+        volume = entry.get("volume", "")
+        pages = entry.get("pages", "")
+        doi = entry.get("doi", "")
+        cite = f"{author} ({year}). *{title}*."
+        if journal:
+            cite += f" {journal}"
+        if volume:
+            cite += f", {volume}"
+        if pages:
+            cite += f": {pages}"
+        cite += "."
+        if doi:
+            cite += f" doi:{doi}"
+    elif bib_type == "book":
+        publisher = entry.get("publisher", "")
+        address = entry.get("address", "")
+        cite = f"{author} ({year}). *{title}*."
+        if publisher:
+            cite += f" {publisher}"
+        if address:
+            cite += f", {address}"
+        cite += "."
+    elif bib_type in ("incollection", "inbook"):
+        booktitle = entry.get("booktitle", "")
+        editor = entry.get("editor", "")
+        publisher = entry.get("publisher", "")
+        cite = f"{author} ({year}). *{title}*."
+        if booktitle:
+            cite += f" In: *{booktitle}*"
+        if editor:
+            cite += f" (ed. {editor})"
+        if publisher:
+            cite += f". {publisher}"
+        cite += "."
+    elif bib_type == "phdthesis":
+        school = entry.get("school", "")
+        cite = f"{author} ({year}). *{title}*. PhD thesis"
+        if school:
+            cite += f", {school}"
+        cite += "."
+    else:
+        cite = f"{author} ({year}). *{title}*."
+        publisher = entry.get("publisher", "")
+        if publisher:
+            cite += f" {publisher}."
+
+    return cite
+
+
+def _resolve_references(refs: list, bib_data: dict) -> list[dict]:
+    """Resolve BibTeX keys to formatted citation dicts."""
+    resolved = []
+    for key in refs:
+        if key in bib_data:
+            entry = bib_data[key]
+            resolved.append({
+                "key": key,
+                "formatted": _format_citation(entry),
+                "author": entry.get("author", ""),
+                "year": entry.get("year", ""),
+                "title": entry.get("title", ""),
+            })
+        else:
+            resolved.append({
+                "key": key,
+                "formatted": f"[{key}] — reference not found",
+                "error": True,
+            })
+    return resolved
+
+
+def convert_encyclopedia(config: TerradocConfig) -> int:
+    """Convert encyclopedia markdown to JSON."""
+    print("=== Converting Encyclopedia ===")
+
+    schema = aptoro.load_schema(str(config.data_dir / "encyclopedia_schema.yaml"))
+    data = _load_encyclopedia_entries(config.data_dir)
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    all_ids = set()
+    for record in records:
+        entry = asdict(record) if is_dataclass(record) else dict(record)
+        eid = entry.get("id", "")
+        if eid:
+            all_ids.add(eid)
+
+    bib_data = _load_bib_data(config.data_dir, config.bib_file)
+    md = build_markdown_renderer()
+    normalized_records = []
+    index_records = []
+
+    for record in records:
+        entry = asdict(record) if is_dataclass(record) else dict(record)
+
+        if not entry.get("infobox"):
+            entry["infobox"] = {}
+
+        content_md = entry.get("content_md") or ""
+        assert_no_html(content_md, entry.get("id", "<unknown>"))
+
+        if "[[" in content_md:
+            content_md = process_wikilinks(content_md, all_ids)
+
+        content_html = md.render(content_md) if content_md else ""
+        entry["content_html"] = content_html
+        entry["content_text"] = html_to_text(content_html)
+        entry["content_md"] = content_md
+
+        refs = entry.get("references") or []
+        if refs and bib_data:
+            entry["resolved_references"] = _resolve_references(refs, bib_data)
+        else:
+            entry["resolved_references"] = []
+
+        normalized_records.append(entry)
+
+        index_records.append({
+            "id": entry.get("id", ""),
+            "title": entry.get("title", ""),
+            "abstract": entry.get("abstract", ""),
+            "categories": entry.get("categories", []),
+            "variants": entry.get("variants", []),
+            "entry_type": entry.get("entry_type", ""),
+            "has_content": bool(content_html),
+        })
+
+    output_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_encyclopedia",
+            "description": f"{config.culture_name} Encyclopedia Entries",
+            "version": "2.0",
+            "record_count": len(normalized_records),
+        },
+        "data": normalized_records,
+    }
+
+    output_file = config.data_dir / "encyclopedia.json"
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    category_tree = build_category_tree(normalized_records)
+
+    index_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_encyclopedia",
+            "description": f"{config.culture_name} Encyclopedia Entries",
+            "version": "2.0",
+            "record_count": len(index_records),
+        },
+        "data": index_records,
+        "category_tree": category_tree,
+    }
+
+    # Select featured article
+    featured = None
+    featured_id = config.featured_article_id
+    if featured_id:
+        for entry in normalized_records:
+            if entry.get("id") == featured_id:
+                images = entry.get("images") or []
+                text = (entry.get("content_text") or "")[:400]
+                if text and " " in text:
+                    text = text.rsplit(" ", 1)[0]
+                featured = {
+                    "id": entry["id"],
+                    "title": entry.get("title", ""),
+                    "abstract": entry.get("abstract", ""),
+                    "image": images[0] if images else None,
+                    "content_excerpt": (text + "...") if text else "",
+                }
+                break
+
+    if not featured:
+        for entry in normalized_records:
+            if entry.get("images") and entry.get("content_html"):
+                images = entry.get("images") or []
+                text = (entry.get("content_text") or "")[:400]
+                if text and " " in text:
+                    text = text.rsplit(" ", 1)[0]
+                featured = {
+                    "id": entry["id"],
+                    "title": entry.get("title", ""),
+                    "abstract": entry.get("abstract", ""),
+                    "image": images[0] if images else None,
+                    "content_excerpt": (text + "...") if text else "",
+                }
+                break
+
+    highlights = []
+    for entry in normalized_records:
+        images = entry.get("images") or []
+        if images and (not featured or entry.get("id") != featured.get("id")):
+            highlights.append({
+                "id": entry["id"],
+                "title": entry.get("title", ""),
+                "image": images[0],
+            })
+            if len(highlights) >= 8:
+                break
+
+    index_data["featured"] = featured
+    index_data["highlights"] = highlights
+
+    index_file = config.data_dir / "encyclopedia_index.json"
+    index_file.write_text(
+        json.dumps(index_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    print(f"  Exported index ({len(index_records)} entries) to {index_file}")
+    return len(normalized_records)
+
+
+def convert_recordings(config: TerradocConfig) -> int:
+    """Convert recordings YAML to JSON."""
+    print("=== Converting Recordings ===")
+
+    recordings_file = config.data_dir / "recordings.yaml"
+    if not recordings_file.exists():
+        print(f"  Recordings file not found: {recordings_file}")
+        return 0
+
+    schema = aptoro.load_schema(str(config.data_dir / "recordings_schema.yaml"))
+
+    with open(recordings_file, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or []
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_data = {
+        "meta": {
+            "name": f"{config.meta_prefix}_recordings",
+            "description": f"{config.culture_name} Language Audio Recordings",
+            "version": "1.0",
+            "record_count": len(normalized_records),
+        },
+        "data": normalized_records,
+    }
+
+    output_file = config.data_dir / "recordings.json"
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
+# Registry of converters
+CONVERTERS = {
+    "dictionary": convert_dictionary,
+    "fauna": convert_fauna,
+    "encyclopedia": convert_encyclopedia,
+    "bibliography": convert_bibliography,
+    "recordings": convert_recordings,
+}
+
+
+def run_all_converters(config: TerradocConfig) -> dict[str, int]:
+    """Run all enabled converters and return counts."""
+    counts = {}
+    for name, converter in CONVERTERS.items():
+        if config.is_module_enabled(name):
+            counts[name] = converter(config)
+            print()
+        else:
+            print(f"=== Skipping {name} (disabled) ===\n")
+    return counts
