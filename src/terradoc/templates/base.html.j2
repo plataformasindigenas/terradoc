@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ t.html_lang | default('pt-BR') }}">
+<html lang="{{ t.html_lang | default(locale | default('en')) }}" class="no-js">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
     {% endif %}
     <title>{% block title %}{{ title | default(site.title) }}{% endblock %} - {{ site.title }}</title>
     <link rel="stylesheet" href="{{ base_path | default('') }}css/terradoc.css">
+    <script>document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');</script>
     <style>
         :root {
             --td-color-primary: {{ theme.colors.primary | default('#3D352F') }};

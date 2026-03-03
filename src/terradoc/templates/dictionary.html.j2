@@ -344,27 +344,42 @@
         <p class="subtitle">{{ meta.description }} &mdash; {{ meta.record_count }} {{ t.entries_label | default('entradas') }}</p>
     </div>
 
-    <div class="dict-controls">
-        <div class="search-row">
-            <input type="text" id="search-input" class="search-input" placeholder="{{ t.dict_search_placeholder | default('Pesquisar...') }}" autocomplete="off" disabled aria-label="{{ t.search_label | default('Pesquisar') }}">
-            <select id="pos-filter" class="filter-select" disabled aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
-                <option value="">{{ t.dict_all_pos | default(t.dict_filter_all | default('Todas as classes')) }}</option>
-            </select>
+    <div class="no-js-only results-container">
+        {% for entry in data %}
+        <div class="entry">
+            <div class="entry-header">
+                <span class="entry-word">{{ entry.entry }}</span>
+                {% if entry.pos %}<span class="entry-tag">{{ t['pos_' + entry.pos] | default(entry.pos) }}</span>{% endif %}
+            </div>
+            {% if entry.definition %}<p class="entry-definition">{{ entry.definition }}</p>{% endif %}
+            {% if entry.example_sent %}<p class="entry-example">{{ entry.example_sent }}</p>{% endif %}
         </div>
-        <div class="dict-stats" id="stats" aria-live="polite"></div>
+        {% endfor %}
     </div>
 
-    <div class="dict-layout" id="dict-layout">
-        <div class="dict-list-panel">
-            <div class="letter-bar" id="letter-bar"></div>
-            <div class="word-list" id="word-list"></div>
+    <div class="js-only">
+        <div class="dict-controls">
+            <div class="search-row">
+                <input type="text" id="search-input" class="search-input" placeholder="{{ t.dict_search_placeholder | default('Pesquisar...') }}" autocomplete="off" aria-label="{{ t.search_label | default('Pesquisar') }}">
+                <select id="pos-filter" class="filter-select" aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
+                    <option value="">{{ t.dict_all_pos | default(t.dict_filter_all | default('Todas as classes')) }}</option>
+                </select>
+            </div>
+            <div class="dict-stats" id="stats" aria-live="polite"></div>
         </div>
-        <div class="dict-detail-panel" id="detail-panel">
-            <div class="dict-skeleton" id="loading">
-                <div class="skeleton skeleton-block"></div>
-                <div class="skeleton skeleton-line"></div>
-                <div class="skeleton skeleton-line"></div>
-                <div class="skeleton skeleton-line" style="width:60%"></div>
+
+        <div class="dict-layout" id="dict-layout">
+            <div class="dict-list-panel">
+                <div class="letter-bar" id="letter-bar"></div>
+                <div class="word-list" id="word-list"></div>
+            </div>
+            <div class="dict-detail-panel" id="detail-panel">
+                <div class="dict-skeleton" id="loading">
+                    <div class="skeleton skeleton-block"></div>
+                    <div class="skeleton skeleton-line"></div>
+                    <div class="skeleton skeleton-line"></div>
+                    <div class="skeleton skeleton-line" style="width:60%"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -466,7 +481,7 @@
 
             var html = '';
             html += '<div class="detail-header">';
-            html += '<h2 class="detail-word" lang="bor">' + escapeHtml(entry.entry) + '</h2>';
+            html += '<h2 class="detail-word">' + escapeHtml(entry.entry) + '</h2>';
 
             html += '<div class="detail-meta">';
             if (entry.ipa) {
@@ -691,61 +706,55 @@
         document.addEventListener('keydown', handleKeyDown);
 
         // Load data
-        fetch(BASE_PATH + 'dictionary-data.json')
-            .then(function(r) { return r.json(); })
-            .then(function(json) {
-                allEntries = json.data.sort(function(a, b) {
-                    var ae = (a.entry || '').replace(/^-+/, '');
-                    var be = (b.entry || '').replace(/^-+/, '');
-                    return ae.localeCompare(be, 'pt');
-                });
+        var json = { data: {{ data | tojson }} };
+        allEntries = json.data.sort(function(a, b) {
+            var ae = (a.entry || '').replace(/^-+/, '');
+            var be = (b.entry || '').replace(/^-+/, '');
+            return ae.localeCompare(be, 'pt');
+        });
 
-                buildLookups(allEntries);
+        buildLookups(allEntries);
 
-                // Populate POS filter
-                var posTypes = {};
-                for (var i = 0; i < allEntries.length; i++) {
-                    if (allEntries[i].pos) posTypes[allEntries[i].pos] = true;
-                }
-                Object.keys(posTypes).sort().forEach(function(pos) {
-                    var opt = document.createElement('option');
-                    opt.value = pos;
-                    opt.textContent = posLabels[pos] || pos;
-                    posFilter.appendChild(opt);
-                });
+        // Populate POS filter
+        var posTypes = {};
+        for (var i = 0; i < allEntries.length; i++) {
+            if (allEntries[i].pos) posTypes[allEntries[i].pos] = true;
+        }
+        Object.keys(posTypes).sort().forEach(function(pos) {
+            var opt = document.createElement('option');
+            opt.value = pos;
+            opt.textContent = posLabels[pos] || pos;
+            posFilter.appendChild(opt);
+        });
 
-                searchInput.disabled = false;
-                posFilter.disabled = false;
+        // Check URL params
+        var urlParams = new URLSearchParams(window.location.search);
+        var initialSearch = urlParams.get('search');
+        var initialEntry = urlParams.get('entry');
 
-                // Check URL params
-                var urlParams = new URLSearchParams(window.location.search);
-                var initialSearch = urlParams.get('search');
-                var initialEntry = urlParams.get('entry');
+        if (initialSearch) {
+            searchInput.value = initialSearch;
+        }
 
-                if (initialSearch) {
-                    searchInput.value = initialSearch;
-                }
+        // Render initial list
+        filterEntries();
 
-                // Render initial list
-                filterEntries();
+        // Select initial entry
+        if (initialEntry) {
+            var entryId = parseInt(initialEntry);
+            if (entriesById[entryId]) {
+                selectEntry(entryId);
+                // Scroll to the selected entry in word list
+                setTimeout(function() {
+                    var el = wordList.querySelector('.word-item.selected');
+                    if (el) el.scrollIntoView({ block: 'center' });
+                }, 100);
+            }
+        } else if (!initialSearch) {
+            renderDetail(null);
+        }
 
-                // Select initial entry
-                if (initialEntry) {
-                    var entryId = parseInt(initialEntry);
-                    if (entriesById[entryId]) {
-                        selectEntry(entryId);
-                        // Scroll to the selected entry in word list
-                        setTimeout(function() {
-                            var el = wordList.querySelector('.word-item.selected');
-                            if (el) el.scrollIntoView({ block: 'center' });
-                        }, 100);
-                    }
-                } else if (!initialSearch) {
-                    renderDetail(null);
-                }
-
-                searchInput.focus();
-            });
+        searchInput.focus();
     })();
     </script>
 {% endblock %}

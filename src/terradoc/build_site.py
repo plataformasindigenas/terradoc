@@ -17,6 +17,14 @@ def load_locale(locale: str, config: TerradocConfig) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def load_json_if_exists(path: Path) -> dict:
+    """Load a JSON file if it exists, otherwise return an empty dict."""
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def get_locale_switches(locale: str, base_path: str, current_page_path: str,
                         config: TerradocConfig) -> list[dict[str, str | bool]]:
     """Build locale switcher metadata for the current page."""
@@ -108,6 +116,10 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
         if name != "index" and not config.is_module_enabled(name):
             continue
 
+        client_index = {}
+        if name == "encyclopedia":
+            client_index = load_json_if_exists(config.data_dir / "encyclopedia_index.json")
+
         batch = kodudo.load_config(config_path)
 
         original_output = str(batch.config.output)
@@ -128,6 +140,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
                 "modules": modules,
                 "page": name,
                 "current_page_path": output_filename,
+                "client_index": client_index,
             },
             output=locale_output,
         )
@@ -161,6 +174,7 @@ def build_language_picker(config: TerradocConfig):
             "site": site,
             "theme": theme_dict,
             "locales": locales,
+            "default_locale": config.default_locale,
         },
         template_dirs=(config.template_dir,),
     )
