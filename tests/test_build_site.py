@@ -1,0 +1,78 @@
+"""Tests for terradoc site builder."""
+
+import tempfile
+from pathlib import Path
+
+from terradoc.build_site import build_language_picker
+from terradoc.config import TerradocConfig, ThemeColors, ThemeConfig
+
+
+def test_build_language_picker():
+    """Language picker HTML is generated correctly."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        config = TerradocConfig(
+            project_name="Test Project",
+            project_subtitle="Test Subtitle",
+            locales=["pt", "en"],
+            base_dir=tmp_path,
+        )
+
+        build_language_picker(config)
+
+        index_html = (docs_dir / "index.html").read_text()
+        assert "Test Project" in index_html
+        assert "Test Subtitle" in index_html
+        assert 'href="pt/index.html"' in index_html
+        assert 'href="en/index.html"' in index_html
+        assert "Português" in index_html
+        assert "English" in index_html
+
+
+def test_build_language_picker_custom_theme():
+    """Language picker uses custom theme colors."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        config = TerradocConfig(
+            project_name="Custom",
+            locales=["pt"],
+            base_dir=tmp_path,
+            theme=ThemeConfig(colors=ThemeColors(
+                primary="#FF0000",
+                accent="#00FF00",
+                bg="#0000FF",
+            )),
+        )
+
+        build_language_picker(config)
+
+        index_html = (docs_dir / "index.html").read_text()
+        assert "#FF0000" in index_html
+        assert "#00FF00" in index_html
+        assert "#0000FF" in index_html
+
+
+def test_build_language_picker_single_locale():
+    """Language picker works with single locale."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        config = TerradocConfig(
+            project_name="Single",
+            locales=["en"],
+            base_dir=tmp_path,
+        )
+
+        build_language_picker(config)
+
+        index_html = (docs_dir / "index.html").read_text()
+        assert 'href="en/index.html"' in index_html
+        assert "pt/index.html" not in index_html

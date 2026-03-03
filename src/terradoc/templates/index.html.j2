@@ -1,0 +1,96 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ t.index_title | default('Início') }}{% endblock %}
+
+{% block extra_styles %}
+        .hero {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: var(--td-color-primary);
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+        }
+        .hero h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.85;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .platforms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .platform-card {
+            background: white;
+            border-radius: 4px;
+            padding: 1.5rem;
+            border: 1px solid var(--td-color-border);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s;
+            display: block;
+        }
+        .platform-card:hover {
+            border-color: var(--td-color-accent);
+        }
+        .platform-card h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--td-color-primary);
+            font-size: 1.4rem;
+        }
+        .platform-card p {
+            margin: 0 0 1rem 0;
+            color: #666;
+        }
+        .platform-card .count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--td-color-accent);
+        }
+        .platform-card .label {
+            font-size: 0.9rem;
+            color: #888;
+        }
+        .about {
+            background: white;
+            border-radius: 4px;
+            padding: 1.5rem;
+            border: 1px solid var(--td-color-border);
+        }
+        .about h2 {
+            margin-top: 0;
+            color: var(--td-color-primary);
+        }
+{% endblock %}
+
+{% block content %}
+    <div class="hero">
+        <h1>{{ t.index_hero_title | default('Boe Eno Moto') }}</h1>
+        <p>{{ t.index_hero_subtitle | default('Mundo Bororo') }}</p>
+    </div>
+
+    <div class="platforms">
+        {% for mod in modules %}
+        <a href="{{ mod.slug }}.html" class="platform-card">
+            <h2>{{ t['card_' + mod.slug + '_title'] | default(mod.name) }}</h2>
+            <p>{{ t['card_' + mod.slug + '_desc'] | default('') }}</p>
+            <div class="count">{{ data[0][mod.slug + '_count'] }}</div>
+            <div class="label">{{ t['card_' + mod.slug + '_label'] | default('') }}</div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="about">
+        <h2>{{ t.index_about_title | default('Sobre o Projeto') }}</h2>
+        <p>{{ t.index_about_p1 | default('') }}</p>
+        <p>{{ t.index_about_p2 | default('') }}</p>
+    </div>
+{% endblock %}
