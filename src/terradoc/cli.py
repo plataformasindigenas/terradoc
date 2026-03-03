@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from terradoc.config import TerradocConfig, load_config
+from terradoc.config import load_config
 
 
 STARTER_PAGE_CONFIGS = {
@@ -210,12 +210,3 @@ index_hero_title: "{name}"
     click.echo(f"  Edit {name}/terradoc.yaml to configure your project")
     click.echo(f"  Add data to {name}/data/")
     click.echo(f"  Run: cd {name} && terradoc build")
-
-
-def resolve_schema(module_slug: str, config: TerradocConfig) -> Path:
-    """Resolve schema path — local overrides package defaults."""
-    local = config.data_dir / f"{module_slug}_schema.yaml"
-    if local.exists():
-        return local
-    package_schema = importlib.resources.files("terradoc.schemas") / f"{module_slug}_schema.yaml"
-    return Path(str(package_schema))

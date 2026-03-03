@@ -1,7 +1,6 @@
 """Data converters for terradoc projects."""
 
 import csv
-import importlib.resources
 import json
 import sys
 from dataclasses import asdict, is_dataclass
@@ -21,15 +20,6 @@ from terradoc.markdown_utils import (
 )
 
 csv.field_size_limit(sys.maxsize)
-
-
-def _resolve_schema_path(config: TerradocConfig, module_slug: str) -> Path:
-    """Resolve a schema path, preferring local overrides in data/."""
-    local = config.data_dir / f"{module_slug}_schema.yaml"
-    if local.exists():
-        return local
-    package_schema = importlib.resources.files("terradoc.schemas") / f"{module_slug}_schema.yaml"
-    return Path(str(package_schema))
 
 
 def _dataset_meta(config: TerradocConfig, module_slug: str, description: str, count: int, version: str) -> dict:
@@ -82,7 +72,7 @@ def convert_dictionary(config: TerradocConfig) -> int:
         print(f"  Exported 0 entries to {output_file}")
         return 0
 
-    schema = aptoro.load_schema(str(_resolve_schema_path(config, "dictionary")))
+    schema = aptoro.load_schema(str(config.resolve_schema("dictionary")))
     data = aptoro.read(str(dictionary_file), format="csv", delimiter="\t")
 
     print(f"  Validating {len(data)} entries...")
@@ -123,7 +113,7 @@ def convert_fauna(config: TerradocConfig) -> int:
         print(f"  Exported 0 entries to {output_file}")
         return 0
 
-    schema = aptoro.load_schema(str(_resolve_schema_path(config, "fauna")))
+    schema = aptoro.load_schema(str(config.resolve_schema("fauna")))
     data = aptoro.read(str(fauna_file), format="yaml")
 
     print(f"  Validating {len(data)} entries...")
@@ -159,7 +149,7 @@ def convert_bibliography(config: TerradocConfig) -> int:
     with open(bib_file, "r", encoding="utf-8") as f:
         bib_database = bparser.parse(f.read())
 
-    schema = aptoro.load_schema(str(_resolve_schema_path(config, "bibliography")))
+    schema = aptoro.load_schema(str(config.resolve_schema("bibliography")))
 
     data = []
     for entry in bib_database.entries:
@@ -350,7 +340,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     """Convert encyclopedia markdown to JSON."""
     print("=== Converting Encyclopedia ===")
 
-    schema = aptoro.load_schema(str(_resolve_schema_path(config, "encyclopedia")))
+    schema = aptoro.load_schema(str(config.resolve_schema("encyclopedia")))
     data = _load_encyclopedia_entries(config.data_dir)
 
     print(f"  Validating {len(data)} entries...")
@@ -499,7 +489,7 @@ def convert_recordings(config: TerradocConfig) -> int:
         print(f"  Recordings file not found: {recordings_file}")
         return 0
 
-    schema = aptoro.load_schema(str(_resolve_schema_path(config, "recordings")))
+    schema = aptoro.load_schema(str(config.resolve_schema("recordings")))
 
     with open(recordings_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or []

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from terradoc.cli import main, resolve_schema
+from terradoc.cli import main
 from terradoc.config import TerradocConfig
 
 
@@ -103,7 +103,7 @@ def test_resolve_schema_local():
         schema_file.write_text("fields: []\n")
 
         config = TerradocConfig(base_dir=tmp_path)
-        result = resolve_schema("dictionary", config)
+        result = config.resolve_schema("dictionary")
         assert result == schema_file
 
 
@@ -114,6 +114,6 @@ def test_resolve_schema_fallback_package():
         (tmp_path / "data").mkdir()
 
         config = TerradocConfig(base_dir=tmp_path)
-        result = resolve_schema("dictionary", config)
+        result = config.resolve_schema("dictionary")
         assert "terradoc" in str(result)
         assert "schemas" in str(result)
