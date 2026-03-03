@@ -226,9 +226,29 @@ def build_language_picker(config: TerradocConfig):
     print("  Generated language picker at docs/index.html")
 
 
+def copy_static_assets(config: TerradocConfig):
+    """Copy bundled static assets (JS, CSS) to docs/."""
+    import importlib.resources
+
+    for subdir in ("js", "css"):
+        dest = config.docs_dir / subdir
+        dest.mkdir(parents=True, exist_ok=True)
+        package = f"terradoc.static.{subdir}"
+        try:
+            src_dir = importlib.resources.files(package)
+        except ModuleNotFoundError:
+            continue
+        for src_file in src_dir.iterdir():
+            if src_file.is_file():
+                shutil.copy2(str(src_file), str(dest / src_file.name))
+    print("  Copied static assets (js/, css/) to docs/")
+
+
 def build_site(config: TerradocConfig):
     """Build the complete site for all locales."""
     print("=== Building i18n Site ===\n")
+
+    copy_static_assets(config)
 
     for locale in config.locales:
         print(f"Building locale: {locale}")

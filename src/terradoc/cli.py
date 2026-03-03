@@ -121,6 +121,7 @@ def init(name: str):
     (project_dir / "docs").mkdir()
     (project_dir / "docs" / "images").mkdir(parents=True)
     (project_dir / "docs" / "js").mkdir(parents=True)
+    (project_dir / "docs" / "css").mkdir(parents=True)
 
     # Copy bundled templates
     templates_src = importlib.resources.files("terradoc.templates")
@@ -135,9 +136,11 @@ def init(name: str):
     for filename, content in STARTER_PAGE_CONFIGS.items():
         (project_dir / "config" / filename).write_text(content, encoding="utf-8")
 
-    # Copy common.js
+    # Copy static assets (JS and CSS)
     js_src = importlib.resources.files("terradoc.static.js") / "common.js"
     shutil.copy2(str(js_src), str(project_dir / "docs" / "js" / "common.js"))
+    css_src = importlib.resources.files("terradoc.static.css") / "terradoc.css"
+    shutil.copy2(str(css_src), str(project_dir / "docs" / "css" / "terradoc.css"))
     (project_dir / "docs" / "images" / "logo.svg").write_text(
         DEFAULT_LOGO_SVG, encoding="utf-8"
     )
