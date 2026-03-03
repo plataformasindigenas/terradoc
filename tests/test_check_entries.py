@@ -93,6 +93,14 @@ def test_check_entries_missing_directory():
         assert check_entries(Path(tmp)) == 1
 
 
+def test_check_entries_empty_directory_is_ok():
+    """check_entries accepts an empty encyclopedia directory."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        (tmp_path / "encyclopedia").mkdir()
+        assert check_entries(tmp_path) == 0
+
+
 def test_check_entries_list_field_not_list():
     """check_entries catches non-list value for list fields."""
     with tempfile.TemporaryDirectory() as tmp:

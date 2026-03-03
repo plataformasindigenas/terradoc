@@ -6,7 +6,6 @@ from pathlib import Path
 
 import kodudo
 import yaml
-from jinja2 import Environment, FileSystemLoader
 
 from terradoc.config import TerradocConfig
 from terradoc.markdown_utils import generate_toc
@@ -15,7 +14,19 @@ from terradoc.markdown_utils import generate_toc
 def load_locale(locale: str, config: TerradocConfig) -> dict:
     path = config.locales_dir / f"{locale}.yaml"
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        return yaml.safe_load(f) or {}
+
+
+def get_locale_switches(locale: str, config: TerradocConfig) -> list[dict[str, str | bool]]:
+    """Build locale switcher metadata for the current page."""
+    switches: list[dict[str, str | bool]] = []
+    for code in config.locales:
+        switches.append({
+            "code": code,
+            "label": code.upper(),
+            "is_current": code == locale,
+        })
+    return switches
 
 
 def render_article_pages(locale: str, translations: dict, config: TerradocConfig):
@@ -33,8 +44,6 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
         return
 
     all_titles = {e["id"]: e.get("title", e["id"]) for e in entries}
-    other_locale = [l for l in config.locales if l != locale][0]
-
     enc_dir = config.docs_dir / locale / "encyclopedia"
     enc_dir.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +71,7 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
                 "all_titles": all_titles,
                 "t": translations,
                 "locale": locale,
-                "other_locale": other_locale,
+                "locale_switches": get_locale_switches(locale, config),
                 "base_path": "../../",
                 "page": "encyclopedia",
                 "title": entry.get("title", ""),
@@ -83,12 +92,13 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
     locale_dir = config.docs_dir / locale
     locale_dir.mkdir(parents=True, exist_ok=True)
 
-    other_locale = [l for l in config.locales if l != locale][0]
     modules = config.enabled_modules()
     theme_dict = config.theme.to_dict()
 
     for config_path in sorted(config.config_dir.glob("*.yaml")):
         name = config_path.stem
+        if name != "index" and not config.is_module_enabled(name):
+            continue
 
         batch = kodudo.load_config(config_path)
 
@@ -101,7 +111,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
             context={
                 "t": translations,
                 "locale": locale,
-                "other_locale": other_locale,
+                "locale_switches": get_locale_switches(locale, config),
                 "base_path": "../",
                 "theme": theme_dict,
                 "modules": modules,

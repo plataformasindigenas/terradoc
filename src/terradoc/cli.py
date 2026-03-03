@@ -9,6 +9,30 @@ import click
 from terradoc.config import TerradocConfig, load_config
 
 
+STARTER_PAGE_CONFIGS = {
+    "index.yaml": """input: ../data/index.json
+template: templates/index.html.j2
+output: ../docs/index.html
+""",
+    "dictionary.yaml": """input: ../data/dictionary.json
+template: templates/dictionary.html.j2
+output: ../docs/dictionary.html
+""",
+    "fauna.yaml": """input: ../data/fauna.json
+template: templates/fauna.html.j2
+output: ../docs/fauna.html
+""",
+    "encyclopedia.yaml": """input: ../data/encyclopedia_index.json
+template: templates/encyclopedia.html.j2
+output: ../docs/encyclopedia.html
+""",
+    "bibliography.yaml": """input: ../data/bibliography.json
+template: templates/bibliography.html.j2
+output: ../docs/bibliography.html
+""",
+}
+
+
 @click.group()
 @click.version_option()
 def main():
@@ -81,12 +105,27 @@ def init(name: str):
         raise SystemExit(1)
 
     project_dir.mkdir()
+    (project_dir / "config").mkdir()
+    (project_dir / "config" / "templates").mkdir(parents=True)
     (project_dir / "data").mkdir()
     (project_dir / "data" / "encyclopedia").mkdir()
     (project_dir / "locales").mkdir()
     (project_dir / "docs").mkdir()
     (project_dir / "docs" / "images").mkdir(parents=True)
     (project_dir / "docs" / "js").mkdir(parents=True)
+
+    # Copy bundled templates
+    templates_src = importlib.resources.files("terradoc.templates")
+    for template_src in templates_src.iterdir():
+        if template_src.name.endswith(".j2"):
+            shutil.copy2(
+                str(template_src),
+                str(project_dir / "config" / "templates" / template_src.name),
+            )
+
+    # Create starter page configs
+    for filename, content in STARTER_PAGE_CONFIGS.items():
+        (project_dir / "config" / filename).write_text(content, encoding="utf-8")
 
     # Copy common.js
     js_src = importlib.resources.files("terradoc.static.js") / "common.js"
