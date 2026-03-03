@@ -1,6 +1,7 @@
 """Data converters for terradoc projects."""
 
 import csv
+import importlib.resources
 import json
 import sys
 from dataclasses import asdict, is_dataclass
@@ -22,6 +23,39 @@ from terradoc.markdown_utils import (
 csv.field_size_limit(sys.maxsize)
 
 
+def _resolve_schema_path(config: TerradocConfig, module_slug: str) -> Path:
+    """Resolve a schema path, preferring local overrides in data/."""
+    local = config.data_dir / f"{module_slug}_schema.yaml"
+    if local.exists():
+        return local
+    package_schema = importlib.resources.files("terradoc.schemas") / f"{module_slug}_schema.yaml"
+    return Path(str(package_schema))
+
+
+def _dataset_meta(config: TerradocConfig, module_slug: str, description: str, count: int, version: str) -> dict:
+    """Build standard metadata for exported datasets."""
+    return {
+        "name": f"{config.meta_prefix}_{module_slug}",
+        "description": description,
+        "version": version,
+        "record_count": count,
+    }
+
+
+def _write_dataset(config: TerradocConfig, output_name: str, module_slug: str, description: str,
+                   records: list[dict], version: str = "1.0") -> Path:
+    """Write a normalized dataset JSON file and return its path."""
+    output_data = {
+        "meta": _dataset_meta(config, module_slug, description, len(records), version),
+        "data": records,
+    }
+    output_file = config.data_dir / output_name
+    output_file.write_text(
+        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return output_file
+
+
 def _normalize_records(records) -> list[dict]:
     """Convert aptoro records to plain dicts."""
     result = []
@@ -35,8 +69,21 @@ def convert_dictionary(config: TerradocConfig) -> int:
     """Convert dictionary TSV to JSON."""
     print("=== Converting Dictionary ===")
 
-    schema = aptoro.load_schema(str(config.data_dir / "dictionary_schema.yaml"))
-    data = aptoro.read(str(config.data_dir / "dictionary.tsv"), format="csv", delimiter="\t")
+    dictionary_file = config.data_dir / "dictionary.tsv"
+    if not dictionary_file.exists():
+        output_file = _write_dataset(
+            config,
+            "dictionary.json",
+            "dictionary",
+            f"{config.culture_name} Dictionary Entries",
+            [],
+        )
+        print(f"  Dictionary file not found: {dictionary_file}")
+        print(f"  Exported 0 entries to {output_file}")
+        return 0
+
+    schema = aptoro.load_schema(str(_resolve_schema_path(config, "dictionary")))
+    data = aptoro.read(str(dictionary_file), format="csv", delimiter="\t")
 
     print(f"  Validating {len(data)} entries...")
     try:
@@ -47,19 +94,12 @@ def convert_dictionary(config: TerradocConfig) -> int:
 
     normalized_records = _normalize_records(records)
 
-    output_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_dictionary",
-            "description": f"{config.culture_name} Dictionary Entries",
-            "version": "1.0",
-            "record_count": len(normalized_records),
-        },
-        "data": normalized_records,
-    }
-
-    output_file = config.data_dir / "dictionary.json"
-    output_file.write_text(
-        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    output_file = _write_dataset(
+        config,
+        "dictionary.json",
+        "dictionary",
+        f"{config.culture_name} Dictionary Entries",
+        normalized_records,
     )
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
@@ -70,8 +110,21 @@ def convert_fauna(config: TerradocConfig) -> int:
     """Convert fauna YAML to JSON."""
     print("=== Converting Fauna ===")
 
-    schema = aptoro.load_schema(str(config.data_dir / "fauna_schema.yaml"))
-    data = aptoro.read(str(config.data_dir / "fauna.yaml"), format="yaml")
+    fauna_file = config.data_dir / "fauna.yaml"
+    if not fauna_file.exists():
+        output_file = _write_dataset(
+            config,
+            "fauna.json",
+            "fauna",
+            f"{config.culture_name} Fauna Dictionary",
+            [],
+        )
+        print(f"  Fauna file not found: {fauna_file}")
+        print(f"  Exported 0 entries to {output_file}")
+        return 0
+
+    schema = aptoro.load_schema(str(_resolve_schema_path(config, "fauna")))
+    data = aptoro.read(str(fauna_file), format="yaml")
 
     print(f"  Validating {len(data)} entries...")
     try:
@@ -82,19 +135,12 @@ def convert_fauna(config: TerradocConfig) -> int:
 
     normalized_records = _normalize_records(records)
 
-    output_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_fauna",
-            "description": f"{config.culture_name} Fauna Dictionary",
-            "version": "1.0",
-            "record_count": len(normalized_records),
-        },
-        "data": normalized_records,
-    }
-
-    output_file = config.data_dir / "fauna.json"
-    output_file.write_text(
-        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    output_file = _write_dataset(
+        config,
+        "fauna.json",
+        "fauna",
+        f"{config.culture_name} Fauna Dictionary",
+        normalized_records,
     )
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
@@ -113,7 +159,7 @@ def convert_bibliography(config: TerradocConfig) -> int:
     with open(bib_file, "r", encoding="utf-8") as f:
         bib_database = bparser.parse(f.read())
 
-    schema = aptoro.load_schema(str(config.data_dir / "bibliography_schema.yaml"))
+    schema = aptoro.load_schema(str(_resolve_schema_path(config, "bibliography")))
 
     data = []
     for entry in bib_database.entries:
@@ -146,19 +192,12 @@ def convert_bibliography(config: TerradocConfig) -> int:
 
     normalized_records = _normalize_records(records)
 
-    output_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_bibliography",
-            "description": f"{config.culture_name} Bibliography References",
-            "version": "1.0",
-            "record_count": len(normalized_records),
-        },
-        "data": normalized_records,
-    }
-
-    output_file = config.data_dir / "bibliography.json"
-    output_file.write_text(
-        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    output_file = _write_dataset(
+        config,
+        "bibliography.json",
+        "bibliography",
+        f"{config.culture_name} Bibliography References",
+        normalized_records,
     )
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
@@ -175,7 +214,7 @@ def _load_encyclopedia_entries(data_dir: Path) -> list[dict]:
         p for p in entries_dir.rglob("*.md") if p.name != "README.md"
     )
     if not md_files:
-        raise FileNotFoundError(f"No markdown entries found in {entries_dir}")
+        return []
 
     raw_entries = []
     for path in md_files:
@@ -311,7 +350,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     """Convert encyclopedia markdown to JSON."""
     print("=== Converting Encyclopedia ===")
 
-    schema = aptoro.load_schema(str(config.data_dir / "encyclopedia_schema.yaml"))
+    schema = aptoro.load_schema(str(_resolve_schema_path(config, "encyclopedia")))
     data = _load_encyclopedia_entries(config.data_dir)
 
     print(f"  Validating {len(data)} entries...")
@@ -368,30 +407,25 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
             "has_content": bool(content_html),
         })
 
-    output_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_encyclopedia",
-            "description": f"{config.culture_name} Encyclopedia Entries",
-            "version": "2.0",
-            "record_count": len(normalized_records),
-        },
-        "data": normalized_records,
-    }
-
-    output_file = config.data_dir / "encyclopedia.json"
-    output_file.write_text(
-        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    output_file = _write_dataset(
+        config,
+        "encyclopedia.json",
+        "encyclopedia",
+        f"{config.culture_name} Encyclopedia Entries",
+        normalized_records,
+        version="2.0",
     )
 
     category_tree = build_category_tree(normalized_records)
 
     index_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_encyclopedia",
-            "description": f"{config.culture_name} Encyclopedia Entries",
-            "version": "2.0",
-            "record_count": len(index_records),
-        },
+        "meta": _dataset_meta(
+            config,
+            "encyclopedia",
+            f"{config.culture_name} Encyclopedia Entries",
+            len(index_records),
+            "2.0",
+        ),
         "data": index_records,
         "category_tree": category_tree,
     }
@@ -465,7 +499,7 @@ def convert_recordings(config: TerradocConfig) -> int:
         print(f"  Recordings file not found: {recordings_file}")
         return 0
 
-    schema = aptoro.load_schema(str(config.data_dir / "recordings_schema.yaml"))
+    schema = aptoro.load_schema(str(_resolve_schema_path(config, "recordings")))
 
     with open(recordings_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or []
@@ -479,19 +513,12 @@ def convert_recordings(config: TerradocConfig) -> int:
 
     normalized_records = _normalize_records(records)
 
-    output_data = {
-        "meta": {
-            "name": f"{config.meta_prefix}_recordings",
-            "description": f"{config.culture_name} Language Audio Recordings",
-            "version": "1.0",
-            "record_count": len(normalized_records),
-        },
-        "data": normalized_records,
-    }
-
-    output_file = config.data_dir / "recordings.json"
-    output_file.write_text(
-        json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    output_file = _write_dataset(
+        config,
+        "recordings.json",
+        "recordings",
+        f"{config.culture_name} Language Audio Recordings",
+        normalized_records,
     )
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
