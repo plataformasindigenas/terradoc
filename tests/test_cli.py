@@ -73,6 +73,27 @@ def test_cli_init_existing_dir():
             assert "already exists" in result.output
 
 
+def test_cli_init_then_build_smoke():
+    """A fresh scaffold builds into a complete starter site."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            init_result = runner.invoke(main, ["init", "demo"])
+            assert init_result.exit_code == 0
+
+            build_result = runner.invoke(main, ["build", "-c", "demo/terradoc.yaml"])
+            assert build_result.exit_code == 0
+
+            project_dir = Path("demo")
+            assert (project_dir / "docs" / "index.html").exists()
+            assert (project_dir / "docs" / "pt" / "index.html").exists()
+            assert (project_dir / "docs" / "en" / "index.html").exists()
+            assert (project_dir / "docs" / "pt" / "dictionary.html").exists()
+            assert (project_dir / "docs" / "pt" / "encyclopedia.html").exists()
+            assert (project_dir / "docs" / "dictionary-data.json").exists()
+            assert (project_dir / "docs" / "encyclopedia-data.json").exists()
+
+
 def test_resolve_schema_local():
     """resolve_schema prefers local schema files."""
     with tempfile.TemporaryDirectory() as tmp:
