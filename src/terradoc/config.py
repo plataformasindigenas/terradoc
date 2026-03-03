@@ -182,9 +182,9 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
         if "locales" in raw:
             config.locales = raw["locales"]
         if "locale_labels" in raw and isinstance(raw["locale_labels"], dict):
-            config.locale_labels = {
+            config.locale_labels.update({
                 str(key): str(value) for key, value in raw["locale_labels"].items()
-            }
+            })
 
         if "theme" in raw:
             theme_raw = raw["theme"]
@@ -200,9 +200,9 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                 if isinstance(mod_cfg, dict):
                     config.modules[mod_name] = ModuleConfig(**mod_cfg)
         if "module_labels" in raw and isinstance(raw["module_labels"], dict):
-            config.module_labels = {
+            config.module_labels.update({
                 str(key): str(value) for key, value in raw["module_labels"].items()
-            }
+            })
 
         config.base_dir = config_path.parent
         return config
