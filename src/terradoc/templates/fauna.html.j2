@@ -1,6 +1,6 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ t.fauna_title | default('Fauna Bororo') }}{% endblock %}
+{% block title %}{{ t.fauna_title | default(site.fauna_label) }}{% endblock %}
 
 {% block extra_styles %}
 /* ── Showcase: reusable card-grid layout (showcase-* prefix) ── */
@@ -303,7 +303,7 @@
 
 {% block content %}
     <header>
-        <h1>{{ t.fauna_title | default('Fauna Bororo') }}</h1>
+        <h1>{{ t.fauna_title | default(site.fauna_label) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.species_label | default('espécies') }}</p>
     </header>
 

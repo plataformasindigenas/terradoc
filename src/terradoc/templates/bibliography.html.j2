@@ -1,10 +1,10 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ t.bib_title | default('Bibliografia Bororo') }}{% endblock %}
+{% block title %}{{ t.bib_title | default(site.bibliography_label) }}{% endblock %}
 
 {% block content %}
     <header>
-        <h1>{{ t.bib_title | default('Bibliografia Bororo') }}</h1>
+        <h1>{{ t.bib_title | default(site.bibliography_label) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.references_label | default('referências') }}</p>
     </header>
 

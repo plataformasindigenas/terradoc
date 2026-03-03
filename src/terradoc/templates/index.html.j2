@@ -73,8 +73,8 @@
 
 {% block content %}
     <div class="hero">
-        <h1>{{ t.index_hero_title | default('Boe Eno Moto') }}</h1>
-        <p>{{ t.index_hero_subtitle | default('Mundo Bororo') }}</p>
+        <h1>{{ t.index_hero_title | default(site.title) }}</h1>
+        <p>{{ t.index_hero_subtitle | default(site.tagline) }}</p>
     </div>
 
     <div class="platforms">

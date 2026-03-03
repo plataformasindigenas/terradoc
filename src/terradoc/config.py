@@ -57,6 +57,8 @@ class ThemeConfig:
 class TerradocConfig:
     project_name: str = "Terradoc Project"
     project_subtitle: str = ""
+    site_title: str = ""
+    site_tagline: str = ""
     culture_name: str = ""
     meta_prefix: str = "terradoc"
     locales: list[str] = field(default_factory=lambda: ["pt", "en"])
@@ -75,6 +77,12 @@ class TerradocConfig:
         "encyclopedia": ModuleConfig(),
         "bibliography": ModuleConfig(),
         "recordings": ModuleConfig(),
+    })
+    module_labels: dict[str, str] = field(default_factory=lambda: {
+        "dictionary": "Dictionary",
+        "encyclopedia": "Encyclopedia",
+        "fauna": "Fauna",
+        "bibliography": "Bibliography",
     })
 
     # Paths (set after loading)
@@ -115,21 +123,33 @@ class TerradocConfig:
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""
-        module_info = {
-            "dictionary": {"slug": "dictionary", "name": "Dictionary"},
-            "encyclopedia": {"slug": "encyclopedia", "name": "Encyclopedia"},
-            "fauna": {"slug": "fauna", "name": "Fauna"},
-            "bibliography": {"slug": "bibliography", "name": "Bibliography"},
-        }
+        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography")
         return [
-            module_info[name]
-            for name in module_info
+            {"slug": name, "name": self.module_label(name)}
+            for name in module_order
             if self.is_module_enabled(name)
         ]
 
     def locale_label(self, code: str) -> str:
         """Return a human-readable label for a locale code."""
         return self.locale_labels.get(code, code.upper())
+
+    def module_label(self, name: str) -> str:
+        """Return the display label for a module slug."""
+        return self.module_labels.get(name, name.replace("_", " ").title())
+
+    def site_context(self) -> dict[str, str]:
+        """Return common site identity values for templates."""
+        title = self.site_title or self.project_name
+        tagline = self.site_tagline or self.project_subtitle
+        return {
+            "title": title,
+            "tagline": tagline,
+            "dictionary_label": self.module_label("dictionary"),
+            "encyclopedia_label": self.module_label("encyclopedia"),
+            "fauna_label": self.module_label("fauna"),
+            "bibliography_label": self.module_label("bibliography"),
+        }
 
 
 def load_config(config_path: Path | None = None) -> TerradocConfig:
@@ -139,7 +159,8 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             raw = yaml.safe_load(f) or {}
 
         config = TerradocConfig()
-        for key in ("project_name", "project_subtitle", "culture_name",
+        for key in ("project_name", "project_subtitle", "site_title",
+                     "site_tagline", "culture_name",
                      "meta_prefix", "default_locale", "featured_article_id",
                      "bib_file"):
             if key in raw:
@@ -165,6 +186,10 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             for mod_name, mod_cfg in raw["modules"].items():
                 if isinstance(mod_cfg, dict):
                     config.modules[mod_name] = ModuleConfig(**mod_cfg)
+        if "module_labels" in raw and isinstance(raw["module_labels"], dict):
+            config.module_labels = {
+                str(key): str(value) for key, value in raw["module_labels"].items()
+            }
 
         config.base_dir = config_path.parent
         return config
