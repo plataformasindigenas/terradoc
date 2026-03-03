@@ -6,12 +6,27 @@
 body {
     font-family: var(--td-font-family);
     line-height: 1.6;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1rem;
+    margin: 0;
+    padding: 0;
     background: var(--td-color-bg);
     color: var(--td-color-text);
 }
+
+/* ── Container ── */
+.td-container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* ── Shadow system ── */
+:root {
+    --td-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --td-shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --td-shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+}
+
+/* ── Skip link ── */
 .skip-link {
     position: absolute;
     top: -40px;
@@ -26,15 +41,28 @@ body {
 .skip-link:focus {
     top: 0;
 }
+
+/* ── Navigation ── */
 nav {
     background: var(--td-color-primary);
-    padding: 0.75rem 1rem;
-    border-radius: var(--td-radius);
-    margin-bottom: 1.5rem;
+    padding: 0.75rem 0;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--td-shadow-sm);
+}
+nav .td-nav-inner {
     display: flex;
     gap: 1rem;
     align-items: center;
     flex-wrap: wrap;
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
 }
 nav a {
     color: white;
@@ -84,6 +112,8 @@ nav .lang-current {
     background: rgba(255,255,255,0.18);
     color: white;
 }
+
+/* ── Header ── */
 header {
     text-align: center;
     padding: 1rem 0;
@@ -98,6 +128,8 @@ h1 {
     color: var(--td-color-text-muted);
     font-size: 0.95rem;
 }
+
+/* ── Search ── */
 .search-container {
     background: var(--td-color-surface);
     padding: 1rem;
@@ -137,6 +169,8 @@ h1 {
     font-size: 0.85rem;
     color: var(--td-color-text-muted);
 }
+
+/* ── Results ── */
 .results-container {
     background: var(--td-color-surface);
     border-radius: var(--td-radius);
@@ -152,6 +186,8 @@ h1 {
     margin: 0 0 0.5rem 0;
     color: var(--td-color-text-muted);
 }
+
+/* ── Entries ── */
 .entry {
     padding: 1rem;
     border-bottom: 1px solid var(--td-color-border-light);
@@ -249,13 +285,20 @@ h1 {
     padding: 0 2px;
     border-radius: 2px;
 }
+
+/* ── Footer ── */
 footer {
     margin-top: 2rem;
-    padding: 1rem;
+    padding: 1.5rem 0;
     text-align: center;
     font-size: 0.85rem;
     color: var(--td-color-text-muted);
+    background: var(--td-color-bg-light);
     border-top: 1px solid var(--td-color-border);
+}
+
+footer .td-container {
+    padding: 0 1.5rem;
 }
 footer a {
     color: var(--td-color-accent);
@@ -264,6 +307,20 @@ footer a {
 footer a:hover {
     text-decoration: underline;
 }
+
+/* ── Cards (shared shadow behavior) ── */
+.platform-card,
+.portal-section,
+.showcase-card {
+    box-shadow: var(--td-shadow-sm);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+}
+.platform-card:hover,
+.portal-section:hover {
+    box-shadow: var(--td-shadow-md);
+}
+
+/* ── Responsive ── */
 @media (max-width: 600px) {
     .search-row {
         flex-direction: column;
@@ -274,8 +331,11 @@ footer a:hover {
     .entry-thumbnail {
         max-width: 80px;
     }
-    nav {
+    nav .td-nav-inner {
         justify-content: center;
+    }
+    .td-container {
+        padding: 0 1rem;
     }
 }
 @media (prefers-reduced-motion: reduce) {
