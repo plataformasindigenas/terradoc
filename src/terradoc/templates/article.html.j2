@@ -418,7 +418,7 @@ article header h1 {
                 {% set img = entry.images[0] %}
                 {% if img.url %}
                 <div class="infobox-image">
-                    <a href="{{ img.url }}" target="_blank" rel="noopener">
+                    <a href="../../{{ img.url }}" target="_blank" rel="noopener">
                         <img src="../../{{ img.url }}" alt="{{ img.alt | default(entry.title) }}" loading="lazy">
                     </a>
                     {% if img.credit %}<div class="infobox-image-credit">{{ img.credit }}</div>{% endif %}
@@ -460,7 +460,7 @@ article header h1 {
                 <div class="infobox-value">
                     {% for img in entry.images[1:] %}
                         {% if img.url %}
-                        <a href="{{ img.url }}" target="_blank" rel="noopener" class="infobox-thumb">
+                        <a href="../../{{ img.url }}" target="_blank" rel="noopener" class="infobox-thumb">
                             <img src="../../{{ img.url }}" alt="{{ img.alt | default('') }}" loading="lazy">
                         </a>
                         {% endif %}

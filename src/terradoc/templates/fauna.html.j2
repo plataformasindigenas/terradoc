@@ -465,7 +465,7 @@
 
             var body = document.createElement('div');
             body.className = 'showcase-card-body';
-            body.innerHTML = '<div class="card-name" lang="bor">' + escapeHtml(entry.name_bororo) + '</div>' +
+            body.innerHTML = '<div class="card-name">' + escapeHtml(entry.name_bororo) + '</div>' +
                 (entry.name_portuguese ? '<div class="card-sub">' + escapeHtml(entry.name_portuguese) + '</div>' : '');
             card.appendChild(body);
 
@@ -530,7 +530,7 @@
             var info = document.createElement('div');
             info.className = 'showcase-detail-info';
 
-            var html = '<h3 lang="bor">' + escapeHtml(entry.name_bororo) + '</h3>';
+            var html = '<h3>' + escapeHtml(entry.name_bororo) + '</h3>';
             if (entry.name_portuguese) {
                 html += '<div class="detail-portuguese">' + escapeHtml(entry.name_portuguese) + '</div>';
             }

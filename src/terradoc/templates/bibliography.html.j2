@@ -8,36 +8,56 @@
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.references_label | default('referências') }}</p>
     </header>
 
-    <div class="search-container">
-        <div class="search-row">
-            <input type="text" id="search-input" class="search-input" placeholder="{{ t.bib_search_placeholder | default('Pesquisar...') }}" autocomplete="off" aria-label="{{ t.search_label | default('Pesquisar') }}">
-            <select id="type-filter" class="filter-select" aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
-                <option value="">{{ t.bib_filter_all | default('Todos os tipos') }}</option>
-                {% set types = [] %}
-                {% for item in data %}
-                    {% if item.type and item.type not in types %}
-                        {% set _ = types.append(item.type) %}
-                    {% endif %}
-                {% endfor %}
-                {% for type in types | sort %}
-                <option value="{{ type }}">{{ type }}</option>
-                {% endfor %}
-            </select>
+    <div class="js-only">
+        <div class="search-container">
+            <div class="search-row">
+                <input type="text" id="search-input" class="search-input" placeholder="{{ t.bib_search_placeholder | default('Pesquisar...') }}" autocomplete="off" aria-label="{{ t.search_label | default('Pesquisar') }}">
+                <select id="type-filter" class="filter-select" aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
+                    <option value="">{{ t.bib_filter_all | default('Todos os tipos') }}</option>
+                    {% set types = [] %}
+                    {% for item in data %}
+                        {% if item.type and item.type not in types %}
+                            {% set _ = types.append(item.type) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% for type in types | sort %}
+                    <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="stats" id="stats" aria-live="polite"></div>
         </div>
-        <div class="stats" id="stats" aria-live="polite"></div>
+
+        <div class="results-container" id="results" aria-live="polite">
+            <div class="empty-state">
+                <h2>{{ t.bib_empty_title | default('Pesquise a bibliografia') }}</h2>
+                <p>{{ t.bib_empty_text | default('') }}</p>
+            </div>
+        </div>
     </div>
 
-    <div class="results-container" id="results" aria-live="polite">
-        <div class="empty-state">
-            <h2>{{ t.bib_empty_title | default('Pesquise a bibliografia') }}</h2>
-            <p>{{ t.bib_empty_text | default('') }}</p>
+    <div class="no-js-only results-container">
+        {% for entry in data %}
+        <div class="entry">
+            <div class="entry-header">
+                <span class="entry-word">{{ entry.id }}</span>
+                {% if entry.type %}<span class="entry-tag">{{ entry.type }}</span>{% endif %}
+            </div>
+            {% if entry.author %}<p class="entry-definition">{{ entry.author }}</p>{% endif %}
+            {% if entry.title %}<p class="entry-example">{{ entry.title }}</p>{% endif %}
+            {% if entry.year or entry.journal or entry.publisher %}
+            <p class="entry-scientific">
+                {% if entry.year %}{{ entry.year }}{% endif %}
+                {% if entry.journal %}{% if entry.year %}, {% endif %}<em>{{ entry.journal }}</em>{% endif %}
+                {% if entry.publisher %}{% if entry.year or entry.journal %}, {% endif %}{{ entry.publisher }}{% endif %}
+            </p>
+            {% endif %}
         </div>
+        {% endfor %}
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-
     <script>
     var T = {{ t | tojson }};
 

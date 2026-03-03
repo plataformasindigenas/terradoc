@@ -265,42 +265,54 @@
         <p class="enc-stat">{{ meta.record_count }} {{ t.articles_label | default('verbetes') }}</p>
     </div>
 
-    <div class="search-container">
-        <div class="search-row">
-            <input type="text" id="search-input" class="search-input"
-                   placeholder="{{ t.enc_search_placeholder | default('Pesquisar...') }}"
-                   autocomplete="off" disabled
-                   aria-label="{{ t.search_label | default('Pesquisar') }}">
-            <select id="keyword-filter" class="filter-select" disabled
-                    aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
-                <option value="">{{ t.enc_filter_all | default('Todas as categorias') }}</option>
-                <option value="__uncategorized__">{{ t.enc_filter_uncategorized | default('Sem categoria') }}</option>
-            </select>
+    <div class="no-js-only results-container">
+        {% for entry in data %}
+        <div class="entry">
+            <div class="entry-header">
+                <span class="entry-word"><a href="encyclopedia/{{ entry.id }}.html">{{ entry.title }}</a></span>
+                {% if entry.entry_type %}<span class="entry-type-tag">{{ entry.entry_type }}</span>{% endif %}
+            </div>
+            {% if entry.abstract %}<p class="entry-summary">{{ entry.abstract }}</p>{% endif %}
         </div>
-        <div class="stats" id="stats" aria-live="polite"></div>
+        {% endfor %}
     </div>
 
-    <div id="portal">
-        <div id="featured-section" class="portal-section" style="display:none;"></div>
-        <div class="portal-columns">
-            <div id="categories-section" class="portal-section" style="display:none;"></div>
-            <div id="highlights-section" class="portal-section" style="display:none;"></div>
+    <div class="js-only">
+        <div class="search-container">
+            <div class="search-row">
+                <input type="text" id="search-input" class="search-input"
+                       placeholder="{{ t.enc_search_placeholder | default('Pesquisar...') }}"
+                       autocomplete="off"
+                       aria-label="{{ t.search_label | default('Pesquisar') }}">
+                <select id="keyword-filter" class="filter-select"
+                        aria-label="{{ t.filter_label | default('Filtrar resultados') }}">
+                    <option value="">{{ t.enc_filter_all | default('Todas as categorias') }}</option>
+                    <option value="__uncategorized__">{{ t.enc_filter_uncategorized | default('Sem categoria') }}</option>
+                </select>
+            </div>
+            <div class="stats" id="stats" aria-live="polite"></div>
         </div>
-    </div>
 
-    <div class="results-container" id="results" style="display:none;">
-        <div class="enc-skeleton" id="loading">
-            <div class="skeleton skeleton-block"></div>
-            <div class="skeleton skeleton-line"></div>
-            <div class="skeleton skeleton-line"></div>
-            <div class="skeleton skeleton-line" style="width:60%"></div>
+        <div id="portal">
+            <div id="featured-section" class="portal-section" style="display:none;"></div>
+            <div class="portal-columns">
+                <div id="categories-section" class="portal-section" style="display:none;"></div>
+                <div id="highlights-section" class="portal-section" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="results-container" id="results" style="display:none;">
+            <div class="enc-skeleton" id="loading">
+                <div class="skeleton skeleton-block"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line" style="width:60%"></div>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-
     <script>
     var T = {{ t | tojson }};
     var BASE_PATH = '{{ base_path | default("../") }}';
@@ -346,9 +358,13 @@
         kwFilter.appendChild(opt);
     }
 
-    fetch(BASE_PATH + 'encyclopedia-data.json')
-        .then(function(r) { return r.json(); })
-        .then(function(json) {
+    var json = {% if client_index %}{{ client_index | tojson }}{% else %}{
+        data: {{ data | tojson }},
+        category_tree: {},
+        featured: null,
+        highlights: []
+    }{% endif %};
+    (function() {
             var kwFilter = document.getElementById('keyword-filter');
             var searchInput = document.getElementById('search-input');
             var portal = document.getElementById('portal');
@@ -429,10 +445,6 @@
             Object.keys(categories).sort().forEach(function(cat) {
                 addFilterOption(kwFilter, cat);
             });
-
-            // --- Enable inputs ---
-            searchInput.disabled = false;
-            kwFilter.disabled = false;
 
             // --- Setup search ---
             initSearchPage({
@@ -523,6 +535,6 @@
 
             // Ensure correct initial visibility
             updateView();
-        });
+    })();
     </script>
 {% endblock %}

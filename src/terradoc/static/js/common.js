@@ -63,13 +63,16 @@ function debounce(func, wait) {
  * @param {Function} [config.onResults] - Optional callback after results are rendered
  */
 function initSearchPage(config) {
-    var fuse = new Fuse(config.data, {
-        keys: config.fuseKeys,
-        threshold: 0.4,
-        ignoreLocation: true,
-        includeMatches: true,
-        minMatchCharLength: 2
-    });
+    var fuse = null;
+    if (typeof Fuse !== 'undefined') {
+        fuse = new Fuse(config.data, {
+            keys: config.fuseKeys,
+            threshold: 0.4,
+            ignoreLocation: true,
+            includeMatches: true,
+            minMatchCharLength: 2
+        });
+    }
 
     var searchInput = document.getElementById('search-input');
     var filterSelect = config.filterElementId ? document.getElementById(config.filterElementId) : null;
@@ -81,6 +84,30 @@ function initSearchPage(config) {
         return entry[config.filterField] === filterValue;
     };
     var filterFn = config.filterFn || defaultFilterFn;
+
+    function getSearchValue(entry, key) {
+        var value = entry[key];
+        if (Array.isArray(value)) return value.join(' ');
+        if (value === null || value === undefined) return '';
+        return String(value);
+    }
+
+    function basicSearch(query) {
+        var q = query.toLowerCase();
+        return config.data
+            .filter(function(entry) {
+                for (var i = 0; i < config.fuseKeys.length; i++) {
+                    var keyName = config.fuseKeys[i].name;
+                    if (getSearchValue(entry, keyName).toLowerCase().indexOf(q) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            })
+            .map(function(entry) {
+                return { item: entry };
+            });
+    }
 
     function search() {
         var query = searchInput.value.trim();
@@ -101,7 +128,7 @@ function initSearchPage(config) {
                 return;
             }
         } else {
-            currentResults = fuse.search(query);
+            currentResults = fuse ? fuse.search(query) : basicSearch(query);
             if (selectedFilter) {
                 currentResults = currentResults.filter(function(result) {
                     return filterFn(result.item, selectedFilter);
