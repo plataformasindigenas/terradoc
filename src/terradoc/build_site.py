@@ -1,6 +1,5 @@
 """Site builder for terradoc — renders HTML pages for all locales."""
 
-import html
 import json
 import shutil
 from pathlib import Path
@@ -146,81 +145,25 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 
 def build_language_picker(config: TerradocConfig):
     """Generate root docs/index.html with language selection."""
-    theme = config.theme
-    colors = theme.colors
     site = config.site_context()
+    theme_dict = config.theme.to_dict()
 
-    esc = html.escape
-    lang_cards = ""
-    for loc in config.locales:
-        label = esc(config.locale_label(loc))
-        lang_cards += f'        <a href="{loc}/index.html" class="lang-card">\n'
-        lang_cards += f'            <h2>{label}</h2>\n'
-        lang_cards += '        </a>\n'
+    locales = [
+        {"code": loc, "label": config.locale_label(loc)}
+        for loc in config.locales
+    ]
 
-    title = esc(site["title"])
-    tagline = esc(site["tagline"])
-    logo = esc(theme.logo)
-    favicon = esc(theme.favicon)
-
-    page_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    {f'<link rel="icon" href="{favicon}">' if theme.favicon else ''}
-    <style>
-        * {{ box-sizing: border-box; }}
-        body {{
-            font-family: {theme.font_family};
-            line-height: 1.6;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-            background: {colors.bg};
-            color: {colors.text};
-            text-align: center;
-        }}
-        h1 {{ color: {colors.primary}; font-size: 2.5rem; margin-bottom: 0.5rem; }}
-        .subtitle {{ color: {colors.text_secondary}; font-size: 1.2rem; margin-bottom: 2rem; }}
-        .logo {{
-            width: 88px;
-            height: 88px;
-            margin: 0 auto 1rem auto;
-            display: block;
-            object-fit: contain;
-        }}
-        .languages {{
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }}
-        .lang-card {{
-            display: block;
-            background: {colors.surface};
-            border: 1px solid {colors.border};
-            border-radius: {theme.border_radius};
-            padding: 2rem 3rem;
-            text-decoration: none;
-            color: inherit;
-            transition: border-color 0.2s;
-            min-width: 200px;
-        }}
-        .lang-card:hover {{ border-color: {colors.accent}; }}
-        .lang-card h2 {{ margin: 0 0 0.25rem 0; color: {colors.primary}; }}
-    </style>
-</head>
-<body>
-    {f'<img src="{logo}" alt="" class="logo">' if theme.logo else ''}
-    <h1>{title}</h1>
-    <p class="subtitle">{tagline}</p>
-    <div class="languages">
-{lang_cards}    </div>
-</body>
-</html>
-"""
+    template_path = config.template_dir / "language_picker.html.j2"
+    page_html = kodudo.render(
+        data=[{}],
+        template=template_path,
+        context={
+            "site": site,
+            "theme": theme_dict,
+            "locales": locales,
+        },
+        template_dirs=(config.template_dir,),
+    )
 
     (config.docs_dir / "index.html").write_text(page_html, encoding="utf-8")
     print("  Generated language picker at docs/index.html")
