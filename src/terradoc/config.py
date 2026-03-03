@@ -15,8 +15,8 @@ class ModuleConfig:
 @dataclass
 class ThemeColors:
     primary: str = "#3D352F"
-    accent: str = "#C75B39"
-    accent_muted: str = "#A84B2F"
+    accent: str = "#B7522C"
+    accent_muted: str = "#9A4427"
     bg: str = "#F9F6F2"
     bg_light: str = "#F5EDE8"
     bg_infobox: str = "#FAF8F5"
@@ -26,6 +26,13 @@ class ThemeColors:
     text_muted: str = "#6B6B6B"
     highlight: str = "#fff59d"
     warning_bg: str = "#fff8e1"
+    surface: str = "#FFFFFF"
+    border_light: str = "#EEEEEE"
+    text_secondary: str = "#555555"
+    accent_light: str = "#FDF0EB"
+    success: str = "#5B8C5A"
+    error: str = "#CC0000"
+    accent_ring: str = "rgba(183, 82, 44, 0.2)"
 
     def to_dict(self) -> dict:
         return {
@@ -41,6 +48,13 @@ class ThemeColors:
             "text_muted": self.text_muted,
             "highlight": self.highlight,
             "warning_bg": self.warning_bg,
+            "surface": self.surface,
+            "border_light": self.border_light,
+            "text_secondary": self.text_secondary,
+            "accent_light": self.accent_light,
+            "success": self.success,
+            "error": self.error,
+            "accent_ring": self.accent_ring,
         }
 
 
@@ -49,12 +63,25 @@ class ThemeConfig:
     colors: ThemeColors = field(default_factory=ThemeColors)
     logo: str = "images/logo.svg"
     favicon: str = "images/favicon.svg"
+    font_family: str = (
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "
+        "Oxygen, Ubuntu, sans-serif"
+    )
+    font_family_headings: str = ""
+    font_family_mono: str = "'Lucida Sans Unicode', 'DejaVu Sans', monospace"
+    border_radius: str = "4px"
+    hero_image: str = ""
 
     def to_dict(self) -> dict:
         return {
             "colors": self.colors.to_dict(),
             "logo": self.logo,
             "favicon": self.favicon,
+            "font_family": self.font_family,
+            "font_family_headings": self.font_family_headings,
+            "font_family_mono": self.font_family_mono,
+            "border_radius": self.border_radius,
+            "hero_image": self.hero_image,
         }
 
 
@@ -190,10 +217,12 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             theme_raw = raw["theme"]
             if "colors" in theme_raw:
                 config.theme.colors = ThemeColors(**theme_raw["colors"])
-            if "logo" in theme_raw:
-                config.theme.logo = theme_raw["logo"]
-            if "favicon" in theme_raw:
-                config.theme.favicon = theme_raw["favicon"]
+            for theme_key in (
+                "logo", "favicon", "font_family", "font_family_headings",
+                "font_family_mono", "border_radius", "hero_image",
+            ):
+                if theme_key in theme_raw:
+                    setattr(config.theme, theme_key, theme_raw[theme_key])
 
         if "modules" in raw:
             for mod_name, mod_cfg in raw["modules"].items():
