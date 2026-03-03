@@ -1,5 +1,6 @@
 """Site builder for terradoc — renders HTML pages for all locales."""
 
+import html
 import json
 import shutil
 from pathlib import Path
@@ -149,22 +150,26 @@ def build_language_picker(config: TerradocConfig):
     colors = theme.colors
     site = config.site_context()
 
+    esc = html.escape
     lang_cards = ""
     for loc in config.locales:
-        label = config.locale_label(loc)
-        desc = f"Open {label}"
+        label = esc(config.locale_label(loc))
         lang_cards += f'        <a href="{loc}/index.html" class="lang-card">\n'
         lang_cards += f'            <h2>{label}</h2>\n'
-        lang_cards += f'            <p>{desc}</p>\n'
         lang_cards += '        </a>\n'
 
-    html = f"""<!DOCTYPE html>
+    title = esc(site["title"])
+    tagline = esc(site["tagline"])
+    logo = esc(theme.logo)
+    favicon = esc(theme.favicon)
+
+    page_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{site["title"]}</title>
-    {f'<link rel="icon" href="{theme.favicon}">' if theme.favicon else ''}
+    <title>{title}</title>
+    {f'<link rel="icon" href="{favicon}">' if theme.favicon else ''}
     <style>
         * {{ box-sizing: border-box; }}
         body {{
@@ -205,20 +210,19 @@ def build_language_picker(config: TerradocConfig):
         }}
         .lang-card:hover {{ border-color: {colors.accent}; }}
         .lang-card h2 {{ margin: 0 0 0.25rem 0; color: {colors.primary}; }}
-        .lang-card p {{ margin: 0; color: #666; font-size: 0.9rem; }}
     </style>
 </head>
 <body>
-    {f'<img src="{theme.logo}" alt="" class="logo">' if theme.logo else ''}
-    <h1>{site["title"]}</h1>
-    <p class="subtitle">{site["tagline"]}</p>
+    {f'<img src="{logo}" alt="" class="logo">' if theme.logo else ''}
+    <h1>{title}</h1>
+    <p class="subtitle">{tagline}</p>
     <div class="languages">
 {lang_cards}    </div>
 </body>
 </html>
 """
 
-    (config.docs_dir / "index.html").write_text(html, encoding="utf-8")
+    (config.docs_dir / "index.html").write_text(page_html, encoding="utf-8")
     print("  Generated language picker at docs/index.html")
 
 
