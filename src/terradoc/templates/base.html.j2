@@ -75,6 +75,7 @@
 
     <footer>
         <div class="td-container">
+            {% if t.footer_text %}<p class="footer-text">{{ t.footer_text }}</p>{% endif %}
             <p>{{ t.footer_generated | default('Gerado com') }} <a href="https://github.com/plataformasindigenas/aptoro">aptoro</a> {{ t.footer_and | default('e') }} <a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></p>
             {% if meta and meta.version %}<p>Schema v{{ meta.version }}</p>{% endif %}
         </div>
