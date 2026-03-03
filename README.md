@@ -18,6 +18,15 @@ Terradoc converts structured data (TSV, YAML, markdown, BibTeX) into multilingua
 pip install terradoc
 ```
 
+## Development
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+pytest -q
+```
+
 ## Quick Start
 
 ```bash
