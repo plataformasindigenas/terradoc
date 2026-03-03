@@ -2,6 +2,18 @@
  * Shared utilities for terradoc search pages.
  */
 
+/* ── Mobile nav toggle ── */
+(function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var links = document.querySelector('.nav-links');
+    if (toggle && links) {
+        toggle.addEventListener('click', function() {
+            var open = links.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', open);
+        });
+    }
+})();
+
 function escapeHtml(text) {
     if (!text) return '';
     var div = document.createElement('div');
