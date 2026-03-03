@@ -51,16 +51,18 @@ article header h1 {
 .infobox {
     float: right;
     clear: right;
-    width: 260px;
-    margin: 0 0 1rem 1.5rem;
+    width: 280px;
+    margin: 0 0 1.25rem 1.5rem;
     padding: 0;
     border: 1px solid var(--td-color-border-dark);
-    background: var(--td-color-bg-infobox);
+    background: linear-gradient(to bottom, var(--td-color-bg-infobox), var(--td-color-surface));
     font-size: 0.88rem;
+    border-radius: var(--td-radius);
+    overflow: hidden;
 }
 .infobox-header {
     background: var(--td-color-accent-light);
-    padding: 0.6rem 0.75rem;
+    padding: 0.7rem 0.85rem;
     font-weight: 600;
     color: var(--td-color-primary);
     text-align: center;
@@ -68,13 +70,13 @@ article header h1 {
 }
 .infobox-image {
     text-align: center;
-    padding: 0.75rem;
+    padding: 0.85rem;
     background: var(--td-color-surface);
     border-bottom: 1px solid var(--td-color-border-dark);
 }
 .infobox-image img {
     max-width: 100%;
-    max-height: 200px;
+    max-height: 240px;
     object-fit: contain;
     border-radius: var(--td-radius);
 }
@@ -125,6 +127,16 @@ article header h1 {
 }
 .infobox-link a:hover {
     text-decoration: underline;
+}
+.infobox-thumb {
+    display: inline-block;
+    margin: 2px;
+}
+.infobox-thumb img {
+    max-width: 50px;
+    max-height: 40px;
+    border-radius: 2px;
+    object-fit: cover;
 }
 .toc {
     display: inline-block;
@@ -185,6 +197,15 @@ article header h1 {
     font-size: 1.08rem;
     line-height: 1.8;
 }
+.article-content > p:first-of-type::first-letter {
+    float: left;
+    font-size: 2.8rem;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--td-color-accent);
+    margin-right: 0.15rem;
+    margin-top: 0.05rem;
+}
 .article-content h4 {
     font-size: 1.1rem;
     color: var(--td-color-primary);
@@ -219,7 +240,7 @@ article header h1 {
     text-decoration: underline wavy;
 }
 .examples-section {
-    margin-top: 1.25rem;
+    margin-top: 2rem;
 }
 .examples-title {
     font-size: 1rem;
@@ -439,8 +460,8 @@ article header h1 {
                 <div class="infobox-value">
                     {% for img in entry.images[1:] %}
                         {% if img.url %}
-                        <a href="{{ img.url }}" target="_blank" rel="noopener" style="display:inline-block;margin:2px">
-                            <img src="../../{{ img.url }}" alt="{{ img.alt | default('') }}" style="max-width:50px;max-height:40px;border-radius:2px" loading="lazy">
+                        <a href="{{ img.url }}" target="_blank" rel="noopener" class="infobox-thumb">
+                            <img src="../../{{ img.url }}" alt="{{ img.alt | default('') }}" loading="lazy">
                         </a>
                         {% endif %}
                     {% endfor %}
