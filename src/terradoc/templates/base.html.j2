@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if theme.favicon %}
+    <link rel="icon" href="{{ base_path | default('') }}{{ theme.favicon }}">
+    {% endif %}
     <title>{% block title %}{{ title | default(site.title) }}{% endblock %} - {{ site.title }}</title>
     <style>
         :root {
@@ -68,6 +71,15 @@
         nav .brand {
             font-weight: 600;
             font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        nav .brand-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            flex-shrink: 0;
         }
         nav .lang-switch {
             margin-left: auto;
@@ -301,7 +313,12 @@
 
     {% set np = nav_prefix | default('') %}
     <nav aria-label="{{ t.nav_label | default('Navegação principal') }}">
-        <a href="{{ np }}index.html" class="brand">{{ t.nav_brand | default(site.title) }}</a>
+        <a href="{{ np }}index.html" class="brand">
+            {% if theme.logo %}
+            <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo">
+            {% endif %}
+            <span>{{ t.nav_brand | default(site.title) }}</span>
+        </a>
         {% for mod in modules %}
         <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
         {% endfor %}

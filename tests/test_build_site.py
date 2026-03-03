@@ -27,6 +27,8 @@ def test_build_language_picker():
         index_html = (docs_dir / "index.html").read_text()
         assert "Test Project" in index_html
         assert "Test Subtitle" in index_html
+        assert 'src="images/logo.svg"' in index_html
+        assert 'rel="icon" href="images/favicon.svg"' in index_html
         assert 'href="pt/index.html"' in index_html
         assert 'href="en/index.html"' in index_html
         assert "Português" in index_html
@@ -57,6 +59,31 @@ def test_build_language_picker_custom_theme():
         assert "#FF0000" in index_html
         assert "#00FF00" in index_html
         assert "#0000FF" in index_html
+
+
+def test_build_language_picker_custom_assets():
+    """Language picker uses configured logo and favicon."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        config = TerradocConfig(
+            project_name="Assets",
+            locales=["en"],
+            base_dir=tmp_path,
+            theme=ThemeConfig(
+                colors=ThemeColors(),
+                logo="images/custom-logo.svg",
+                favicon="images/custom-favicon.svg",
+            ),
+        )
+
+        build_language_picker(config)
+
+        index_html = (docs_dir / "index.html").read_text()
+        assert 'src="images/custom-logo.svg"' in index_html
+        assert 'rel="icon" href="images/custom-favicon.svg"' in index_html
 
 
 def test_build_language_picker_single_locale():

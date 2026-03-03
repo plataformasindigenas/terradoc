@@ -145,7 +145,8 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 
 def build_language_picker(config: TerradocConfig):
     """Generate root docs/index.html with language selection."""
-    theme = config.theme.colors
+    theme = config.theme
+    colors = theme.colors
     site = config.site_context()
 
     lang_cards = ""
@@ -163,6 +164,7 @@ def build_language_picker(config: TerradocConfig):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{site["title"]}</title>
+    {f'<link rel="icon" href="{theme.favicon}">' if theme.favicon else ''}
     <style>
         * {{ box-sizing: border-box; }}
         body {{
@@ -171,12 +173,19 @@ def build_language_picker(config: TerradocConfig):
             max-width: 600px;
             margin: 0 auto;
             padding: 2rem 1rem;
-            background: {theme.bg};
-            color: {theme.text};
+            background: {colors.bg};
+            color: {colors.text};
             text-align: center;
         }}
-        h1 {{ color: {theme.primary}; font-size: 2.5rem; margin-bottom: 0.5rem; }}
+        h1 {{ color: {colors.primary}; font-size: 2.5rem; margin-bottom: 0.5rem; }}
         .subtitle {{ color: #666; font-size: 1.2rem; margin-bottom: 2rem; }}
+        .logo {{
+            width: 88px;
+            height: 88px;
+            margin: 0 auto 1rem auto;
+            display: block;
+            object-fit: contain;
+        }}
         .languages {{
             display: flex;
             gap: 1.5rem;
@@ -186,7 +195,7 @@ def build_language_picker(config: TerradocConfig):
         .lang-card {{
             display: block;
             background: white;
-            border: 1px solid {theme.border};
+            border: 1px solid {colors.border};
             border-radius: 4px;
             padding: 2rem 3rem;
             text-decoration: none;
@@ -194,12 +203,13 @@ def build_language_picker(config: TerradocConfig):
             transition: border-color 0.2s;
             min-width: 200px;
         }}
-        .lang-card:hover {{ border-color: {theme.accent}; }}
-        .lang-card h2 {{ margin: 0 0 0.25rem 0; color: {theme.primary}; }}
+        .lang-card:hover {{ border-color: {colors.accent}; }}
+        .lang-card h2 {{ margin: 0 0 0.25rem 0; color: {colors.primary}; }}
         .lang-card p {{ margin: 0; color: #666; font-size: 0.9rem; }}
     </style>
 </head>
 <body>
+    {f'<img src="{theme.logo}" alt="" class="logo">' if theme.logo else ''}
     <h1>{site["title"]}</h1>
     <p class="subtitle">{site["tagline"]}</p>
     <div class="languages">
