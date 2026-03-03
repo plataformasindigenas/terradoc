@@ -213,6 +213,42 @@ h1 {
     margin: 0 0 0.5rem 0;
     color: var(--td-color-text-muted);
 }
+.empty-state svg {
+    display: block;
+    margin: 0 auto 1rem auto;
+    opacity: 0.4;
+}
+
+/* ── Loading skeleton ── */
+.loading-state {
+    padding: 3rem;
+    text-align: center;
+    color: var(--td-color-text-muted);
+}
+.skeleton {
+    background: linear-gradient(90deg,
+        var(--td-color-border-light) 25%,
+        var(--td-color-bg-light) 50%,
+        var(--td-color-border-light) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: var(--td-radius);
+}
+.skeleton-line {
+    height: 1rem;
+    margin-bottom: 0.75rem;
+}
+.skeleton-line:last-child {
+    width: 60%;
+}
+.skeleton-block {
+    height: 4rem;
+    margin-bottom: 1rem;
+}
+@keyframes skeleton-pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
 
 /* ── Entries ── */
 .entry {

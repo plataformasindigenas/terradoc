@@ -292,10 +292,8 @@
             font-size: 0.85rem;
         }
 
-        .loading-state {
-            padding: 3rem;
-            text-align: center;
-            color: var(--td-color-text-muted);
+        .dict-skeleton {
+            padding: 1.5rem;
         }
 
         /* Mobile */
@@ -349,8 +347,11 @@
             <div class="word-list" id="word-list"></div>
         </div>
         <div class="dict-detail-panel" id="detail-panel">
-            <div class="loading-state" id="loading">
-                {{ t.dict_loading | default('Carregando dicionário...') }}
+            <div class="dict-skeleton" id="loading">
+                <div class="skeleton skeleton-block"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line" style="width:60%"></div>
             </div>
         </div>
     </div>
