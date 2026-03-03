@@ -34,6 +34,31 @@
             --td-font-headings: {{ theme.font_family_headings | default('inherit') }};
             --td-font-mono: {{ theme.font_family_mono | default("'Lucida Sans Unicode', 'DejaVu Sans', monospace") }};
         }
+        {% if theme.colors_dark %}
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --td-color-primary: {{ theme.colors_dark.primary }};
+                --td-color-accent: {{ theme.colors_dark.accent }};
+                --td-color-accent-muted: {{ theme.colors_dark.accent_muted }};
+                --td-color-bg: {{ theme.colors_dark.bg }};
+                --td-color-bg-light: {{ theme.colors_dark.bg_light }};
+                --td-color-bg-infobox: {{ theme.colors_dark.bg_infobox }};
+                --td-color-border: {{ theme.colors_dark.border }};
+                --td-color-border-dark: {{ theme.colors_dark.border_dark }};
+                --td-color-text: {{ theme.colors_dark.text }};
+                --td-color-text-muted: {{ theme.colors_dark.text_muted }};
+                --td-color-highlight: {{ theme.colors_dark.highlight }};
+                --td-color-warning-bg: {{ theme.colors_dark.warning_bg }};
+                --td-color-surface: {{ theme.colors_dark.surface }};
+                --td-color-border-light: {{ theme.colors_dark.border_light }};
+                --td-color-text-secondary: {{ theme.colors_dark.text_secondary }};
+                --td-color-accent-light: {{ theme.colors_dark.accent_light }};
+                --td-color-success: {{ theme.colors_dark.success }};
+                --td-color-error: {{ theme.colors_dark.error }};
+                --td-color-accent-ring: {{ theme.colors_dark.accent_ring }};
+            }
+        }
+        {% endif %}
         {% block extra_styles %}{% endblock %}
     </style>
 </head>
