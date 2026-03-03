@@ -137,6 +137,9 @@ project_subtitle: ""
 culture_name: ""
 meta_prefix: "{name.lower().replace(' ', '_').replace('-', '_')}"
 locales: ["pt", "en"]
+locale_labels:
+  pt: "Português"
+  en: "English"
 default_locale: "pt"
 featured_article_id: ""
 bib_file: "references.bib"
