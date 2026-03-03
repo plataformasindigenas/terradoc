@@ -82,7 +82,9 @@ def test_load_config_from_yaml():
         assert cfg.culture_name == "TestCulture"
         assert cfg.meta_prefix == "test"
         assert cfg.locales == ["en"]
-        assert cfg.locale_labels == {"en": "English"}
+        assert cfg.locale_labels["en"] == "English"
+        # Default "pt" is still present because labels merge with defaults
+        assert "pt" in cfg.locale_labels
         assert cfg.module_labels["dictionary"] == "Lexicon"
         assert cfg.default_locale == "en"
         assert cfg.featured_article_id == "main"
@@ -132,6 +134,32 @@ def test_module_label_fallback():
     """Unknown module labels fall back to title-cased slugs."""
     cfg = TerradocConfig()
     assert cfg.module_label("audio_archive") == "Audio Archive"
+
+
+def test_load_config_merges_labels_with_defaults():
+    """Setting one label in YAML preserves the other defaults."""
+    config_data = {
+        "module_labels": {"dictionary": "Lexicon"},
+        "locale_labels": {"pt": "Brazilian Portuguese"},
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config_data, f)
+        tmp_path = Path(f.name)
+
+    try:
+        cfg = load_config(tmp_path)
+        # Overridden key
+        assert cfg.module_labels["dictionary"] == "Lexicon"
+        # Default keys still present
+        assert cfg.module_labels["encyclopedia"] == "Encyclopedia"
+        assert cfg.module_labels["fauna"] == "Fauna"
+        # Overridden locale label
+        assert cfg.locale_labels["pt"] == "Brazilian Portuguese"
+        # Default locale label still present
+        assert cfg.locale_labels["en"] == "English"
+    finally:
+        tmp_path.unlink()
 
 
 def test_site_context_includes_custom_module_label():
