@@ -42,3 +42,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 terradoc = ["templates/*.j2", "static/js/*.js", "schemas/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
