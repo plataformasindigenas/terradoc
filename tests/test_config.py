@@ -14,6 +14,7 @@ def test_default_config():
     assert cfg.project_name == "Terradoc Project"
     assert cfg.locales == ["pt", "en"]
     assert cfg.default_locale == "pt"
+    assert cfg.site_context()["title"] == "Terradoc Project"
     assert cfg.is_module_enabled("dictionary") is True
     assert cfg.is_module_enabled("fauna") is True
     assert cfg.is_module_enabled("nonexistent") is False
@@ -42,6 +43,8 @@ def test_load_config_from_yaml():
     """load_config reads YAML correctly."""
     config_data = {
         "project_name": "Test Project",
+        "site_title": "Platform Title",
+        "site_tagline": "Platform Tagline",
         "culture_name": "TestCulture",
         "meta_prefix": "test",
         "locales": ["en"],
@@ -52,6 +55,10 @@ def test_load_config_from_yaml():
         "modules": {
             "dictionary": {"enabled": True},
             "fauna": {"enabled": False},
+        },
+        "module_labels": {
+            "dictionary": "Lexicon",
+            "encyclopedia": "Knowledge Base",
         },
         "theme": {
             "colors": {
@@ -68,10 +75,13 @@ def test_load_config_from_yaml():
     try:
         cfg = load_config(tmp_path)
         assert cfg.project_name == "Test Project"
+        assert cfg.site_title == "Platform Title"
+        assert cfg.site_tagline == "Platform Tagline"
         assert cfg.culture_name == "TestCulture"
         assert cfg.meta_prefix == "test"
         assert cfg.locales == ["en"]
         assert cfg.locale_labels == {"en": "English"}
+        assert cfg.module_labels["dictionary"] == "Lexicon"
         assert cfg.default_locale == "en"
         assert cfg.featured_article_id == "main"
         assert cfg.bib_file == "test.bib"
@@ -104,3 +114,9 @@ def test_theme_to_dict():
     assert len(d) == 12
     assert d["primary"] == "#3D352F"
     assert d["accent"] == "#C75B39"
+
+
+def test_module_label_fallback():
+    """Unknown module labels fall back to title-cased slugs."""
+    cfg = TerradocConfig()
+    assert cfg.module_label("audio_archive") == "Audio Archive"

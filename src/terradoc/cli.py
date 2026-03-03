@@ -128,6 +128,8 @@ def init(name: str):
     # Create default config
     config_content = f"""project_name: "{name}"
 project_subtitle: ""
+site_title: "{name}"
+site_tagline: ""
 culture_name: ""
 meta_prefix: "{name.lower().replace(' ', '_').replace('-', '_')}"
 locales: ["pt", "en"]
@@ -144,6 +146,12 @@ modules:
   encyclopedia: {{ enabled: true }}
   bibliography: {{ enabled: false }}
   recordings: {{ enabled: false }}
+
+module_labels:
+  dictionary: "Dictionary"
+  encyclopedia: "Encyclopedia"
+  fauna: "Fauna"
+  bibliography: "Bibliography"
 
 theme:
   colors:

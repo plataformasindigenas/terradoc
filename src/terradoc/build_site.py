@@ -52,6 +52,7 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
     template_path = config.template_dir / "article.html.j2"
     modules = config.enabled_modules()
     theme_dict = config.theme.to_dict()
+    site_dict = config.site_context()
 
     for entry in entries:
         entry_id = entry.get("id", "")
@@ -80,6 +81,7 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
                 "page": "encyclopedia",
                 "current_page_path": f"encyclopedia/{entry_id}.html",
                 "title": entry.get("title", ""),
+                "site": site_dict,
                 "theme": theme_dict,
                 "modules": modules,
             },
@@ -99,6 +101,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 
     modules = config.enabled_modules()
     theme_dict = config.theme.to_dict()
+    site_dict = config.site_context()
 
     for config_path in sorted(config.config_dir.glob("*.yaml")):
         name = config_path.stem
@@ -120,6 +123,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
                     locale, "../", output_filename, config
                 ),
                 "base_path": "../",
+                "site": site_dict,
                 "theme": theme_dict,
                 "modules": modules,
                 "page": name,
@@ -142,6 +146,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 def build_language_picker(config: TerradocConfig):
     """Generate root docs/index.html with language selection."""
     theme = config.theme.colors
+    site = config.site_context()
 
     lang_cards = ""
     for loc in config.locales:
@@ -157,7 +162,7 @@ def build_language_picker(config: TerradocConfig):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{config.project_name}</title>
+    <title>{site["title"]}</title>
     <style>
         * {{ box-sizing: border-box; }}
         body {{
@@ -195,8 +200,8 @@ def build_language_picker(config: TerradocConfig):
     </style>
 </head>
 <body>
-    <h1>{config.project_name}</h1>
-    <p class="subtitle">{config.project_subtitle}</p>
+    <h1>{site["title"]}</h1>
+    <p class="subtitle">{site["tagline"]}</p>
     <div class="languages">
 {lang_cards}    </div>
 </body>

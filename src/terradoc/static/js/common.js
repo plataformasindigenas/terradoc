@@ -1,5 +1,5 @@
 /**
- * Shared utilities for Boe Eno Moto search pages.
+ * Shared utilities for terradoc search pages.
  */
 
 function escapeHtml(text) {

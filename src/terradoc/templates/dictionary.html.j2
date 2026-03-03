@@ -1,6 +1,6 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ t.dict_title | default('Dicionário Bororo') }}{% endblock %}
+{% block title %}{{ t.dict_title | default(site.dictionary_label) }}{% endblock %}
 
 {% block extra_styles %}
         .dict-header {
@@ -312,7 +312,7 @@
 
 {% block content %}
     <div class="dict-header">
-        <h1>{{ t.dict_title | default('Dicionário Bororo') }}</h1>
+        <h1>{{ t.dict_title | default(site.dictionary_label) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ meta.record_count }} {{ t.entries_label | default('entradas') }}</p>
     </div>
 

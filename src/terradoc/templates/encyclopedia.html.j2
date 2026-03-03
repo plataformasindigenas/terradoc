@@ -1,6 +1,6 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ t.enc_title | default('Enciclopédia Bororo') }}{% endblock %}
+{% block title %}{{ t.enc_title | default(site.encyclopedia_label) }}{% endblock %}
 
 {% block extra_styles %}
 .enc-welcome {
@@ -250,7 +250,7 @@
 
 {% block content %}
     <div class="enc-welcome">
-        <h1>{{ t.enc_title | default('Enciclopédia Bororo') }}</h1>
+        <h1>{{ t.enc_title | default(site.encyclopedia_label) }}</h1>
         <p class="enc-welcome-text">{{ t.enc_welcome_text | default('') }}</p>
         <p class="enc-stat">{{ meta.record_count }} {{ t.articles_label | default('verbetes') }}</p>
     </div>
