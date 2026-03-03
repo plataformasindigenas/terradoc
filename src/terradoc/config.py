@@ -155,14 +155,14 @@ class TerradocConfig:
         """Return common site identity values for templates."""
         title = self.site_title or self.project_name
         tagline = self.site_tagline or self.project_subtitle
-        return {
+        ctx = {
             "title": title,
             "tagline": tagline,
-            "dictionary_label": self.module_label("dictionary"),
-            "encyclopedia_label": self.module_label("encyclopedia"),
-            "fauna_label": self.module_label("fauna"),
-            "bibliography_label": self.module_label("bibliography"),
         }
+        ctx.update({
+            f"{slug}_label": self.module_label(slug) for slug in self.modules
+        })
+        return ctx
 
 
 def load_config(config_path: Path | None = None) -> TerradocConfig:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from terradoc.config import TerradocConfig, ThemeColors, ThemeConfig, load_config
+from terradoc.config import ModuleConfig, TerradocConfig, ThemeColors, ThemeConfig, load_config
 
 
 def test_default_config():
@@ -132,3 +132,14 @@ def test_module_label_fallback():
     """Unknown module labels fall back to title-cased slugs."""
     cfg = TerradocConfig()
     assert cfg.module_label("audio_archive") == "Audio Archive"
+
+
+def test_site_context_includes_custom_module_label():
+    """site_context() includes labels for custom modules."""
+    cfg = TerradocConfig()
+    cfg.modules["recipes"] = ModuleConfig()
+    cfg.module_labels["recipes"] = "Recipes"
+    ctx = cfg.site_context()
+    assert ctx["recipes_label"] == "Recipes"
+    # Built-in modules still present
+    assert ctx["dictionary_label"] == "Dictionary"
