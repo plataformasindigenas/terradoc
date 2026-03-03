@@ -17,6 +17,14 @@ def test_cli_help():
     assert "Terradoc" in result.output
 
 
+def test_cli_build_help_has_no_output_override():
+    """build help no longer exposes the removed output override."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["build", "--help"])
+    assert result.exit_code == 0
+    assert "--output" not in result.output
+
+
 def test_cli_build_missing_config():
     """build command fails when config file is missing."""
     runner = CliRunner()

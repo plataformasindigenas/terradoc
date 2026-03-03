@@ -43,9 +43,7 @@ def main():
 @main.command()
 @click.option("--config", "-c", "config_path", default="terradoc.yaml",
               help="Path to terradoc.yaml config file")
-@click.option("--output", "-o", default=None,
-              help="Output directory (default: docs/)")
-def build(config_path: str, output: str | None):
+def build(config_path: str):
     """Build the complete site."""
     cfg_path = Path(config_path)
     if not cfg_path.exists():
@@ -53,10 +51,6 @@ def build(config_path: str, output: str | None):
         raise SystemExit(1)
 
     cfg = load_config(cfg_path)
-
-    if output:
-        # Override output directory — need to update docs_dir
-        cfg._docs_dir_override = Path(output)
 
     # Step 1: Check encyclopedia entries (if enabled)
     if cfg.is_module_enabled("encyclopedia"):
