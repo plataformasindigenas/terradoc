@@ -443,6 +443,11 @@ select:focus-visible,
         margin-top: 0.25rem;
     }
 }
+@media (max-width: 768px) and (min-width: 601px) {
+    .td-container {
+        padding: 0 1.25rem;
+    }
+}
 @media (max-width: 600px) {
     .search-row {
         flex-direction: column;

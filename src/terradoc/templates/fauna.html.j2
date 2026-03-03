@@ -273,6 +273,20 @@
     color: var(--td-color-text-muted);
 }
 
+/* Tablet */
+@media (max-width: 900px) and (min-width: 701px) {
+    .showcase-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    .showcase-detail-layout {
+        gap: 1rem;
+    }
+    .showcase-detail-img,
+    .showcase-detail-placeholder {
+        width: 160px;
+        min-width: 140px;
+    }
+}
 /* Mobile */
 @media (max-width: 700px) {
     .showcase-grid {
