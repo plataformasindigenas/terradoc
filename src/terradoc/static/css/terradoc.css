@@ -460,5 +460,43 @@ select:focus-visible,
 @media (prefers-reduced-motion: reduce) {
     * {
         transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ── Print ── */
+@media print {
+    nav, footer, .skip-link, .nav-toggle, .lang-switch,
+    .search-container, .dict-controls, .letter-bar,
+    .back-link, .filter-select {
+        display: none !important;
+    }
+    body {
+        background: white;
+        color: black;
+        font-size: 12pt;
+    }
+    .td-container {
+        max-width: 100%;
+        padding: 0;
+    }
+    main.td-container {
+        animation: none;
+    }
+    a {
+        color: inherit;
+        text-decoration: underline;
+    }
+    .entry, .platform-card, .portal-section, .showcase-card {
+        box-shadow: none !important;
+        border-color: #ccc !important;
+    }
+    .infobox {
+        float: right;
+        border: 1px solid #ccc;
+    }
+    .highlight {
+        background: none;
+        font-weight: bold;
     }
 }
