@@ -46,11 +46,15 @@ class ThemeColors:
 @dataclass
 class ThemeConfig:
     colors: ThemeColors = field(default_factory=ThemeColors)
-    logo: str = "images/logo.png"
-    favicon: str = "images/favicon.ico"
+    logo: str = "images/logo.svg"
+    favicon: str = "images/favicon.svg"
 
     def to_dict(self) -> dict:
-        return {"colors": self.colors.to_dict()}
+        return {
+            "colors": self.colors.to_dict(),
+            "logo": self.logo,
+            "favicon": self.favicon,
+        }
 
 
 @dataclass

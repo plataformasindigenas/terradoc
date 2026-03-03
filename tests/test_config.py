@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from terradoc.config import TerradocConfig, ThemeColors, load_config
+from terradoc.config import TerradocConfig, ThemeColors, ThemeConfig, load_config
 
 
 def test_default_config():
@@ -61,6 +61,8 @@ def test_load_config_from_yaml():
             "encyclopedia": "Knowledge Base",
         },
         "theme": {
+            "logo": "images/custom-logo.svg",
+            "favicon": "images/custom-favicon.svg",
             "colors": {
                 "primary": "#FF0000",
                 "accent": "#00FF00",
@@ -89,6 +91,8 @@ def test_load_config_from_yaml():
         assert cfg.is_module_enabled("fauna") is False
         assert cfg.theme.colors.primary == "#FF0000"
         assert cfg.theme.colors.accent == "#00FF00"
+        assert cfg.theme.logo == "images/custom-logo.svg"
+        assert cfg.theme.favicon == "images/custom-favicon.svg"
         # Unset colors keep defaults
         assert cfg.theme.colors.bg == "#F9F6F2"
     finally:
@@ -114,6 +118,14 @@ def test_theme_to_dict():
     assert len(d) == 12
     assert d["primary"] == "#3D352F"
     assert d["accent"] == "#C75B39"
+
+
+def test_theme_config_to_dict_includes_assets():
+    """ThemeConfig.to_dict includes color values and asset paths."""
+    theme = ThemeConfig()
+    d = theme.to_dict()
+    assert d["logo"] == "images/logo.svg"
+    assert d["favicon"] == "images/favicon.svg"
 
 
 def test_module_label_fallback():

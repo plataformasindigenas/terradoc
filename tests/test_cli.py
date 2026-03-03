@@ -55,6 +55,8 @@ def test_cli_init():
             assert (project_dir / "config" / "templates" / "base.html.j2").exists()
             assert (project_dir / "locales").exists()
             assert (project_dir / "docs").exists()
+            assert (project_dir / "docs" / "images" / "logo.svg").exists()
+            assert (project_dir / "docs" / "images" / "favicon.svg").exists()
             assert (project_dir / "terradoc.yaml").exists()
             assert (project_dir / "locales" / "pt.yaml").exists()
             assert (project_dir / "locales" / "en.yaml").exists()

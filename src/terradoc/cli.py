@@ -32,6 +32,20 @@ output: ../docs/bibliography.html
 """,
 }
 
+DEFAULT_LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Project logo">
+  <rect width="128" height="128" rx="24" fill="#3D352F"/>
+  <circle cx="64" cy="52" r="24" fill="#C75B39"/>
+  <path d="M32 94h64" stroke="#F9F6F2" stroke-width="10" stroke-linecap="round"/>
+</svg>
+"""
+
+DEFAULT_FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#3D352F"/>
+  <circle cx="32" cy="26" r="12" fill="#C75B39"/>
+  <path d="M18 46h28" stroke="#F9F6F2" stroke-width="6" stroke-linecap="round"/>
+</svg>
+"""
+
 
 @click.group()
 @click.version_option()
@@ -124,6 +138,12 @@ def init(name: str):
     # Copy common.js
     js_src = importlib.resources.files("terradoc.static.js") / "common.js"
     shutil.copy2(str(js_src), str(project_dir / "docs" / "js" / "common.js"))
+    (project_dir / "docs" / "images" / "logo.svg").write_text(
+        DEFAULT_LOGO_SVG, encoding="utf-8"
+    )
+    (project_dir / "docs" / "images" / "favicon.svg").write_text(
+        DEFAULT_FAVICON_SVG, encoding="utf-8"
+    )
 
     # Create default config
     config_content = f"""project_name: "{name}"
@@ -154,6 +174,8 @@ module_labels:
   bibliography: "Bibliography"
 
 theme:
+  logo: "images/logo.svg"
+  favicon: "images/favicon.svg"
   colors:
     primary: "#3D352F"
     accent: "#C75B39"
