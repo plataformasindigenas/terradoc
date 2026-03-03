@@ -61,6 +61,7 @@ class ThemeColors:
 @dataclass
 class ThemeConfig:
     colors: ThemeColors = field(default_factory=ThemeColors)
+    colors_dark: ThemeColors | None = None
     logo: str = "images/logo.svg"
     favicon: str = "images/favicon.svg"
     font_family: str = (
@@ -73,8 +74,9 @@ class ThemeConfig:
     hero_image: str = ""
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "colors": self.colors.to_dict(),
+            "colors_dark": self.colors_dark.to_dict() if self.colors_dark else None,
             "logo": self.logo,
             "favicon": self.favicon,
             "font_family": self.font_family,
@@ -83,6 +85,7 @@ class ThemeConfig:
             "border_radius": self.border_radius,
             "hero_image": self.hero_image,
         }
+        return result
 
 
 @dataclass
@@ -217,6 +220,8 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             theme_raw = raw["theme"]
             if "colors" in theme_raw:
                 config.theme.colors = ThemeColors(**theme_raw["colors"])
+            if "colors_dark" in theme_raw:
+                config.theme.colors_dark = ThemeColors(**theme_raw["colors_dark"])
             for theme_key in (
                 "logo", "favicon", "font_family", "font_family_headings",
                 "font_family_mono", "border_radius", "hero_image",
