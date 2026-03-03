@@ -1,5 +1,6 @@
 """Configuration for terradoc projects."""
 
+import importlib.resources
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -141,6 +142,14 @@ class TerradocConfig:
     def module_label(self, name: str) -> str:
         """Return the display label for a module slug."""
         return self.module_labels.get(name, name.replace("_", " ").title())
+
+    def resolve_schema(self, module_slug: str) -> Path:
+        """Resolve a schema path, preferring local overrides in data/."""
+        local = self.data_dir / f"{module_slug}_schema.yaml"
+        if local.exists():
+            return local
+        package_schema = importlib.resources.files("terradoc.schemas") / f"{module_slug}_schema.yaml"
+        return Path(str(package_schema))
 
     def site_context(self) -> dict[str, str]:
         """Return common site identity values for templates."""
