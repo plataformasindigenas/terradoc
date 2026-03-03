@@ -17,13 +17,15 @@ def load_locale(locale: str, config: TerradocConfig) -> dict:
         return yaml.safe_load(f) or {}
 
 
-def get_locale_switches(locale: str, config: TerradocConfig) -> list[dict[str, str | bool]]:
+def get_locale_switches(locale: str, base_path: str, current_page_path: str,
+                        config: TerradocConfig) -> list[dict[str, str | bool]]:
     """Build locale switcher metadata for the current page."""
     switches: list[dict[str, str | bool]] = []
     for code in config.locales:
         switches.append({
             "code": code,
-            "label": code.upper(),
+            "label": config.locale_label(code),
+            "href": f"{base_path}{code}/{current_page_path}",
             "is_current": code == locale,
         })
     return switches
@@ -71,9 +73,12 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
                 "all_titles": all_titles,
                 "t": translations,
                 "locale": locale,
-                "locale_switches": get_locale_switches(locale, config),
+                "locale_switches": get_locale_switches(
+                    locale, "../../", f"encyclopedia/{entry_id}.html", config
+                ),
                 "base_path": "../../",
                 "page": "encyclopedia",
+                "current_page_path": f"encyclopedia/{entry_id}.html",
                 "title": entry.get("title", ""),
                 "theme": theme_dict,
                 "modules": modules,
@@ -111,10 +116,14 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
             context={
                 "t": translations,
                 "locale": locale,
-                "locale_switches": get_locale_switches(locale, config),
+                "locale_switches": get_locale_switches(
+                    locale, "../", output_filename, config
+                ),
                 "base_path": "../",
                 "theme": theme_dict,
                 "modules": modules,
+                "page": name,
+                "current_page_path": output_filename,
             },
             output=locale_output,
         )
@@ -133,17 +142,14 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 def build_language_picker(config: TerradocConfig):
     """Generate root docs/index.html with language selection."""
     theme = config.theme.colors
-    locale_info = {
-        "pt": {"name": "Português", "desc": "Acessar em Português"},
-        "en": {"name": "English", "desc": "Access in English"},
-    }
 
     lang_cards = ""
     for loc in config.locales:
-        info = locale_info.get(loc, {"name": loc.upper(), "desc": f"Access in {loc}"})
+        label = config.locale_label(loc)
+        desc = f"Open {label}"
         lang_cards += f'        <a href="{loc}/index.html" class="lang-card">\n'
-        lang_cards += f'            <h2>{info["name"]}</h2>\n'
-        lang_cards += f'            <p>{info["desc"]}</p>\n'
+        lang_cards += f'            <h2>{label}</h2>\n'
+        lang_cards += f'            <p>{desc}</p>\n'
         lang_cards += '        </a>\n'
 
     html = f"""<!DOCTYPE html>

@@ -71,11 +71,28 @@
         }
         nav .lang-switch {
             margin-left: auto;
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+            flex-wrap: wrap;
             font-size: 0.85rem;
+        }
+        nav .lang-link, nav .lang-current {
+            padding: 0.25rem 0.5rem;
+            border-radius: 999px;
+        }
+        nav .lang-link {
+            color: white;
+            text-decoration: none;
             opacity: 0.8;
         }
-        nav .lang-switch:hover {
+        nav .lang-link:hover {
             opacity: 1;
+            background: rgba(255,255,255,0.15);
+        }
+        nav .lang-current {
+            background: rgba(255,255,255,0.18);
+            color: white;
         }
         header {
             text-align: center;
@@ -288,8 +305,16 @@
         {% for mod in modules %}
         <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
         {% endfor %}
-        {% if other_locale %}
-        <a href="{{ base_path | default('') }}{{ other_locale }}/{{ page | default('index') }}.html" class="lang-switch">{{ other_locale | upper }}</a>
+        {% if locale_switches and locale_switches | length > 1 %}
+        <div class="lang-switch" aria-label="{{ t.lang_switch_label | default('Language selector') }}">
+            {% for switch in locale_switches %}
+                {% if switch.is_current %}
+                <span class="lang-current" aria-current="true">{{ switch.label }}</span>
+                {% else %}
+                <a href="{{ switch.href }}" class="lang-link">{{ switch.label }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
         {% endif %}
     </nav>
 

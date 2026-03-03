@@ -45,6 +45,7 @@ def test_load_config_from_yaml():
         "culture_name": "TestCulture",
         "meta_prefix": "test",
         "locales": ["en"],
+        "locale_labels": {"en": "English"},
         "default_locale": "en",
         "featured_article_id": "main",
         "bib_file": "test.bib",
@@ -70,6 +71,7 @@ def test_load_config_from_yaml():
         assert cfg.culture_name == "TestCulture"
         assert cfg.meta_prefix == "test"
         assert cfg.locales == ["en"]
+        assert cfg.locale_labels == {"en": "English"}
         assert cfg.default_locale == "en"
         assert cfg.featured_article_id == "main"
         assert cfg.bib_file == "test.bib"

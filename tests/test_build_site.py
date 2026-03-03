@@ -18,6 +18,7 @@ def test_build_language_picker():
             project_name="Test Project",
             project_subtitle="Test Subtitle",
             locales=["pt", "en"],
+            locale_labels={"pt": "Português", "en": "English"},
             base_dir=tmp_path,
         )
 
@@ -68,6 +69,7 @@ def test_build_language_picker_single_locale():
         config = TerradocConfig(
             project_name="Single",
             locales=["en"],
+            locale_labels={"en": "English"},
             base_dir=tmp_path,
         )
 
@@ -76,3 +78,24 @@ def test_build_language_picker_single_locale():
         index_html = (docs_dir / "index.html").read_text()
         assert 'href="en/index.html"' in index_html
         assert "pt/index.html" not in index_html
+
+
+def test_build_language_picker_custom_locale_labels():
+    """Language picker uses labels from the project config."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        config = TerradocConfig(
+            project_name="Labels",
+            locales=["bor", "en"],
+            locale_labels={"bor": "Bororo", "en": "English"},
+            base_dir=tmp_path,
+        )
+
+        build_language_picker(config)
+
+        index_html = (docs_dir / "index.html").read_text()
+        assert "Bororo" in index_html
+        assert "English" in index_html

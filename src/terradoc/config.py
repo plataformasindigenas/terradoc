@@ -60,6 +60,10 @@ class TerradocConfig:
     culture_name: str = ""
     meta_prefix: str = "terradoc"
     locales: list[str] = field(default_factory=lambda: ["pt", "en"])
+    locale_labels: dict[str, str] = field(default_factory=lambda: {
+        "pt": "Português",
+        "en": "English",
+    })
     default_locale: str = "pt"
     featured_article_id: str = ""
     bib_file: str = "references.bib"
@@ -123,6 +127,10 @@ class TerradocConfig:
             if self.is_module_enabled(name)
         ]
 
+    def locale_label(self, code: str) -> str:
+        """Return a human-readable label for a locale code."""
+        return self.locale_labels.get(code, code.upper())
+
 
 def load_config(config_path: Path | None = None) -> TerradocConfig:
     """Load configuration from a YAML file, or return defaults."""
@@ -139,6 +147,10 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
 
         if "locales" in raw:
             config.locales = raw["locales"]
+        if "locale_labels" in raw and isinstance(raw["locale_labels"], dict):
+            config.locale_labels = {
+                str(key): str(value) for key, value in raw["locale_labels"].items()
+            }
 
         if "theme" in raw:
             theme_raw = raw["theme"]
