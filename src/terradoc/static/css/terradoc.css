@@ -1,5 +1,8 @@
 /* Terradoc base stylesheet — shared across all pages. */
 
+html {
+    scroll-behavior: smooth;
+}
 * {
     box-sizing: border-box;
 }
@@ -376,6 +379,25 @@ footer a {
 }
 footer a:hover {
     text-decoration: underline;
+}
+
+/* ── Page transition ── */
+main.td-container {
+    animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Focus styles ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.word-item:focus-visible {
+    outline: 2px solid var(--td-color-accent);
+    outline-offset: 2px;
 }
 
 /* ── Cards (shared shadow behavior) ── */
