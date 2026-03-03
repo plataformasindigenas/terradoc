@@ -42,35 +42,39 @@
 
     {% set np = nav_prefix | default('') %}
     <nav aria-label="{{ t.nav_label | default('Navegação principal') }}">
-        <a href="{{ np }}index.html" class="brand">
-            {% if theme.logo %}
-            <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo">
-            {% endif %}
-            <span>{{ t.nav_brand | default(site.title) }}</span>
-        </a>
-        {% for mod in modules %}
-        <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
-        {% endfor %}
-        {% if locale_switches and locale_switches | length > 1 %}
-        <div class="lang-switch" aria-label="{{ t.lang_switch_label | default('Language selector') }}">
-            {% for switch in locale_switches %}
-                {% if switch.is_current %}
-                <span class="lang-current" aria-current="true">{{ switch.label }}</span>
-                {% else %}
-                <a href="{{ switch.href }}" class="lang-link">{{ switch.label }}</a>
+        <div class="td-nav-inner">
+            <a href="{{ np }}index.html" class="brand">
+                {% if theme.logo %}
+                <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo">
                 {% endif %}
+                <span>{{ t.nav_brand | default(site.title) }}</span>
+            </a>
+            {% for mod in modules %}
+            <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
             {% endfor %}
+            {% if locale_switches and locale_switches | length > 1 %}
+            <div class="lang-switch" aria-label="{{ t.lang_switch_label | default('Language selector') }}">
+                {% for switch in locale_switches %}
+                    {% if switch.is_current %}
+                    <span class="lang-current" aria-current="true">{{ switch.label }}</span>
+                    {% else %}
+                    <a href="{{ switch.href }}" class="lang-link">{{ switch.label }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </nav>
 
-    <main id="main-content">
+    <main id="main-content" class="td-container">
         {% block content %}{% endblock %}
     </main>
 
     <footer>
-        <p>{{ t.footer_generated | default('Gerado com') }} <a href="https://github.com/plataformasindigenas/aptoro">aptoro</a> {{ t.footer_and | default('e') }} <a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></p>
-        {% if meta and meta.version %}<p>Schema v{{ meta.version }}</p>{% endif %}
+        <div class="td-container">
+            <p>{{ t.footer_generated | default('Gerado com') }} <a href="https://github.com/plataformasindigenas/aptoro">aptoro</a> {{ t.footer_and | default('e') }} <a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></p>
+            {% if meta and meta.version %}<p>Schema v{{ meta.version }}</p>{% endif %}
+        </div>
     </footer>
 
     <script src="{{ base_path | default('') }}js/common.js"></script>
