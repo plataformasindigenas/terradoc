@@ -2,6 +2,7 @@
 
 import json
 import shutil
+from dataclasses import replace as dc_replace
 from pathlib import Path
 
 import kodudo
@@ -121,6 +122,15 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
             client_index = load_json_if_exists(config.data_dir / "encyclopedia_index.json")
 
         batch = kodudo.load_config(config_path)
+
+        # If the template doesn't exist locally, resolve from bundled templates
+        if not batch.config.resolved_template.exists():
+            template_name = Path(batch.config.template).name
+            bundled = config.template_dir / template_name
+            if bundled.exists():
+                batch = dc_replace(batch, config=dc_replace(
+                    batch.config, template=bundled,
+                ))
 
         original_output = str(batch.config.output)
         output_filename = Path(original_output).name
