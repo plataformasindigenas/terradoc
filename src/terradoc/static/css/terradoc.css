@@ -424,6 +424,19 @@ select:focus-visible,
     box-shadow: var(--td-shadow-md);
 }
 
+/* ── Language term emphasis ── */
+.td-term {
+    color: var(--td-term-color);
+    font-weight: var(--td-term-weight);
+}
+
+/* ── Decorative components ── */
+.td-decor-spine { display: flex; justify-content: center; }
+.td-decor-motif { display: flex; justify-content: center; align-items: center; margin: 1.5rem 0; }
+.td-decor-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+.td-decor-dots { display: flex; gap: 6px; align-items: center; }
+.td-decor-marker { display: inline-block; flex-shrink: 0; }
+
 /* ══════════════════════════════════════════════════════
    Terra theme — warm, organic, culturally-inspired
    ══════════════════════════════════════════════════════ */
@@ -604,6 +617,12 @@ select:focus-visible,
     border-top: 1px solid var(--td-color-border);
     margin-top: 4rem;
     padding: 2.5rem 0;
+}
+
+/* ── Terra: Term emphasis ── */
+.td-style-terra .td-term {
+    border-bottom: 1px dotted var(--td-term-color);
+    padding-bottom: 1px;
 }
 
 /* ══════════════════════════════════════════════════════

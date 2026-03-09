@@ -20,6 +20,8 @@
             --td-radius: {{ theme.border_radius | default('4px') }};
             --td-font-family: {{ theme.font_family | default("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif") }};
             --td-font-headings: {{ theme.font_family_headings | default('inherit') }};
+            --td-term-color: {{ theme.term_color or theme.colors.accent_muted | default('#A85D33') }};
+            --td-term-weight: {{ theme.term_weight | default('600') }};
         }
         * { box-sizing: border-box; }
         body {

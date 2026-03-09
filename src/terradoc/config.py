@@ -69,6 +69,9 @@ THEME_PRESETS: dict[str, dict] = {
         "font_family_headings": "'Bitter', 'Georgia', 'Cambria', serif",
         "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
         "border_radius": "8px",
+        "module_intensity": {},
+        "term_color": "",
+        "term_weight": "600",
         "description": "Warm, organic theme with nature-inspired palette",
     },
     "classic": {
@@ -101,6 +104,9 @@ THEME_PRESETS: dict[str, dict] = {
         "font_family_headings": "",
         "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
         "border_radius": "4px",
+        "module_intensity": {},
+        "term_color": "",
+        "term_weight": "600",
         "description": "Classic utilitarian dashboard look",
     },
 }
@@ -121,6 +127,9 @@ class ThemeConfig:
     border_radius: str = "8px"
     hero_image: str = ""
     style: str = "terra"
+    module_intensity: dict[str, str] = field(default_factory=dict)
+    term_color: str = ""
+    term_weight: str = "600"
 
     def to_dict(self) -> dict:
         result = {
@@ -134,6 +143,9 @@ class ThemeConfig:
             "border_radius": self.border_radius,
             "hero_image": self.hero_image,
             "style": self.style,
+            "module_intensity": self.module_intensity,
+            "term_color": self.term_color,
+            "term_weight": self.term_weight,
         }
         return result
 
@@ -190,6 +202,11 @@ class TerradocConfig:
         return self.base_dir / "locales"
 
     @property
+    def bundled_template_dir(self) -> Path:
+        """Return the bundled template directory from the package."""
+        return Path(str(importlib.resources.files("terradoc.templates")))
+
+    @property
     def template_dir(self) -> Path:
         """Return the template directory.
 
@@ -199,8 +216,7 @@ class TerradocConfig:
         local = self.config_dir / "templates"
         if local.exists():
             return local
-        import importlib.resources
-        return Path(str(importlib.resources.files("terradoc.templates")))
+        return self.bundled_template_dir
 
     def is_module_enabled(self, name: str) -> bool:
         mod = self.modules.get(name)
@@ -300,13 +316,20 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             for theme_key in (
                 "font_family", "font_family_headings",
                 "font_family_mono", "border_radius",
+                "term_color", "term_weight",
             ):
                 setattr(config.theme, theme_key, preset.get(theme_key, getattr(config.theme, theme_key)))
+
+            # Module intensity: start from preset, merge YAML on top
+            preset_intensity = dict(preset.get("module_intensity", {}))
+            preset_intensity.update(theme_raw.get("module_intensity", {}))
+            config.theme.module_intensity = preset_intensity
 
             # YAML overrides on top of preset
             for theme_key in (
                 "logo", "favicon", "font_family", "font_family_headings",
                 "font_family_mono", "border_radius", "hero_image", "style",
+                "term_color", "term_weight",
             ):
                 if theme_key in theme_raw:
                     setattr(config.theme, theme_key, theme_raw[theme_key])

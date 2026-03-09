@@ -326,3 +326,69 @@ def test_load_config_rejects_non_mapping_theme_colors_dark():
             load_config(tmp_path)
     finally:
         tmp_path.unlink()
+
+
+# ── Layer 2: module_intensity, term_color, term_weight ──
+
+
+def test_module_intensity_default():
+    """Default module_intensity is empty dict, get() returns 'balanced'."""
+    cfg = TerradocConfig()
+    assert cfg.theme.module_intensity == {}
+    assert cfg.theme.module_intensity.get("dictionary", "balanced") == "balanced"
+
+
+def test_module_intensity_from_yaml():
+    """module_intensity values load from YAML."""
+    config_data = {
+        "theme": {
+            "module_intensity": {
+                "dictionary": "minimal",
+                "fauna": "rich",
+            },
+        },
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config_data, f)
+        tmp_path = Path(f.name)
+
+    try:
+        cfg = load_config(tmp_path)
+        assert cfg.theme.module_intensity["dictionary"] == "minimal"
+        assert cfg.theme.module_intensity["fauna"] == "rich"
+        assert cfg.theme.module_intensity.get("encyclopedia", "balanced") == "balanced"
+    finally:
+        tmp_path.unlink()
+
+
+def test_term_color_default():
+    """Default term_color is empty string."""
+    cfg = TerradocConfig()
+    assert cfg.theme.term_color == ""
+
+
+def test_term_weight_default():
+    """Default term_weight is '600'."""
+    cfg = TerradocConfig()
+    assert cfg.theme.term_weight == "600"
+
+
+def test_to_dict_includes_layer2_fields():
+    """to_dict() includes module_intensity, term_color, term_weight."""
+    theme = ThemeConfig(
+        module_intensity={"dictionary": "minimal"},
+        term_color="#8B2500",
+        term_weight="700",
+    )
+    d = theme.to_dict()
+    assert d["module_intensity"] == {"dictionary": "minimal"}
+    assert d["term_color"] == "#8B2500"
+    assert d["term_weight"] == "700"
+
+
+def test_bundled_template_dir():
+    """bundled_template_dir returns a valid Path containing base.html.j2."""
+    cfg = TerradocConfig()
+    bundled = cfg.bundled_template_dir
+    assert (bundled / "base.html.j2").exists()

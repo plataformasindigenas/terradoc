@@ -12,6 +12,11 @@ from terradoc.config import TerradocConfig
 from terradoc.markdown_utils import generate_toc
 
 
+def get_module_intensity(config: TerradocConfig, page_name: str) -> str:
+    """Return the intensity level for a module page."""
+    return config.theme.module_intensity.get(page_name, "balanced")
+
+
 def load_locale(locale: str, config: TerradocConfig) -> dict:
     path = config.locales_dir / f"{locale}.yaml"
     with open(path, "r", encoding="utf-8") as f:
@@ -93,8 +98,9 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
                 "site": site_dict,
                 "theme": theme_dict,
                 "modules": modules,
+                "intensity": get_module_intensity(config, "encyclopedia"),
             },
-            template_dirs=(config.template_dir,),
+            template_dirs=(config.template_dir, config.bundled_template_dir),
         )
 
         output_path = enc_dir / f"{entry_id}.html"
@@ -129,8 +135,15 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
             bundled = config.template_dir / template_name
             if bundled.exists():
                 batch = dc_replace(batch, config=dc_replace(
-                    batch.config, template=bundled,
+                    batch.config,
+                    template=bundled,
+                    template_dirs=(config.template_dir, config.bundled_template_dir),
                 ))
+        else:
+            batch = dc_replace(batch, config=dc_replace(
+                batch.config,
+                template_dirs=(config.template_dir, config.bundled_template_dir),
+            ))
 
         original_output = str(batch.config.output)
         output_filename = Path(original_output).name
@@ -151,6 +164,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
                 "page": name,
                 "current_page_path": output_filename,
                 "client_index": client_index,
+                "intensity": get_module_intensity(config, name),
             },
             output=locale_output,
         )

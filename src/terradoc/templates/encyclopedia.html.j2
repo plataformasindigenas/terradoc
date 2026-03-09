@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% from "decor.html.j2" import badge_circle, motif_divider %}
 
 {% block title %}{{ t.enc_title | default(site.encyclopedia_label) }}{% endblock %}
 
@@ -262,7 +263,7 @@
     <div class="enc-welcome">
         <h1>{{ t.enc_title | default(site.encyclopedia_label) }}</h1>
         <p class="enc-welcome-text">{{ t.enc_welcome_text | default('') }}</p>
-        <p class="enc-stat">{{ meta.record_count }} {{ t.articles_label | default('verbetes') }}</p>
+        <p class="enc-stat">{{ badge_circle(label=meta.record_count|string, intensity=intensity) }} {{ meta.record_count }} {{ t.articles_label | default('verbetes') }}</p>
     </div>
 
     <div class="no-js-only results-container">
@@ -292,6 +293,8 @@
             </div>
             <div class="stats" id="stats" aria-live="polite"></div>
         </div>
+
+        {{ motif_divider(intensity=intensity) }}
 
         <div id="portal">
             <div id="featured-section" class="portal-section" style="display:none;"></div>
