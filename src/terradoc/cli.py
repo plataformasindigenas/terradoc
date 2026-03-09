@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from terradoc.config import load_config
+from terradoc.config import THEME_PRESETS, load_config
 
 
 STARTER_PAGE_CONFIGS = {
@@ -105,7 +105,10 @@ def build(config_path: str):
 
 @main.command()
 @click.argument("name", default="my-project")
-def init(name: str):
+@click.option("--theme", "theme_preset", default="terra",
+              type=click.Choice(list(THEME_PRESETS.keys())),
+              help="Theme preset to use (default: terra)")
+def init(name: str, theme_preset: str):
     """Scaffold a new terradoc project."""
     project_dir = Path(name)
     if project_dir.exists():
@@ -136,11 +139,18 @@ def init(name: str):
     for filename, content in STARTER_PAGE_CONFIGS.items():
         (project_dir / "config" / filename).write_text(content, encoding="utf-8")
 
-    # Copy static assets (JS and CSS)
+    # Copy static assets (JS, CSS, fonts)
     js_src = importlib.resources.files("terradoc.static.js") / "common.js"
     shutil.copy2(str(js_src), str(project_dir / "docs" / "js" / "common.js"))
     css_src = importlib.resources.files("terradoc.static.css") / "terradoc.css"
     shutil.copy2(str(css_src), str(project_dir / "docs" / "css" / "terradoc.css"))
+    fonts_css_src = importlib.resources.files("terradoc.static.css") / "fonts.css"
+    shutil.copy2(str(fonts_css_src), str(project_dir / "docs" / "css" / "fonts.css"))
+    (project_dir / "docs" / "fonts").mkdir(parents=True, exist_ok=True)
+    fonts_dir = importlib.resources.files("terradoc.static.fonts")
+    for font_file in fonts_dir.iterdir():
+        if font_file.is_file() and font_file.name.endswith(".woff2"):
+            shutil.copy2(str(font_file), str(project_dir / "docs" / "fonts" / font_file.name))
     (project_dir / "docs" / "images" / "logo.svg").write_text(
         DEFAULT_LOGO_SVG, encoding="utf-8"
     )
@@ -149,6 +159,7 @@ def init(name: str):
     )
 
     # Create default config
+    preset = THEME_PRESETS[theme_preset]
     config_content = f"""project_name: "{name}"
 project_subtitle: ""
 site_title: "{name}"
@@ -177,11 +188,12 @@ module_labels:
   bibliography: "Bibliography"
 
 theme:
+  preset: "{theme_preset}"
   logo: "images/logo.svg"
   favicon: "images/favicon.svg"
   colors:
-    primary: "#3D352F"
-    accent: "#C75B39"
+    primary: "{preset['colors']['primary']}"
+    accent: "{preset['colors']['accent']}"
 """
 
     (project_dir / "terradoc.yaml").write_text(config_content, encoding="utf-8")
@@ -209,7 +221,22 @@ index_hero_title: "{name}"
         en_locale.format(name=name), encoding="utf-8"
     )
 
-    click.echo(f"Created new terradoc project in '{name}/'")
+    click.echo(f"Created new terradoc project in '{name}/' (theme: {theme_preset})")
     click.echo(f"  Edit {name}/terradoc.yaml to configure your project")
     click.echo(f"  Add data to {name}/data/")
     click.echo(f"  Run: cd {name} && terradoc build")
+
+
+@main.command()
+def themes():
+    """List available theme presets."""
+    click.echo("Available theme presets:\n")
+    for name, preset in THEME_PRESETS.items():
+        desc = preset.get("description", "")
+        default = " (default)" if name == "terra" else ""
+        click.echo(f"  {name}{default}")
+        if desc:
+            click.echo(f"    {desc}")
+        click.echo(f"    Style: {preset.get('style', name)}")
+        click.echo(f"    Primary: {preset['colors']['primary']}  Accent: {preset['colors']['accent']}")
+        click.echo()

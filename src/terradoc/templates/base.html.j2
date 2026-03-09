@@ -7,6 +7,7 @@
     <link rel="icon" href="{{ base_path | default('') }}{{ theme.favicon }}">
     {% endif %}
     <title>{% block title %}{{ title | default(site.title) }}{% endblock %} - {{ site.title }}</title>
+    <link rel="stylesheet" href="{{ base_path | default('') }}css/fonts.css">
     <link rel="stylesheet" href="{{ base_path | default('') }}css/terradoc.css">
     <script>document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');</script>
     <style>
@@ -63,7 +64,7 @@
         {% block extra_styles %}{% endblock %}
     </style>
 </head>
-<body>
+<body class="td-style-{{ theme.style | default('terra') }}">
     <a href="#main-content" class="skip-link">{{ t.skip_link | default('Pular para conteúdo') }}</a>
 
     {% set np = nav_prefix | default('') %}

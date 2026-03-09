@@ -194,10 +194,10 @@ def build_language_picker(config: TerradocConfig):
 
 
 def copy_static_assets(config: TerradocConfig):
-    """Copy bundled static assets (JS, CSS) to docs/."""
+    """Copy bundled static assets (JS, CSS, fonts) to docs/."""
     import importlib.resources
 
-    for subdir in ("js", "css"):
+    for subdir in ("js", "css", "fonts"):
         dest = config.docs_dir / subdir
         dest.mkdir(parents=True, exist_ok=True)
         package = f"terradoc.static.{subdir}"
@@ -208,7 +208,7 @@ def copy_static_assets(config: TerradocConfig):
         for src_file in src_dir.iterdir():
             if src_file.is_file() and src_file.name != "__init__.py":
                 shutil.copy2(str(src_file), str(dest / src_file.name))
-    print("  Copied static assets (js/, css/) to docs/")
+    print("  Copied static assets (js/, css/, fonts/) to docs/")
 
 
 def build_site(config: TerradocConfig):
