@@ -206,7 +206,7 @@ def copy_static_assets(config: TerradocConfig):
         except ModuleNotFoundError:
             continue
         for src_file in src_dir.iterdir():
-            if src_file.is_file():
+            if src_file.is_file() and src_file.name != "__init__.py":
                 shutil.copy2(str(src_file), str(dest / src_file.name))
     print("  Copied static assets (js/, css/) to docs/")
 
