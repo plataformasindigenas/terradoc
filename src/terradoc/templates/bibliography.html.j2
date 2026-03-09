@@ -3,11 +3,33 @@
 
 {% block title %}{{ t.bib_title | default(site.bibliography_label) }}{% endblock %}
 
+{% block extra_styles %}
+        .bib-header {
+            padding: 1.5rem 0 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .bib-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1.5rem;
+            width: 4px;
+            height: 48px;
+            background: var(--td-color-primary);
+            border-radius: 2px;
+        }
+        .bib-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+{% endblock %}
+
 {% block content %}
-    <header>
+    <div class="bib-header">
         <h1>{{ t.bib_title | default(site.bibliography_label) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.references_label | default('referências') }}</p>
-    </header>
+    </div>
 
     <div class="js-only">
         <div class="search-container">

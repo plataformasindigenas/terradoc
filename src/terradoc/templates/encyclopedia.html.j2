@@ -5,43 +5,63 @@
 
 {% block extra_styles %}
 .enc-welcome {
-    text-align: center;
-    padding: 2rem 1rem;
-    background: var(--td-color-primary);
-    color: white;
-    border-radius: var(--td-radius);
+    padding: 1.5rem 0 1rem;
     margin-bottom: 1.5rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+.enc-welcome::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1.5rem;
+    width: 4px;
+    height: 48px;
+    background: var(--td-color-primary);
+    border-radius: 2px;
 }
 .enc-welcome h1 {
-    color: white;
+    color: var(--td-color-primary);
     margin: 0 0 0.5rem 0;
     font-size: 2rem;
 }
 .enc-welcome-text {
-    opacity: 0.9;
     max-width: 600px;
-    margin: 0 auto;
     font-size: 0.95rem;
     line-height: 1.6;
+    color: var(--td-color-text-secondary);
 }
 .enc-stat {
     font-size: 0.85rem;
-    opacity: 0.7;
+    color: var(--td-color-text-muted);
     margin-top: 0.5rem;
 }
 .portal-section {
     background: var(--td-color-surface);
     border: 1px solid var(--td-color-border);
     border-radius: var(--td-radius);
-    padding: 1.25rem;
+    padding: 1.5rem;
     margin-bottom: 1.5rem;
+    box-shadow: var(--td-shadow-sm);
 }
 .portal-section h2 {
     margin: 0 0 1rem 0;
     font-size: 1.1rem;
     color: var(--td-color-primary);
-    border-bottom: 2px solid var(--td-color-accent);
     padding-bottom: 0.5rem;
+    border-bottom: none;
+    position: relative;
+    padding-left: 1rem;
+}
+.portal-section h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    width: 3px;
+    height: 1.1em;
+    background: var(--td-color-primary);
+    border-radius: 2px;
 }
 .portal-columns {
     display: grid;
@@ -95,13 +115,18 @@
 }
 .featured-readmore {
     display: inline-block;
-    color: var(--td-color-accent-muted);
+    background: var(--td-color-primary);
+    color: white;
+    padding: 0.4rem 1.25rem;
+    border-radius: 999px;
     text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 .featured-readmore:hover {
-    text-decoration: underline;
+    background: var(--td-color-accent-muted);
+    text-decoration: none;
 }
 .cat-list {
     list-style: none;
@@ -112,7 +137,7 @@
     padding: 0.3rem 0;
 }
 .cat-list a {
-    color: var(--td-color-accent-muted);
+    color: var(--td-color-primary);
     text-decoration: none;
     font-size: 0.95rem;
 }
@@ -192,9 +217,9 @@
 .entry-type-tag {
     font-size: 0.7rem;
     background: var(--td-color-accent-light);
-    color: var(--td-color-text-muted);
-    padding: 0.1rem 0.4rem;
-    border-radius: var(--td-radius);
+    color: var(--td-color-accent-muted);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
 }
 .entry-summary {
     color: var(--td-color-text-secondary);
@@ -210,14 +235,16 @@
 }
 .entry-cat {
     font-size: 0.72rem;
-    background: var(--td-color-border);
-    color: var(--td-color-text-secondary);
-    padding: 0.12rem 0.4rem;
-    border-radius: var(--td-radius);
+    background: var(--td-color-accent-light);
+    color: var(--td-color-accent-muted);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
     cursor: pointer;
+    transition: background 0.15s;
 }
 .entry-cat:hover {
     background: var(--td-color-border-dark);
+    color: white;
 }
 .entry-variants {
     font-size: 0.85rem;
@@ -227,7 +254,7 @@
 .variant-tag {
     background: var(--td-color-border);
     padding: 0.1rem 0.5rem;
-    border-radius: var(--td-radius);
+    border-radius: 999px;
     margin-right: 0.3rem;
     font-style: italic;
 }

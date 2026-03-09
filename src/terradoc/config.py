@@ -14,25 +14,26 @@ class ModuleConfig:
 
 @dataclass
 class ThemeColors:
-    primary: str = "#2D4A3E"
-    accent: str = "#C2703E"
-    accent_muted: str = "#A85D33"
-    bg: str = "#F7F5F0"
+    primary: str = "#C81F2D"
+    accent: str = "#D4A03A"
+    accent_muted: str = "#A01924"
+    bg: str = "#F4F1EA"
     bg_light: str = "#EDE9E0"
     bg_infobox: str = "#FAF8F4"
     border: str = "#DDD8CE"
     border_dark: str = "#B8AFA2"
-    text: str = "#2C2C2C"
-    text_muted: str = "#6B6B6B"
+    text: str = "#111827"
+    text_muted: str = "#6B6F5A"
     highlight: str = "#FFF9DB"
     warning_bg: str = "#FFF8E1"
     surface: str = "#FFFFFF"
     border_light: str = "#ECEAE5"
-    text_secondary: str = "#555555"
-    accent_light: str = "#FDF0EB"
+    text_secondary: str = "#6B6F5A"
+    accent_light: str = "#FDECEA"
     success: str = "#4A7C59"
     error: str = "#C44536"
-    accent_ring: str = "rgba(194, 112, 62, 0.2)"
+    accent_ring: str = "rgba(200, 31, 45, 0.2)"
+    dark: str = "#0B0F17"
 
     def to_dict(self) -> dict:
         return {f.name: getattr(self, f.name) for f in fields(self)}
@@ -42,33 +43,34 @@ THEME_PRESETS: dict[str, dict] = {
     "terra": {
         "style": "terra",
         "colors": {
-            "primary": "#2D4A3E",
-            "accent": "#C2703E",
-            "accent_muted": "#A85D33",
-            "bg": "#F7F5F0",
+            "primary": "#C81F2D",
+            "accent": "#D4A03A",
+            "accent_muted": "#A01924",
+            "bg": "#F4F1EA",
             "bg_light": "#EDE9E0",
             "bg_infobox": "#FAF8F4",
             "border": "#DDD8CE",
             "border_dark": "#B8AFA2",
-            "text": "#2C2C2C",
-            "text_muted": "#6B6B6B",
+            "text": "#111827",
+            "text_muted": "#6B6F5A",
             "highlight": "#FFF9DB",
             "warning_bg": "#FFF8E1",
             "surface": "#FFFFFF",
             "border_light": "#ECEAE5",
-            "text_secondary": "#555555",
-            "accent_light": "#FDF0EB",
+            "text_secondary": "#6B6F5A",
+            "accent_light": "#FDECEA",
             "success": "#4A7C59",
             "error": "#C44536",
-            "accent_ring": "rgba(194, 112, 62, 0.2)",
+            "accent_ring": "rgba(200, 31, 45, 0.2)",
+            "dark": "#0B0F17",
         },
         "font_family": (
-            "'Source Sans 3', -apple-system, BlinkMacSystemFont, "
+            "'Inter', -apple-system, BlinkMacSystemFont, "
             "'Segoe UI', sans-serif"
         ),
-        "font_family_headings": "'Bitter', 'Georgia', 'Cambria', serif",
-        "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
-        "border_radius": "8px",
+        "font_family_headings": "'Sora', 'Inter', sans-serif",
+        "font_family_mono": "'IBM Plex Mono', 'Consolas', monospace",
+        "border_radius": "28px",
         "module_intensity": {},
         "term_color": "",
         "term_weight": "600",
@@ -119,12 +121,12 @@ class ThemeConfig:
     logo: str = "images/logo.svg"
     favicon: str = "images/favicon.svg"
     font_family: str = (
-        "'Source Sans 3', -apple-system, BlinkMacSystemFont, "
+        "'Inter', -apple-system, BlinkMacSystemFont, "
         "'Segoe UI', sans-serif"
     )
-    font_family_headings: str = "'Bitter', 'Georgia', 'Cambria', serif"
-    font_family_mono: str = "'Lucida Sans Unicode', 'DejaVu Sans', monospace"
-    border_radius: str = "8px"
+    font_family_headings: str = "'Sora', 'Inter', sans-serif"
+    font_family_mono: str = "'IBM Plex Mono', 'Consolas', monospace"
+    border_radius: str = "28px"
     hero_image: str = ""
     style: str = "terra"
     module_intensity: dict[str, str] = field(default_factory=dict)
@@ -224,7 +226,7 @@ class TerradocConfig:
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""
-        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography")
+        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography", "recordings")
         return [
             {"slug": name, "name": self.module_label(name)}
             for name in module_order
