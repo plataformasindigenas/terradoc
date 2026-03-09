@@ -234,6 +234,51 @@ index_hero_title: "{name}"
 
 
 @main.command()
+@click.option("--config", "-c", "config_path", default="terradoc.yaml",
+              help="Path to terradoc.yaml config file")
+@click.option("--output", "-o", "output_path", default=None,
+              help="Write to file instead of stdout (e.g. data/categories.yaml)")
+def categories(config_path: str, output_path: str | None):
+    """Dump all category paths from encyclopedia entries."""
+    cfg_path = Path(config_path)
+    cfg = load_config(cfg_path if cfg_path.exists() else None)
+
+    entries_dir = cfg.data_dir / "encyclopedia"
+    if not entries_dir.exists():
+        click.echo(f"No encyclopedia directory: {entries_dir}", err=True)
+        raise SystemExit(1)
+
+    from terradoc.check_entries import _parse_front_matter
+
+    all_categories: set[str] = set()
+    for path in sorted(entries_dir.rglob("*.md")):
+        if path.name == "README.md":
+            continue
+        try:
+            fm, _ = _parse_front_matter(path)
+        except Exception:
+            continue
+        cats = fm.get("categories") or fm.get("keywords") or []
+        if isinstance(cats, list):
+            for cat in cats:
+                all_categories.add(str(cat))
+
+    sorted_cats = sorted(all_categories)
+
+    import yaml
+    content = yaml.dump(sorted_cats, default_flow_style=False, allow_unicode=True)
+
+    if output_path:
+        out = Path(output_path)
+        out.write_text(content, encoding="utf-8")
+        click.echo(f"Wrote {len(sorted_cats)} categories to {out}")
+    else:
+        click.echo(content.rstrip())
+
+    click.echo(f"  Total unique category paths: {len(sorted_cats)}", err=True)
+
+
+@main.command()
 def themes():
     """List available theme presets."""
     click.echo("Available theme presets:\n")

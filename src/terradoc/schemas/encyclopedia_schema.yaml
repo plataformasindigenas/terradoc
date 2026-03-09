@@ -14,8 +14,6 @@ fields:
   images: list = []
   content_md: str?
   examples: list = []
-  dictionary_ids: list?
-  fauna_ids: list?
   entry_type: str = ""
   infobox: dict?
   references: list = []

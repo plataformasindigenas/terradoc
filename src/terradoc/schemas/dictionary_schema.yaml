@@ -14,5 +14,3 @@ fields:
   wiki_link: str?
   pic_link: str?
   comment: str?
-  fauna_ids: list?
-  encyclopedia_ids: list?
