@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from terradoc.config import ModuleConfig, TerradocConfig, ThemeColors, ThemeConfig, load_config
+from terradoc.config import THEME_PRESETS, ModuleConfig, TerradocConfig, ThemeColors, ThemeConfig, load_config
 
 
 def test_default_config():
@@ -32,11 +32,11 @@ def test_enabled_modules():
 
 
 def test_theme_colors_defaults():
-    """Theme colors have correct defaults."""
+    """Theme colors have correct defaults (terra palette)."""
     colors = ThemeColors()
-    assert colors.primary == "#3D352F"
-    assert colors.accent == "#B7522C"
-    assert colors.bg == "#F9F6F2"
+    assert colors.primary == "#2D4A3E"
+    assert colors.accent == "#C2703E"
+    assert colors.bg == "#F7F5F0"
 
 
 def test_load_config_from_yaml():
@@ -95,8 +95,8 @@ def test_load_config_from_yaml():
         assert cfg.theme.colors.accent == "#00FF00"
         assert cfg.theme.logo == "images/custom-logo.svg"
         assert cfg.theme.favicon == "images/custom-favicon.svg"
-        # Unset colors keep defaults
-        assert cfg.theme.colors.bg == "#F9F6F2"
+        # Unset colors use preset defaults (terra by default)
+        assert cfg.theme.colors.bg == "#F7F5F0"
     finally:
         tmp_path.unlink()
 
@@ -118,8 +118,8 @@ def test_theme_to_dict():
     colors = ThemeColors()
     d = colors.to_dict()
     assert len(d) == 19
-    assert d["primary"] == "#3D352F"
-    assert d["accent"] == "#B7522C"
+    assert d["primary"] == "#2D4A3E"
+    assert d["accent"] == "#C2703E"
 
 
 def test_theme_config_to_dict_includes_assets():
@@ -171,3 +171,105 @@ def test_site_context_includes_custom_module_label():
     assert ctx["recipes_label"] == "Recipes"
     # Built-in modules still present
     assert ctx["dictionary_label"] == "Dictionary"
+
+
+def test_theme_presets_exist():
+    """THEME_PRESETS contains terra and classic."""
+    assert "terra" in THEME_PRESETS
+    assert "classic" in THEME_PRESETS
+    for name, preset in THEME_PRESETS.items():
+        assert "style" in preset
+        assert "colors" in preset
+        assert "description" in preset
+
+
+def test_default_theme_is_terra():
+    """Default ThemeConfig uses terra style."""
+    theme = ThemeConfig()
+    assert theme.style == "terra"
+    assert theme.border_radius == "8px"
+    assert "'Bitter'" in theme.font_family_headings
+    assert "'Source Sans 3'" in theme.font_family
+
+
+def test_preset_loading_terra():
+    """Loading config without preset defaults to terra."""
+    config_data = {
+        "project_name": "Terra Test",
+        "theme": {
+            "colors": {
+                "primary": "#FF0000",
+            },
+        },
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config_data, f)
+        tmp_path = Path(f.name)
+
+    try:
+        cfg = load_config(tmp_path)
+        # Overridden color
+        assert cfg.theme.colors.primary == "#FF0000"
+        # Other colors come from terra preset
+        assert cfg.theme.colors.accent == "#C2703E"
+        assert cfg.theme.style == "terra"
+        assert cfg.theme.border_radius == "8px"
+    finally:
+        tmp_path.unlink()
+
+
+def test_preset_loading_classic():
+    """Loading config with preset: classic uses classic values."""
+    config_data = {
+        "project_name": "Classic Test",
+        "theme": {
+            "preset": "classic",
+        },
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config_data, f)
+        tmp_path = Path(f.name)
+
+    try:
+        cfg = load_config(tmp_path)
+        assert cfg.theme.style == "classic"
+        assert cfg.theme.colors.primary == "#3D352F"
+        assert cfg.theme.colors.accent == "#B7522C"
+        assert cfg.theme.border_radius == "4px"
+    finally:
+        tmp_path.unlink()
+
+
+def test_preset_with_color_override():
+    """YAML color overrides merge on top of preset."""
+    config_data = {
+        "theme": {
+            "preset": "classic",
+            "colors": {
+                "accent": "#CUSTOM",
+            },
+        },
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config_data, f)
+        tmp_path = Path(f.name)
+
+    try:
+        cfg = load_config(tmp_path)
+        assert cfg.theme.colors.accent == "#CUSTOM"
+        # Other classic colors preserved
+        assert cfg.theme.colors.primary == "#3D352F"
+        assert cfg.theme.style == "classic"
+    finally:
+        tmp_path.unlink()
+
+
+def test_theme_config_to_dict_includes_style():
+    """ThemeConfig.to_dict includes style field."""
+    theme = ThemeConfig()
+    d = theme.to_dict()
+    assert d["style"] == "terra"
+    assert "colors" in d

@@ -1,7 +1,7 @@
 """Configuration for terradoc projects."""
 
 import importlib.resources
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 import yaml
@@ -14,48 +14,96 @@ class ModuleConfig:
 
 @dataclass
 class ThemeColors:
-    primary: str = "#3D352F"
-    accent: str = "#B7522C"
-    accent_muted: str = "#9A4427"
-    bg: str = "#F9F6F2"
-    bg_light: str = "#F5EDE8"
-    bg_infobox: str = "#FAF8F5"
-    border: str = "#E8E4DF"
-    border_dark: str = "#C8B8A8"
-    text: str = "#333333"
+    primary: str = "#2D4A3E"
+    accent: str = "#C2703E"
+    accent_muted: str = "#A85D33"
+    bg: str = "#F7F5F0"
+    bg_light: str = "#EDE9E0"
+    bg_infobox: str = "#FAF8F4"
+    border: str = "#DDD8CE"
+    border_dark: str = "#B8AFA2"
+    text: str = "#2C2C2C"
     text_muted: str = "#6B6B6B"
-    highlight: str = "#fff59d"
-    warning_bg: str = "#fff8e1"
+    highlight: str = "#FFF9DB"
+    warning_bg: str = "#FFF8E1"
     surface: str = "#FFFFFF"
-    border_light: str = "#EEEEEE"
+    border_light: str = "#ECEAE5"
     text_secondary: str = "#555555"
     accent_light: str = "#FDF0EB"
-    success: str = "#5B8C5A"
-    error: str = "#CC0000"
-    accent_ring: str = "rgba(183, 82, 44, 0.2)"
+    success: str = "#4A7C59"
+    error: str = "#C44536"
+    accent_ring: str = "rgba(194, 112, 62, 0.2)"
 
     def to_dict(self) -> dict:
-        return {
-            "primary": self.primary,
-            "accent": self.accent,
-            "accent_muted": self.accent_muted,
-            "bg": self.bg,
-            "bg_light": self.bg_light,
-            "bg_infobox": self.bg_infobox,
-            "border": self.border,
-            "border_dark": self.border_dark,
-            "text": self.text,
-            "text_muted": self.text_muted,
-            "highlight": self.highlight,
-            "warning_bg": self.warning_bg,
-            "surface": self.surface,
-            "border_light": self.border_light,
-            "text_secondary": self.text_secondary,
-            "accent_light": self.accent_light,
-            "success": self.success,
-            "error": self.error,
-            "accent_ring": self.accent_ring,
-        }
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+
+THEME_PRESETS: dict[str, dict] = {
+    "terra": {
+        "style": "terra",
+        "colors": {
+            "primary": "#2D4A3E",
+            "accent": "#C2703E",
+            "accent_muted": "#A85D33",
+            "bg": "#F7F5F0",
+            "bg_light": "#EDE9E0",
+            "bg_infobox": "#FAF8F4",
+            "border": "#DDD8CE",
+            "border_dark": "#B8AFA2",
+            "text": "#2C2C2C",
+            "text_muted": "#6B6B6B",
+            "highlight": "#FFF9DB",
+            "warning_bg": "#FFF8E1",
+            "surface": "#FFFFFF",
+            "border_light": "#ECEAE5",
+            "text_secondary": "#555555",
+            "accent_light": "#FDF0EB",
+            "success": "#4A7C59",
+            "error": "#C44536",
+            "accent_ring": "rgba(194, 112, 62, 0.2)",
+        },
+        "font_family": (
+            "'Source Sans 3', -apple-system, BlinkMacSystemFont, "
+            "'Segoe UI', sans-serif"
+        ),
+        "font_family_headings": "'Bitter', 'Georgia', 'Cambria', serif",
+        "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
+        "border_radius": "8px",
+        "description": "Warm, organic theme with nature-inspired palette",
+    },
+    "classic": {
+        "style": "classic",
+        "colors": {
+            "primary": "#3D352F",
+            "accent": "#B7522C",
+            "accent_muted": "#9A4427",
+            "bg": "#F9F6F2",
+            "bg_light": "#F5EDE8",
+            "bg_infobox": "#FAF8F5",
+            "border": "#E8E4DF",
+            "border_dark": "#C8B8A8",
+            "text": "#333333",
+            "text_muted": "#6B6B6B",
+            "highlight": "#fff59d",
+            "warning_bg": "#fff8e1",
+            "surface": "#FFFFFF",
+            "border_light": "#EEEEEE",
+            "text_secondary": "#555555",
+            "accent_light": "#FDF0EB",
+            "success": "#5B8C5A",
+            "error": "#CC0000",
+            "accent_ring": "rgba(183, 82, 44, 0.2)",
+        },
+        "font_family": (
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "
+            "Oxygen, Ubuntu, sans-serif"
+        ),
+        "font_family_headings": "",
+        "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
+        "border_radius": "4px",
+        "description": "Classic utilitarian dashboard look",
+    },
+}
 
 
 @dataclass
@@ -65,13 +113,14 @@ class ThemeConfig:
     logo: str = "images/logo.svg"
     favicon: str = "images/favicon.svg"
     font_family: str = (
-        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "
-        "Oxygen, Ubuntu, sans-serif"
+        "'Source Sans 3', -apple-system, BlinkMacSystemFont, "
+        "'Segoe UI', sans-serif"
     )
-    font_family_headings: str = ""
+    font_family_headings: str = "'Bitter', 'Georgia', 'Cambria', serif"
     font_family_mono: str = "'Lucida Sans Unicode', 'DejaVu Sans', monospace"
-    border_radius: str = "4px"
+    border_radius: str = "8px"
     hero_image: str = ""
+    style: str = "terra"
 
     def to_dict(self) -> dict:
         result = {
@@ -84,6 +133,7 @@ class ThemeConfig:
             "font_family_mono": self.font_family_mono,
             "border_radius": self.border_radius,
             "hero_image": self.hero_image,
+            "style": self.style,
         }
         return result
 
@@ -218,13 +268,29 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
 
         if "theme" in raw:
             theme_raw = raw["theme"]
+            preset_name = theme_raw.get("preset", "terra")
+            preset = THEME_PRESETS.get(preset_name, THEME_PRESETS["terra"])
+
+            # Apply preset base values
+            preset_colors = dict(preset["colors"])
             if "colors" in theme_raw:
-                config.theme.colors = ThemeColors(**theme_raw["colors"])
+                preset_colors.update(theme_raw["colors"])
+            config.theme.colors = ThemeColors(**preset_colors)
+
             if "colors_dark" in theme_raw:
                 config.theme.colors_dark = ThemeColors(**theme_raw["colors_dark"])
+
+            config.theme.style = preset.get("style", "terra")
+            for theme_key in (
+                "font_family", "font_family_headings",
+                "font_family_mono", "border_radius",
+            ):
+                setattr(config.theme, theme_key, preset.get(theme_key, getattr(config.theme, theme_key)))
+
+            # YAML overrides on top of preset
             for theme_key in (
                 "logo", "favicon", "font_family", "font_family_headings",
-                "font_family_mono", "border_radius", "hero_image",
+                "font_family_mono", "border_radius", "hero_image", "style",
             ):
                 if theme_key in theme_raw:
                     setattr(config.theme, theme_key, theme_raw[theme_key])

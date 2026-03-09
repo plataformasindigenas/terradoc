@@ -126,3 +126,35 @@ def test_build_language_picker_custom_locale_labels():
         index_html = (docs_dir / "index.html").read_text()
         assert "Bororo" in index_html
         assert "English" in index_html
+
+
+def test_theme_dict_includes_style_terra():
+    """Theme to_dict includes terra style by default."""
+    config = TerradocConfig()
+    theme_dict = config.theme.to_dict()
+    assert theme_dict["style"] == "terra"
+
+
+def test_theme_dict_includes_style_classic():
+    """Theme to_dict includes classic style when configured."""
+    config = TerradocConfig(
+        theme=ThemeConfig(style="classic"),
+    )
+    theme_dict = config.theme.to_dict()
+    assert theme_dict["style"] == "classic"
+
+
+def test_base_template_has_body_class():
+    """base.html.j2 template includes td-style body class placeholder."""
+    import importlib.resources
+    base_template = importlib.resources.files("terradoc.templates") / "base.html.j2"
+    content = base_template.read_text()
+    assert 'class="td-style-{{ theme.style' in content
+
+
+def test_base_template_has_fonts_css_link():
+    """base.html.j2 template links to fonts.css."""
+    import importlib.resources
+    base_template = importlib.resources.files("terradoc.templates") / "base.html.j2"
+    content = base_template.read_text()
+    assert "fonts.css" in content
