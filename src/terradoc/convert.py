@@ -5,9 +5,10 @@ import json
 import sys
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
+from typing import Any
 
 import aptoro
-from bibtexparser import bparser
+from bibtexparser import bparser  # type: ignore[import-untyped]
 import yaml
 
 from terradoc.config import TerradocConfig
@@ -46,13 +47,16 @@ def _write_dataset(config: TerradocConfig, output_name: str, module_slug: str, d
     return output_file
 
 
-def _normalize_records(records) -> list[dict]:
+def _record_to_dict(record: object) -> dict:
+    """Convert a single aptoro record (dataclass or dict) to a plain dict."""
+    if is_dataclass(record):
+        return asdict(record)  # type: ignore[arg-type]
+    return dict(record)  # type: ignore[call-overload]
+
+
+def _normalize_records(records: list) -> list[dict]:
     """Convert aptoro records to plain dicts."""
-    result = []
-    for record in records:
-        entry = asdict(record) if is_dataclass(record) else dict(record)
-        result.append(entry)
-    return result
+    return [_record_to_dict(r) for r in records]
 
 
 def convert_dictionary(config: TerradocConfig) -> int:
@@ -380,7 +384,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
 
     all_ids = set()
     for record in records:
-        entry = asdict(record) if is_dataclass(record) else dict(record)
+        entry = _record_to_dict(record)
         eid = entry.get("id", "")
         if eid:
             all_ids.add(eid)
@@ -390,7 +394,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     # Validate bibliography keys upfront
     bib_errors: list[str] = []
     for record in records:
-        entry = asdict(record) if is_dataclass(record) else dict(record)
+        entry = _record_to_dict(record)
         refs = entry.get("references") or []
         for key in refs:
             if key not in bib_data:
@@ -406,7 +410,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     index_records = []
 
     for record in records:
-        entry = asdict(record) if is_dataclass(record) else dict(record)
+        entry = _record_to_dict(record)
 
         if not entry.get("infobox"):
             entry["infobox"] = {}
@@ -451,7 +455,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
 
     category_tree = build_category_tree(normalized_records)
 
-    index_data = {
+    index_data: dict[str, Any] = {
         "meta": _dataset_meta(
             config,
             "encyclopedia",

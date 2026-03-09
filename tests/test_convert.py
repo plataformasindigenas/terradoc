@@ -1,6 +1,5 @@
 """Tests for terradoc converters."""
 
-import json
 import tempfile
 from pathlib import Path
 
