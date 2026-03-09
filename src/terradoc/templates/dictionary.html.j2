@@ -5,10 +5,20 @@
 
 {% block extra_styles %}
         .dict-header {
-            text-align: center;
-            padding: 1rem 0;
-            border-bottom: 2px solid var(--td-color-border);
+            padding: 1.5rem 0 1rem;
             margin-bottom: 1rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .dict-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1.5rem;
+            width: 4px;
+            height: 48px;
+            background: var(--td-color-primary);
+            border-radius: 2px;
         }
         .dict-header h1 {
             margin: 0 0 0.5rem 0;
@@ -28,22 +38,22 @@
         .dict-controls .search-input {
             flex: 1;
             min-width: 180px;
-            padding: 0.6rem 0.75rem;
+            padding: 0.6rem 1rem;
             font-size: 0.95rem;
             border: 1px solid var(--td-color-border);
-            border-radius: var(--td-radius);
+            border-radius: 999px;
             outline: none;
             transition: border-color 0.2s;
         }
         .dict-controls .search-input:focus {
-            border-color: var(--td-color-accent);
-            box-shadow: 0 0 0 2px var(--td-color-accent-ring);
+            border-color: var(--td-color-primary);
+            box-shadow: 0 0 0 3px var(--td-color-accent-ring);
         }
         .dict-controls .filter-select {
-            padding: 0.6rem;
+            padding: 0.6rem 1rem;
             font-size: 0.95rem;
             border: 1px solid var(--td-color-border);
-            border-radius: var(--td-radius);
+            border-radius: 999px;
             background: var(--td-color-surface);
             cursor: pointer;
         }
@@ -60,6 +70,7 @@
             border: 1px solid var(--td-color-border);
             overflow: hidden;
             min-height: 70vh;
+            box-shadow: var(--td-shadow-sm);
         }
 
         /* Letter bar */
@@ -81,20 +92,20 @@
             width: 2rem;
             height: 2rem;
             border: none;
-            border-radius: var(--td-radius);
-            background: var(--td-color-bg-light);
+            border-radius: 999px;
+            background: transparent;
             color: var(--td-color-primary);
             font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: background 0.15s, color 0.15s;
         }
         .letter-btn:hover {
-            background: var(--td-color-accent);
+            background: var(--td-color-primary);
             color: white;
         }
         .letter-btn.active {
-            background: var(--td-color-accent);
+            background: var(--td-color-primary);
             color: white;
         }
         .letter-btn.dimmed {
@@ -102,7 +113,7 @@
             cursor: default;
         }
         .letter-btn.dimmed:hover {
-            background: var(--td-color-bg-light);
+            background: transparent;
             color: var(--td-color-primary);
         }
 
@@ -127,8 +138,9 @@
             padding: 0.35rem 0.75rem;
             font-weight: 700;
             font-size: 0.9rem;
-            color: var(--td-color-accent-muted);
+            color: var(--td-color-primary);
             z-index: 1;
+            font-family: var(--td-font-headings);
         }
         .letter-count {
             font-weight: 400;
@@ -149,7 +161,7 @@
             background: var(--td-color-accent-light);
         }
         .word-item.selected {
-            background: var(--td-color-accent);
+            background: var(--td-color-primary);
             color: white;
         }
         .letter-group.hidden {
@@ -190,6 +202,7 @@
             font-weight: 700;
             color: var(--td-color-primary);
             margin: 0 0 0.25rem 0;
+            font-family: var(--td-font-headings);
         }
         .detail-meta {
             display: flex;
@@ -205,10 +218,10 @@
         }
         .detail-pos {
             font-size: 0.8rem;
-            background: var(--td-color-bg-light);
+            background: var(--td-color-accent-light);
             color: var(--td-color-accent-muted);
-            padding: 0.2rem 0.6rem;
-            border-radius: var(--td-radius);
+            padding: 0.2rem 0.75rem;
+            border-radius: 999px;
             font-weight: 500;
         }
         .detail-definition {
@@ -219,7 +232,7 @@
         }
         .detail-example {
             padding: 0.75rem 1rem;
-            border-left: 4px solid var(--td-color-accent);
+            border-left: 4px solid var(--td-color-primary);
             background: var(--td-color-accent-light);
             color: var(--td-color-text-secondary);
             font-style: italic;
@@ -277,7 +290,7 @@
             border-top: 1px solid var(--td-color-border-light);
         }
         .detail-links a {
-            color: var(--td-color-accent);
+            color: var(--td-color-primary);
             text-decoration: none;
             font-size: 0.9rem;
         }

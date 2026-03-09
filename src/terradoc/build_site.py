@@ -173,7 +173,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
     if config.is_module_enabled("encyclopedia"):
         render_article_pages(locale, translations, config)
 
-    for name in ("dictionary-data", "encyclopedia-data"):
+    for name in ("dictionary-data", "encyclopedia-data", "recordings-data"):
         src = config.docs_dir / f"{name}.json"
         if src.exists():
             dst = locale_dir / f"{name}.json"

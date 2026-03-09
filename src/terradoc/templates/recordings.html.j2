@@ -1,0 +1,383 @@
+{% extends "base.html.j2" %}
+{% from "decor.html.j2" import motif_divider %}
+
+{% block title %}{{ t.rec_title | default('Corpus') }}{% endblock %}
+
+{% block extra_styles %}
+        .rec-header {
+            padding: 1.5rem 0 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .rec-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1.5rem;
+            width: 4px;
+            height: 48px;
+            background: var(--td-color-primary);
+            border-radius: 2px;
+        }
+        .rec-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+        .rec-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        .rec-sidebar {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            padding: 1.25rem;
+            position: sticky;
+            top: 5.5rem;
+        }
+        .rec-sidebar h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            color: var(--td-color-primary);
+        }
+        .rec-filter-group {
+            margin-bottom: 1rem;
+        }
+        .rec-filter-label {
+            font-size: 0.8rem;
+            font-family: var(--td-font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--td-color-text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .rec-checkbox-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .rec-checkbox-list li {
+            padding: 0.2rem 0;
+        }
+        .rec-checkbox-list label {
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .rec-main {
+            min-width: 0;
+        }
+        .rec-search-bar {
+            margin-bottom: 1rem;
+        }
+        .rec-search-bar .search-input {
+            width: 100%;
+            border-radius: 999px;
+        }
+        .rec-stats {
+            font-size: 0.85rem;
+            color: var(--td-color-text-muted);
+            margin-bottom: 0.75rem;
+        }
+        .rec-table-wrap {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            overflow: hidden;
+        }
+        .rec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .rec-table thead th {
+            background: var(--td-color-bg-light);
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--td-color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid var(--td-color-border);
+        }
+        .rec-table tbody tr {
+            border-bottom: 1px solid var(--td-color-border-light);
+            transition: background 0.15s;
+        }
+        .rec-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        .rec-table tbody tr:hover {
+            background: var(--td-color-bg-light);
+        }
+        .rec-table td {
+            padding: 0.5rem 0.75rem;
+        }
+        .rec-type-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--td-color-accent-light);
+            color: var(--td-color-primary);
+            font-size: 0.75rem;
+        }
+        .rec-word {
+            font-weight: 600;
+            color: var(--td-color-primary);
+        }
+        .rec-speaker-tag {
+            font-size: 0.75rem;
+            background: var(--td-color-accent-light);
+            color: var(--td-color-accent-muted);
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+        }
+        .rec-match-tag {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+        }
+        .rec-match-exact { background: #d4edda; color: #155724; }
+        .rec-match-normalized { background: #fff3cd; color: #856404; }
+        .rec-match-none { background: var(--td-color-bg-light); color: var(--td-color-text-muted); }
+        .rec-date {
+            font-size: 0.82rem;
+            color: var(--td-color-text-muted);
+            font-family: var(--td-font-mono);
+        }
+        .rec-audio-cell audio {
+            height: 28px;
+            max-width: 200px;
+        }
+        .rec-review-flag {
+            font-size: 0.7rem;
+            background: var(--td-color-warning-bg);
+            color: #856404;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+        }
+
+        @media (max-width: 768px) {
+            .rec-layout {
+                grid-template-columns: 1fr;
+            }
+            .rec-sidebar {
+                position: static;
+            }
+            .rec-table {
+                font-size: 0.82rem;
+            }
+            .rec-table td, .rec-table th {
+                padding: 0.4rem 0.5rem;
+            }
+        }
+{% endblock %}
+
+{% block content %}
+    <div class="rec-header">
+        <h1>{{ t.rec_title | default('Corpus') }}</h1>
+        <p class="subtitle">{{ t.rec_subtitle | default(meta.description | default('')) }} &mdash; {{ data | length }} {{ t.rec_count_label | default('recordings') }}</p>
+    </div>
+
+    <div class="no-js-only">
+        <div class="rec-table-wrap">
+            <table class="rec-table">
+                <thead>
+                    <tr>
+                        <th>{{ t.rec_col_word | default('Word') }}</th>
+                        <th>{{ t.rec_col_speaker | default('Speaker') }}</th>
+                        <th>{{ t.rec_col_date | default('Date') }}</th>
+                        <th>{{ t.rec_col_match | default('Match') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in data %}
+                    <tr>
+                        <td class="rec-word">{{ rec.normalized_word | default(rec.raw_word) }}</td>
+                        <td>{{ rec.speaker | default('') }}</td>
+                        <td class="rec-date">{{ rec.recording_date | default('') }}</td>
+                        <td>
+                            {% if rec.match_type == 'exact' %}
+                            <span class="rec-match-tag rec-match-exact">exact</span>
+                            {% elif rec.match_type == 'normalized' %}
+                            <span class="rec-match-tag rec-match-normalized">normalized</span>
+                            {% else %}
+                            <span class="rec-match-tag rec-match-none">none</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="js-only">
+        <div class="rec-layout">
+            <aside class="rec-sidebar">
+                <h3>{{ t.rec_filters_title | default('Filters') }}</h3>
+                <div class="rec-filter-group">
+                    <div class="rec-filter-label">{{ t.rec_filter_format | default('Format') }}</div>
+                    <ul class="rec-checkbox-list" id="format-filters"></ul>
+                </div>
+                <div class="rec-filter-group">
+                    <div class="rec-filter-label">{{ t.rec_filter_speaker | default('Speaker') }}</div>
+                    <ul class="rec-checkbox-list" id="speaker-filters"></ul>
+                </div>
+                <div class="rec-filter-group">
+                    <div class="rec-filter-label">{{ t.rec_filter_match | default('Match type') }}</div>
+                    <ul class="rec-checkbox-list" id="match-filters"></ul>
+                </div>
+            </aside>
+
+            <div class="rec-main">
+                <div class="rec-search-bar">
+                    <input type="text" id="search-input" class="search-input"
+                           placeholder="{{ t.rec_search_placeholder | default('Search recordings...') }}"
+                           autocomplete="off"
+                           aria-label="{{ t.search_label | default('Search') }}">
+                </div>
+                <div class="rec-stats" id="stats" aria-live="polite"></div>
+
+                <div class="rec-table-wrap">
+                    <table class="rec-table" id="rec-results-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>{{ t.rec_col_word | default('Word') }}</th>
+                                <th>{{ t.rec_col_speaker | default('Speaker') }}</th>
+                                <th>{{ t.rec_col_match | default('Match') }}</th>
+                                <th>{{ t.rec_col_date | default('Date') }}</th>
+                                <th>{{ t.rec_col_audio | default('Audio') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    var T = {{ t | tojson }};
+    var BASE_PATH = '{{ base_path | default("") }}';
+    var allData = {{ data | tojson }};
+
+    (function() {
+        var searchInput = document.getElementById('search-input');
+        var resultsBody = document.getElementById('results');
+        var statsDiv = document.getElementById('stats');
+
+        // Build filter options
+        var formats = {}, speakers = {}, matchTypes = {};
+        allData.forEach(function(r) {
+            if (r.format) formats[r.format] = true;
+            if (r.speaker) speakers[r.speaker] = true;
+            if (r.match_type) matchTypes[r.match_type] = true;
+        });
+
+        function buildCheckboxes(containerId, values) {
+            var container = document.getElementById(containerId);
+            var keys = Object.keys(values).sort();
+            keys.forEach(function(val) {
+                var li = document.createElement('li');
+                var label = document.createElement('label');
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = val;
+                cb.checked = true;
+                cb.addEventListener('change', filterAndRender);
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + val));
+                li.appendChild(label);
+                container.appendChild(li);
+            });
+        }
+        buildCheckboxes('format-filters', formats);
+        buildCheckboxes('speaker-filters', speakers);
+        buildCheckboxes('match-filters', matchTypes);
+
+        function getCheckedValues(containerId) {
+            var checked = [];
+            document.querySelectorAll('#' + containerId + ' input:checked').forEach(function(cb) {
+                checked.push(cb.value);
+            });
+            return checked;
+        }
+
+        function matchTypeClass(mt) {
+            if (mt === 'exact') return 'rec-match-exact';
+            if (mt === 'normalized') return 'rec-match-normalized';
+            return 'rec-match-none';
+        }
+
+        function formatIcon(fmt) {
+            if (fmt === 'webm' || fmt === 'wav' || fmt === 'mp3') return '&#x1f50a;';
+            if (fmt === 'mp4' || fmt === 'video') return '&#x1f3ac;';
+            return '&#x1f4c4;';
+        }
+
+        function filterAndRender() {
+            var query = searchInput.value.trim().toLowerCase();
+            var activeFormats = getCheckedValues('format-filters');
+            var activeSpeakers = getCheckedValues('speaker-filters');
+            var activeMatches = getCheckedValues('match-filters');
+
+            var filtered = allData.filter(function(r) {
+                if (activeFormats.indexOf(r.format) === -1) return false;
+                if (r.speaker && activeSpeakers.indexOf(r.speaker) === -1) return false;
+                if (r.match_type && activeMatches.indexOf(r.match_type) === -1) return false;
+                if (query) {
+                    var fields = [r.raw_word, r.normalized_word, r.speaker, r.location, r.notes].join(' ').toLowerCase();
+                    if (fields.indexOf(query) === -1) return false;
+                }
+                return true;
+            });
+
+            statsDiv.textContent = filtered.length + ' ' + (T.rec_count_label || 'recordings');
+
+            var display = filtered.slice(0, 200);
+            var html = '';
+            display.forEach(function(r) {
+                var mimeType = r.format === 'webm' ? 'audio/webm' : 'audio/wav';
+                html += '<tr>';
+                html += '<td><span class="rec-type-icon">' + formatIcon(r.format) + '</span></td>';
+                html += '<td><span class="rec-word">' + escapeHtml(r.normalized_word || r.raw_word) + '</span>';
+                if (r.needs_review) html += ' <span class="rec-review-flag">review</span>';
+                html += '</td>';
+                html += '<td><span class="rec-speaker-tag">' + escapeHtml(r.speaker || '') + '</span></td>';
+                html += '<td><span class="rec-match-tag ' + matchTypeClass(r.match_type) + '">' + escapeHtml(r.match_type || 'none') + '</span></td>';
+                html += '<td class="rec-date">' + escapeHtml(r.recording_date || '') + '</td>';
+                html += '<td class="rec-audio-cell"><audio controls preload="none"><source src="' + BASE_PATH + 'recordings/' + escapeHtml(r.file_path) + '" type="' + mimeType + '"></audio></td>';
+                html += '</tr>';
+            });
+
+            if (filtered.length > 200) {
+                html += '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--td-color-text-muted);">' +
+                    (T.rec_overflow || 'Showing 200 of ' + filtered.length + '. Refine your search.') + '</td></tr>';
+            }
+
+            if (filtered.length === 0) {
+                html = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--td-color-text-muted);">' +
+                    (T.rec_no_results || 'No recordings found') + '</td></tr>';
+            }
+
+            resultsBody.innerHTML = html;
+        }
+
+        searchInput.addEventListener('input', debounce(filterAndRender, 200));
+        filterAndRender();
+        searchInput.focus();
+    })();
+    </script>
+{% endblock %}

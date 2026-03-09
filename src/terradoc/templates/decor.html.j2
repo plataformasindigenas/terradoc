@@ -101,3 +101,48 @@ border-left: {{ thickness }} solid {{ color }}
 {%- endif %}
 {%- endif %}
 {%- endmacro %}
+
+{#- ── New decorative macros for redesign ── -#}
+
+{% macro target_rings(size="300px") -%}
+<div class="td-target-rings" style="width:{{ size }};height:{{ size }};" aria-hidden="true">
+    <div class="td-target-ring" style="width:{{ size }};height:{{ size }};"></div>
+    <div class="td-target-ring" style="width:calc({{ size }} * 0.73);height:calc({{ size }} * 0.73);"></div>
+    <div class="td-target-ring" style="width:calc({{ size }} * 0.47);height:calc({{ size }} * 0.47);"></div>
+</div>
+{%- endmacro %}
+
+{% macro target_motif_small(size="64px") -%}
+<div class="td-target-rings" style="width:{{ size }};height:{{ size }};" aria-hidden="true">
+    <div class="td-target-ring" style="width:{{ size }};height:{{ size }};border-width:1.5px;"></div>
+    <div class="td-target-ring" style="width:calc({{ size }} * 0.6);height:calc({{ size }} * 0.6);border-width:1.5px;"></div>
+    <div style="width:calc({{ size }} * 0.2);height:calc({{ size }} * 0.2);background:var(--td-color-primary);border-radius:50%;"></div>
+</div>
+{%- endmacro %}
+
+{% macro red_wedge(size="120px") -%}
+<svg class="td-red-wedge" width="{{ size }}" height="{{ size }}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M0,0 L120,0 L0,120 Z" fill="var(--td-color-primary)" opacity="0.08"/>
+</svg>
+{%- endmacro %}
+
+{% macro pattern_x() -%}
+<svg class="td-pattern-x" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M12,2 L22,12 L12,22 L2,12 Z" fill="none" stroke="var(--td-color-primary)" stroke-width="1.5" opacity="0.15"/>
+</svg>
+{%- endmacro %}
+
+{% macro adugo_spine() -%}
+<div class="footer-adugo-spine" aria-hidden="true"></div>
+{%- endmacro %}
+
+{% macro grain_overlay() -%}
+<div class="td-grain-overlay" aria-hidden="true"></div>
+{%- endmacro %}
+
+{% macro section_heading(title, subtitle="") -%}
+<div class="td-section-heading">
+    <h2>{{ title }}</h2>
+    {% if subtitle %}<p class="subtitle">{{ subtitle }}</p>{% endif %}
+</div>
+{%- endmacro %}

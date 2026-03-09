@@ -31,10 +31,13 @@
             --td-color-success: {{ theme.colors.success | default('#5B8C5A') }};
             --td-color-error: {{ theme.colors.error | default('#CC0000') }};
             --td-color-accent-ring: {{ theme.colors.accent_ring | default('rgba(183, 82, 44, 0.2)') }};
-            --td-radius: {{ theme.border_radius | default('4px') }};
-            --td-font-family: {{ theme.font_family | default("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif") }};
-            --td-font-headings: {{ theme.font_family_headings | default('inherit') }};
-            --td-font-mono: {{ theme.font_family_mono | default("'Lucida Sans Unicode', 'DejaVu Sans', monospace") }};
+            --td-radius: {{ theme.border_radius | default('28px') }};
+            --td-color-dark: {{ theme.colors.dark | default('#0B0F17') }};
+            --td-radius-lg: {{ theme.border_radius | default('28px') }};
+            --td-radius-pill: 999px;
+            --td-font-family: {{ theme.font_family | default("'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif") }};
+            --td-font-headings: {{ theme.font_family_headings | default("'Sora', 'Inter', sans-serif") }};
+            --td-font-mono: {{ theme.font_family_mono | default("'IBM Plex Mono', 'Consolas', monospace") }};
             --td-term-color: {{ theme.term_color or theme.colors.accent_muted | default('#A85D33') }};
             --td-term-weight: {{ theme.term_weight | default('600') }};
         }
@@ -70,11 +73,13 @@
     <a href="#main-content" class="skip-link">{{ t.skip_link | default('Pular para conteúdo') }}</a>
 
     {% set np = nav_prefix | default('') %}
-    <nav aria-label="{{ t.nav_label | default('Navegação principal') }}">
+    <nav id="td-nav" aria-label="{{ t.nav_label | default('Navegação principal') }}">
         <div class="td-nav-inner">
             <a href="{{ np }}index.html" class="brand">
                 {% if theme.logo %}
                 <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo">
+                {% else %}
+                <span class="td-logo-mark" aria-hidden="true"><span class="ring-outer"><span class="ring-inner"><span class="ring-dot"></span></span></span></span>
                 {% endif %}
                 <span>{{ t.nav_brand | default(site.title) }}</span>
             </a>
@@ -87,10 +92,11 @@
             {% if locale_switches and locale_switches | length > 1 %}
             <div class="lang-switch" aria-label="{{ t.lang_switch_label | default('Language selector') }}">
                 {% for switch in locale_switches %}
+                    {% if not loop.first %}<span class="lang-sep">/</span>{% endif %}
                     {% if switch.is_current %}
-                    <span class="lang-current" aria-current="true">{{ switch.label }}</span>
+                    <span class="lang-current" aria-current="true">{{ switch.code | default(switch.label) | upper }}</span>
                     {% else %}
-                    <a href="{{ switch.href }}" class="lang-link">{{ switch.label }}</a>
+                    <a href="{{ switch.href }}" class="lang-link">{{ switch.code | default(switch.label) | upper }}</a>
                     {% endif %}
                 {% endfor %}
             </div>
@@ -103,10 +109,55 @@
     </main>
 
     <footer>
+        <div class="footer-adugo-spine" aria-hidden="true"></div>
         <div class="td-container">
-            {% if t.footer_text %}<p class="footer-text">{{ t.footer_text }}</p>{% endif %}
-            <p>{{ t.footer_generated | default('Gerado com') }} <a href="https://github.com/plataformasindigenas/aptoro">aptoro</a> {{ t.footer_and | default('e') }} <a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></p>
-            {% if meta and meta.version %}<p>Schema v{{ meta.version }}</p>{% endif %}
+            <div class="footer-grid">
+                <div class="footer-brand-col">
+                    <a href="{{ np }}index.html" class="brand" style="color:white;text-decoration:none;font-family:var(--td-font-headings);font-weight:700;font-size:1.15rem;">
+                        {% if theme.logo %}
+                        <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo" style="filter:brightness(10);">
+                        {% else %}
+                        <span class="td-logo-mark" aria-hidden="true" style="--td-color-primary:#fff;"><span class="ring-outer"><span class="ring-inner"><span class="ring-dot"></span></span></span></span>
+                        {% endif %}
+                        {{ t.nav_brand | default(site.title) }}
+                    </a>
+                    <p class="footer-brand-desc">{{ t.footer_description | default('') }}</p>
+                </div>
+                <div>
+                    <h4 class="footer-heading">{{ t.footer_nav_heading | default('Navigation') }}</h4>
+                    <ul class="footer-links">
+                        {% for mod in modules %}
+                        <li><a href="{{ np }}{{ mod.slug }}.html">{{ t['nav_' + mod.slug] | default(mod.name) }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">{{ t.footer_resources_heading | default('Resources') }}</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/plataformasindigenas/aptoro">aptoro</a></li>
+                        <li><a href="https://github.com/plataformasindigenas/kodudo">kodudo</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">{{ t.footer_contact_heading | default('Contact') }}</h4>
+                    {% if t.footer_email %}
+                    <div class="footer-contact-item">
+                        <span class="footer-contact-icon">&#9993;</span>
+                        <a href="mailto:{{ t.footer_email }}">{{ t.footer_email }}</a>
+                    </div>
+                    {% endif %}
+                    {% if t.footer_location %}
+                    <div class="footer-contact-item">
+                        <span class="footer-contact-icon">&#9906;</span>
+                        <span>{{ t.footer_location }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>{{ t.footer_credits | default(t.footer_generated | default('Generated with') ~ ' aptoro & kodudo') }}</p>
+                <p>{{ t.footer_license | default('') }}</p>
+            </div>
         </div>
     </footer>
 

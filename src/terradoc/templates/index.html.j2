@@ -1,39 +1,244 @@
 {% extends "base.html.j2" %}
-{% from "decor.html.j2" import hero_decor, motif_divider %}
+{% from "decor.html.j2" import hero_decor, motif_divider, target_rings, target_motif_small, section_heading %}
 
 {% block title %}{{ t.index_title | default('Início') }}{% endblock %}
 
 {% block extra_styles %}
-        .hero {
-            text-align: center;
-            padding: 3rem 1.5rem;
-            background: var(--td-color-primary);
-            color: white;
-            border-radius: var(--td-radius);
-            margin-bottom: 3rem;
+        /* ── Hero ── */
+        .index-hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
             position: relative;
             overflow: hidden;
+            padding: 6rem 0 4rem;
+            margin: -5rem -2rem 3rem;
         }
-        {% if theme.hero_image %}
-        .hero {
-            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
-                        url('{{ base_path | default('') }}{{ theme.hero_image }}') center/cover no-repeat;
-            padding: 4rem 1.5rem;
+        .index-hero-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            width: 100%;
+            position: relative;
+            z-index: 2;
         }
-        {% endif %}
-        .hero h1 {
-            color: white;
+        .index-hero-text h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            color: var(--td-color-text);
+            margin: 0 0 1rem 0;
+        }
+        .index-hero-text p {
+            font-size: 1.25rem;
+            color: var(--td-color-text-muted);
+            max-width: 480px;
+            margin: 0 0 2rem 0;
+            line-height: 1.6;
+        }
+        .index-hero-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .hero-photo-disc {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: var(--td-shadow-lg);
+            position: relative;
+            z-index: 2;
+        }
+        .hero-photo-disc img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hero-rings-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .hero-small-target {
+            position: absolute;
+            bottom: 2rem;
+            right: 3rem;
+            z-index: 1;
+        }
+
+        /* ── Section teasers ── */
+        .index-section {
+            margin-bottom: 4rem;
+        }
+        .index-section .td-section-heading h2 {
+            font-size: 1.75rem;
+        }
+        .teaser-desc {
+            color: var(--td-color-text-secondary);
+            max-width: 640px;
+            line-height: 1.7;
+            margin: 0.5rem 0 1.25rem;
+        }
+        .teaser-count {
+            font-family: var(--td-font-headings);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--td-color-primary);
+            line-height: 1;
+            margin-right: 0.5rem;
+        }
+        .teaser-count-label {
+            font-size: 0.9rem;
+            color: var(--td-color-text-muted);
+        }
+        .teaser-stat {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ── Encyclopedia split teaser ── */
+        .enc-teaser-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        .enc-teaser-image {
+            border-radius: var(--td-radius);
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+        .enc-teaser-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ── Fauna cards grid ── */
+        .fauna-teaser-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+        .fauna-teaser-card {
+            background: var(--td-color-surface);
+            border-radius: var(--td-radius);
+            border: 1px solid var(--td-color-border);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--td-shadow-sm);
+        }
+        .fauna-teaser-icon {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
-            position: relative;
         }
-        .hero p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
+
+        /* ── Gallery teaser ── */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.75rem;
         }
+        .gallery-item {
+            border-radius: var(--td-radius);
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* ── About section ── */
+        .about-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .about-card {
+            background: var(--td-color-surface);
+            border-radius: var(--td-radius);
+            padding: 2rem;
+            border: 1px solid var(--td-color-border);
+            box-shadow: var(--td-shadow-sm);
+        }
+        .about-card h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 1.1rem;
+        }
+        .about-card p {
+            color: var(--td-color-text-secondary);
+            font-size: 0.95rem;
+            margin: 0;
+            line-height: 1.6;
+        }
+        .about-card-red {
+            background: var(--td-color-primary);
+            border-color: var(--td-color-primary);
+            color: white;
+        }
+        .about-card-red h3,
+        .about-card-red p {
+            color: white;
+        }
+        .about-quote {
+            border-left: 4px solid var(--td-color-primary);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--td-color-surface);
+            border-radius: 0 var(--td-radius) var(--td-radius) 0;
+        }
+        .about-quote blockquote {
+            margin: 0;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--td-color-text-secondary);
+            line-height: 1.7;
+        }
+        .about-quote cite {
+            display: block;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            font-style: normal;
+            color: var(--td-color-text-muted);
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .stat-item {
+            padding: 1rem;
+        }
+        .stat-number {
+            font-family: var(--td-font-headings);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--td-color-primary);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--td-color-text-muted);
+        }
+
+        /* Legacy card classes for compatibility */
         .platforms {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -51,7 +256,7 @@
             flex-direction: column;
         }
         .platform-card:hover {
-            border-color: var(--td-color-accent);
+            border-color: var(--td-color-primary);
             transform: translateY(-2px);
         }
         .platform-card h2 {
@@ -95,33 +300,166 @@
             margin-top: 0;
             color: var(--td-color-primary);
         }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .index-hero-inner {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .index-hero-text h1 {
+                font-size: 2.5rem;
+            }
+            .index-hero-text p {
+                margin: 0 auto 2rem;
+            }
+            .hero-photo-disc {
+                width: 220px;
+                height: 220px;
+            }
+            .enc-teaser-grid {
+                grid-template-columns: 1fr;
+            }
+            .about-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 600px) {
+            .index-hero {
+                min-height: auto;
+                padding: 4rem 0 2rem;
+            }
+            .index-hero-text h1 {
+                font-size: 2rem;
+            }
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
 {% endblock %}
 
 {% block content %}
-    <div class="hero">
-        <h1>{{ t.index_hero_title | default(site.title) }}</h1>
-        <p>{{ t.index_hero_subtitle | default(site.tagline) }}</p>
-        {{ hero_decor(intensity=intensity) }}
-    </div>
-
-    <div class="platforms">
-        {% for mod in modules %}
-        <a href="{{ mod.slug }}.html" class="platform-card">
-            <h2>{{ t['card_' + mod.slug + '_title'] | default(mod.name) }}</h2>
-            <p class="card-desc">{{ t['card_' + mod.slug + '_desc'] | default('') }}</p>
-            <div class="card-footer">
-                <span class="card-count"><strong>{{ data[0][mod.slug + '_count'] }}</strong> {{ t['card_' + mod.slug + '_label'] | default('') }}</span>
-                <span class="card-cta">{{ t.card_cta | default('Explorar') }} &rarr;</span>
+    {# ── Hero ── #}
+    <section class="index-hero">
+        <div class="index-hero-inner">
+            <div class="index-hero-text">
+                <h1>{{ t.index_hero_title | default(site.title) }}</h1>
+                <p>{{ t.index_hero_subtitle | default(site.tagline) }}</p>
+                <a href="#sections" class="td-pill td-pill-red">{{ t.index_hero_cta | default('Explorar') }} &rarr;</a>
             </div>
-        </a>
-        {% endfor %}
-    </div>
+            <div class="index-hero-visual">
+                <div class="hero-rings-bg">
+                    {{ target_rings("400px") }}
+                </div>
+                {% if theme.hero_image %}
+                <div class="hero-photo-disc">
+                    <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="{{ t.index_hero_title | default(site.title) }}">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-small-target">
+            {{ target_motif_small("64px") }}
+        </div>
+    </section>
 
-    {{ motif_divider(intensity=intensity) }}
+    <div id="sections">
 
-    <div class="about">
-        <h2>{{ t.index_about_title | default('Sobre o Projeto') }}</h2>
-        <p>{{ t.index_about_p1 | default('') }}</p>
-        <p>{{ t.index_about_p2 | default('') }}</p>
+    {# ── Dictionary teaser ── #}
+    {% if 'dictionary' in modules | map(attribute='slug') | list %}
+    <section class="index-section td-fade-in">
+        {{ section_heading(t.card_dictionary_title | default('Dictionary'), '') }}
+        <div class="teaser-stat">
+            <span class="teaser-count">{{ data[0].dictionary_count | default('0') }}</span>
+            <span class="teaser-count-label">{{ t.card_dictionary_label | default('entries') }}</span>
+        </div>
+        <p class="teaser-desc">{{ t.card_dictionary_desc | default('') }}</p>
+        <a href="dictionary.html" class="td-pill td-pill-outline">{{ t.index_view_all_dictionary | default(t.card_cta | default('Explore')) }} &rarr;</a>
+    </section>
+    {% endif %}
+
+    {# ── Encyclopedia teaser ── #}
+    {% if 'encyclopedia' in modules | map(attribute='slug') | list %}
+    <section class="index-section td-fade-in">
+        {{ section_heading(t.card_encyclopedia_title | default('Encyclopedia'), '') }}
+        <div class="enc-teaser-grid">
+            <div>
+                <div class="teaser-stat">
+                    <span class="teaser-count">{{ data[0].encyclopedia_count | default('0') }}</span>
+                    <span class="teaser-count-label">{{ t.card_encyclopedia_label | default('articles') }}</span>
+                </div>
+                <p class="teaser-desc">{{ t.card_encyclopedia_desc | default('') }}</p>
+                <a href="encyclopedia.html" class="td-pill td-pill-outline">{{ t.index_view_all_encyclopedia | default(t.card_cta | default('Explore')) }} &rarr;</a>
+            </div>
+            {% if theme.hero_image %}
+            <div class="enc-teaser-image">
+                <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="" loading="lazy">
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    {# ── Fauna teaser ── #}
+    {% if 'fauna' in modules | map(attribute='slug') | list %}
+    <section class="index-section td-fade-in">
+        {{ section_heading(t.card_fauna_title | default('Fauna'), '') }}
+        <div class="teaser-stat">
+            <span class="teaser-count">{{ data[0].fauna_count | default('0') }}</span>
+            <span class="teaser-count-label">{{ t.card_fauna_label | default('species') }}</span>
+        </div>
+        <p class="teaser-desc">{{ t.card_fauna_desc | default('') }}</p>
+        <a href="fauna.html" class="td-pill td-pill-outline">{{ t.index_view_all_fauna | default(t.card_cta | default('Explore')) }} &rarr;</a>
+    </section>
+    {% endif %}
+
+    {# ── Gallery teaser ── #}
+    <section class="index-section td-fade-in">
+        {{ section_heading(t.index_gallery_title | default('Images & Sounds'), t.index_gallery_subtitle | default('')) }}
+        <div class="gallery-grid">
+            {% if theme.hero_image %}
+            <div class="gallery-item">
+                <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="" loading="lazy">
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    {# ── About ── #}
+    <section class="index-section td-fade-in">
+        {{ section_heading(t.index_about_title | default('About the Project'), t.index_about_subtitle | default('')) }}
+
+        <div class="about-cards">
+            <div class="about-card">
+                <h3>{{ t.index_about_who_title | default(t.index_about_title | default('About')) }}</h3>
+                <p>{{ t.index_about_p1 | default('') }}</p>
+            </div>
+            <div class="about-card about-card-red">
+                <h3>{{ t.index_about_cite_title | default('How to cite') }}</h3>
+                <p>{{ t.index_about_cite | default(t.index_about_p2 | default('')) }}</p>
+            </div>
+            <div class="about-card">
+                <h3>{{ t.index_about_partners_title | default('Partners') }}</h3>
+                <p>{{ t.index_about_p2 | default('') }}</p>
+            </div>
+        </div>
+
+        {% if t.index_quote %}
+        <div class="about-quote">
+            <blockquote>{{ t.index_quote }}</blockquote>
+            {% if t.index_quote_attribution %}<cite>&mdash; {{ t.index_quote_attribution }}</cite>{% endif %}
+        </div>
+        {% endif %}
+
+        <div class="stats-row">
+            {% for mod in modules %}
+            <div class="stat-item">
+                <div class="stat-number">{{ data[0][mod.slug + '_count'] | default('0') }}</div>
+                <div class="stat-label">{{ t['stat_' + mod.slug + '_entries'] | default(t['card_' + mod.slug + '_label'] | default(mod.name)) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
     </div>
 {% endblock %}
