@@ -5,7 +5,7 @@ import shutil
 from dataclasses import replace as dc_replace
 from pathlib import Path
 
-import kodudo
+import kodudo  # type: ignore[import-untyped]
 import yaml
 
 from terradoc.config import TerradocConfig

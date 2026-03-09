@@ -24,7 +24,7 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
     with open(recordings_file, "r", encoding="utf-8") as f:
         recordings = yaml.safe_load(f) or []
 
-    audio_map = {}
+    audio_map: dict[int, list[dict]] = {}
     for rec in recordings:
         dict_id = rec.get("dictionary_id")
         if dict_id is None:
@@ -92,13 +92,13 @@ def cross_link_datasets(config: TerradocConfig):
 
     # Dictionary ↔ Fauna cross-links
     if dictionary and fauna:
-        fauna_by_sci = {}
+        fauna_by_sci: dict[str, list[dict]] = {}
         for entry in fauna["data"]:
             sci = (entry.get("scientific_name") or "").strip().lower()
             if sci:
                 fauna_by_sci.setdefault(sci, []).append(entry)
 
-        dict_by_sci = {}
+        dict_by_sci: dict[str, list[dict]] = {}
         for entry in dictionary["data"]:
             sci = (entry.get("scientific_name") or "").strip().lower()
             if sci:

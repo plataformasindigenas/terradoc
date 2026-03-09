@@ -25,7 +25,7 @@ A typical project combines:
 - optional recordings metadata
 - locale files for multilingual interface text
 
-From those inputs, Terradoc generates HTML pages and JSON assets that can be published on standard static hosting without requiring a database or application server.
+From those inputs, Terradoc validates data integrity, converts source formats, and generates HTML pages and JSON assets that can be published on standard static hosting without requiring a database or application server.
 
 ## Context And Use Case
 
@@ -83,7 +83,10 @@ If you are integrating Terradoc into a larger documentation workflow, the main e
 - Multilingual rendering with locale-based navigation and page generation
 - Static-site output that can be hosted on GitHub Pages, institutional servers, or any basic web host
 - Bundled templates that can be overridden per project
-- Theme customization through YAML configuration
+- Theme presets (`terra`, `classic`) with full color palettes, font stacks, and decorative macro system
+- Per-module decoration intensity (`minimal`, `balanced`, `rich`) and indigenous-language term emphasis
+- Data validation: ID format enforcement, filename consistency, `see_also` referential integrity, bibliography key resolution, and optional category vocabulary
+- Data completeness reporting after conversion
 - Cross-linking between datasets to improve navigation across related entries
 - Built-in project scaffolding for new sites
 
@@ -113,6 +116,11 @@ my-project/
     encyclopedia.yaml
     bibliography.yaml
   data/
+    encyclopedia/        # Markdown articles with YAML front matter
+    categories.yaml      # Optional: controlled category vocabulary
+    dictionary.tsv
+    fauna.yaml
+    references.bib
   locales/
   docs/
 ```
@@ -127,15 +135,15 @@ The standard workflow is:
 
 ## Installation
 
-After the first public PyPI release, install with:
-
 ```bash
 pip install terradoc
 ```
 
-Until then, install from source:
+For development, install from source:
 
 ```bash
+git clone https://github.com/plataformasindigenas/terradoc.git
+cd terradoc
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
@@ -143,10 +151,11 @@ pip install -e .[dev]
 
 ## Quick Start
 
-Create a new project:
+Create a new project (optionally choose a theme preset):
 
 ```bash
 terradoc init my-project
+terradoc init my-project --theme classic
 ```
 
 Move into the project and edit the main configuration:
@@ -165,10 +174,10 @@ The generated site will be written to `docs/`.
 
 ## Command-Line Interface
 
-Terradoc currently exposes two primary commands:
-
-- `terradoc init <name>`: scaffold a new project with starter configuration, templates, locales, and asset placeholders
-- `terradoc build`: validate inputs, run conversions, generate derived data, and build the final static site
+- `terradoc init <name> [--theme PRESET]`: scaffold a new project with starter configuration, templates, locales, and asset placeholders
+- `terradoc build [-c CONFIG]`: validate inputs, run conversions, generate derived data, and build the final static site
+- `terradoc categories [-o FILE]`: dump all unique category paths from encyclopedia entries (use `-o data/categories.yaml` to bootstrap a controlled vocabulary)
+- `terradoc themes`: list available theme presets with their color palettes
 
 ## Configuration
 
@@ -192,14 +201,37 @@ modules:
   recordings: { enabled: false }
 
 theme:
+  preset: "terra"               # or "classic"
   logo: "images/logo.svg"
   favicon: "images/favicon.svg"
-  colors:
+  colors:                       # override individual preset colors
     primary: "#3D352F"
     accent: "#C75B39"
+  module_intensity:             # decoration density per page
+    dictionary: "minimal"
+    encyclopedia: "balanced"
+    fauna: "rich"
+  # term_color: "#A85D33"       # color for .td-term spans
+  # term_weight: "600"          # font-weight for .td-term spans
 ```
 
 Local templates in `config/templates/` take precedence over the bundled defaults, which makes it straightforward to adapt Terradoc to different communities, institutions, and visual identities without forking the package.
+
+### Data Validation
+
+Terradoc validates encyclopedia entries during the build:
+
+- **ID format**: must match `[a-z0-9][a-z0-9-]*` (no uppercase, spaces, underscores, or accents)
+- **Filename consistency**: each file's stem must match its `id` front-matter field
+- **`see_also` integrity**: every cross-reference target must exist as an entry
+- **Bibliography keys**: all referenced BibTeX keys must resolve against the `.bib` file
+- **Category vocabulary**: if `data/categories.yaml` exists, entry categories are validated against it
+
+To bootstrap a controlled category vocabulary from existing data:
+
+```bash
+terradoc categories -o data/categories.yaml
+```
 
 ## Project Philosophy
 
