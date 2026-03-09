@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% from "decor.html.j2" import motif_divider, section_accent %}
 
 {% set nav_prefix = "../" %}
 
@@ -475,6 +476,8 @@ article header h1 {
         {{ toc_html | safe }}
         {% endif %}
 
+        {{ motif_divider(intensity=intensity) }}
+
         {% if entry.content_html %}
         <div class="article-content">
             {{ entry.content_html | safe }}
@@ -518,7 +521,7 @@ article header h1 {
         {% set has_dict_links = entry._linked_dictionary is defined and entry._linked_dictionary %}
         {% set has_fauna_links = entry._linked_fauna is defined and entry._linked_fauna %}
         {% if has_dict_links or has_fauna_links %}
-        <section class="cross-links-section">
+        <section class="cross-links-section" style="{{ section_accent(intensity=intensity) }}">
             <h2>{{ t.see_also | default('Ver também') }}</h2>
             {% if has_dict_links %}
                 {% for link in entry._linked_dictionary %}

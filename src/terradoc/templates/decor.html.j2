@@ -1,0 +1,103 @@
+{#- Decorative macros — Layer 2 theming components.
+    Each macro accepts an `intensity` parameter: "minimal" | "balanced" | "rich".
+    At "minimal", most decorative elements render nothing.
+    At "balanced", the default implementation.
+    At "rich", a fuller version with more visual weight. -#}
+
+{% macro spine_divider(color="var(--td-color-border-dark)", height="40px", thickness="2px", intensity="balanced") -%}
+{% if intensity != "minimal" -%}
+{% set h = "60px" if intensity == "rich" else height -%}
+{% set c = "var(--td-color-accent)" if intensity == "rich" else color -%}
+<div class="td-decor-spine" aria-hidden="true"><div style="width:{{ thickness }};height:{{ h }};background:{{ c }};border-radius:1px;"></div></div>
+{%- endif %}
+{%- endmacro %}
+
+{% macro motif_divider(color="var(--td-color-border)", width="120px", pattern="dot", intensity="balanced") -%}
+{% if intensity != "minimal" -%}
+{% set w = "180px" if intensity == "rich" else width -%}
+{% set c = "var(--td-color-accent)" if intensity == "rich" else color -%}
+<div class="td-decor-motif" aria-hidden="true">
+{%- if pattern == "line" -%}
+<svg width="{{ w }}" height="6" viewBox="0 0 120 6" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="3" x2="120" y2="3" stroke="{{ c }}" stroke-width="1.5"/></svg>
+{%- elif pattern == "diamond" -%}
+<svg width="{{ w }}" height="12" viewBox="0 0 120 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="50" y2="6" stroke="{{ c }}" stroke-width="1.5"/><polygon points="60,1 67,6 60,11 53,6" fill="{{ c }}"/><line x1="70" y1="6" x2="120" y2="6" stroke="{{ c }}" stroke-width="1.5"/></svg>
+{%- else -%}
+<svg width="{{ w }}" height="8" viewBox="0 0 120 8" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="4" x2="52" y2="4" stroke="{{ c }}" stroke-width="1.5"/><circle cx="60" cy="4" r="3" fill="{{ c }}"/><line x1="68" y1="4" x2="120" y2="4" stroke="{{ c }}" stroke-width="1.5"/></svg>
+{%- endif -%}
+</div>
+{%- endif %}
+{%- endmacro %}
+
+{% macro section_accent(color="var(--td-color-primary)", thickness="4px", side="left", intensity="balanced") -%}
+{% if intensity == "minimal" -%}
+border-{{ side }}: 2px solid var(--td-color-border-light)
+{%- elif intensity == "rich" -%}
+border-{{ side }}: 5px solid var(--td-color-accent)
+{%- else -%}
+border-{{ side }}: {{ thickness }} solid {{ color }}
+{%- endif %}
+{%- endmacro %}
+
+{% macro badge_circle(label="", color="var(--td-color-accent)", bg="var(--td-color-accent-light)", size="32px", intensity="balanced") -%}
+{% if intensity != "minimal" -%}
+{% set s = "40px" if intensity == "rich" else size -%}
+{% set shadow = "box-shadow:0 2px 6px rgba(0,0,0,0.1);" if intensity == "rich" else "" -%}
+<span class="td-decor-badge" style="width:{{ s }};height:{{ s }};background:{{ bg }};color:{{ color }};font-size:0.75rem;font-weight:600;{{ shadow }}" aria-hidden="true">{{ label }}</span>
+{%- endif %}
+{%- endmacro %}
+
+{% macro hero_decor(style="line", color="var(--td-color-accent)", width="80px", intensity="balanced") -%}
+{% if intensity == "minimal" -%}
+<div style="width:40px;height:2px;background:{{ color }};margin:1rem auto 0;border-radius:1px;" aria-hidden="true"></div>
+{%- elif intensity == "rich" -%}
+{% if style == "dots" -%}
+<div class="td-decor-dots" style="justify-content:center;margin:1.5rem auto 0;" aria-hidden="true"><span style="width:8px;height:8px;border-radius:50%;background:{{ color }};"></span><span style="width:8px;height:8px;border-radius:50%;background:{{ color }};opacity:0.6;"></span><span style="width:8px;height:8px;border-radius:50%;background:{{ color }};opacity:0.3;"></span></div>
+{%- elif style == "motif" -%}
+<div style="margin:1.5rem auto 0;text-align:center;" aria-hidden="true"><svg width="120px" height="12" viewBox="0 0 120 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="50" y2="6" stroke="{{ color }}" stroke-width="2"/><polygon points="60,1 67,6 60,11 53,6" fill="{{ color }}"/><line x1="70" y1="6" x2="120" y2="6" stroke="{{ color }}" stroke-width="2"/></svg></div>
+{%- else -%}
+<div style="width:120px;height:4px;background:{{ color }};margin:1.5rem auto 0;border-radius:2px;" aria-hidden="true"></div>
+{%- endif %}
+{%- else -%}
+{% if style == "dots" -%}
+<div class="td-decor-dots" style="justify-content:center;margin:1.5rem auto 0;" aria-hidden="true"><span style="width:6px;height:6px;border-radius:50%;background:{{ color }};"></span><span style="width:6px;height:6px;border-radius:50%;background:{{ color }};opacity:0.6;"></span><span style="width:6px;height:6px;border-radius:50%;background:{{ color }};opacity:0.3;"></span></div>
+{%- elif style == "motif" -%}
+<div style="margin:1.5rem auto 0;text-align:center;" aria-hidden="true"><svg width="{{ width }}" height="10" viewBox="0 0 80 10" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="5" x2="30" y2="5" stroke="{{ color }}" stroke-width="1.5"/><polygon points="40,1 46,5 40,9 34,5" fill="{{ color }}"/><line x1="50" y1="5" x2="80" y2="5" stroke="{{ color }}" stroke-width="1.5"/></svg></div>
+{%- else -%}
+<div style="width:{{ width }};height:3px;background:{{ color }};margin:1.5rem auto 0;border-radius:2px;" aria-hidden="true"></div>
+{%- endif %}
+{%- endif %}
+{%- endmacro %}
+
+{% macro progress_dots(total=5, current=0, color="var(--td-color-accent)", inactive_color="var(--td-color-border-light)", size="8px", intensity="balanced") -%}
+{% if intensity != "minimal" -%}
+{% set s = "10px" if intensity == "rich" else size -%}
+<div class="td-decor-dots" aria-hidden="true">
+{%- for i in range(total) -%}
+<span style="width:{{ s }};height:{{ s }};border-radius:50%;background:{% if i < current %}{{ color }}{% else %}{{ inactive_color }}{% endif %};"></span>
+{%- endfor -%}
+</div>
+{%- endif %}
+{%- endmacro %}
+
+{% macro section_spine(color="var(--td-color-border-light)", thickness="2px", intensity="balanced") -%}
+{% if intensity == "minimal" -%}
+border-left: 1px solid var(--td-color-border-light)
+{%- elif intensity == "rich" -%}
+border-left: 3px solid var(--td-color-accent)
+{%- else -%}
+border-left: {{ thickness }} solid {{ color }}
+{%- endif %}
+{%- endmacro %}
+
+{% macro category_marker(color="var(--td-color-accent)", shape="circle", size="10px", intensity="balanced") -%}
+{% if intensity != "minimal" -%}
+{% set s = "12px" if intensity == "rich" else size -%}
+{% if shape == "square" -%}
+<span class="td-decor-marker" style="width:{{ s }};height:{{ s }};background:{{ color }};border-radius:2px;" aria-hidden="true"></span>
+{%- elif shape == "diamond" -%}
+<span class="td-decor-marker" style="width:{{ s }};height:{{ s }};background:{{ color }};transform:rotate(45deg);border-radius:1px;" aria-hidden="true"></span>
+{%- else -%}
+<span class="td-decor-marker" style="width:{{ s }};height:{{ s }};background:{{ color }};border-radius:50%;" aria-hidden="true"></span>
+{%- endif %}
+{%- endif %}
+{%- endmacro %}

@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% from "decor.html.j2" import section_spine %}
 
 {% block title %}{{ t.dict_title | default(site.dictionary_label) }}{% endblock %}
 
@@ -369,7 +370,7 @@
         </div>
 
         <div class="dict-layout" id="dict-layout">
-            <div class="dict-list-panel">
+            <div class="dict-list-panel" style="{{ section_spine(intensity=intensity) }}">
                 <div class="letter-bar" id="letter-bar"></div>
                 <div class="word-list" id="word-list"></div>
             </div>

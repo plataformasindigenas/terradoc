@@ -167,3 +167,22 @@ def test_language_picker_loads_fonts_css_and_style_class():
     content = template.read_text()
     assert "css/fonts.css" in content
     assert 'class="td-style-{{ theme.style' in content
+
+
+# ── Layer 2: decorative macros and CSS ──
+
+
+def test_decor_template_exists():
+    """decor.html.j2 exists in bundled templates."""
+    import importlib.resources
+    decor = importlib.resources.files("terradoc.templates") / "decor.html.j2"
+    assert decor.is_file()
+
+
+def test_terradoc_css_has_td_term():
+    """.td-term class exists in terradoc.css."""
+    import importlib.resources
+    css = importlib.resources.files("terradoc.static.css") / "terradoc.css"
+    content = css.read_text()
+    assert ".td-term" in content
+    assert "var(--td-term-color)" in content

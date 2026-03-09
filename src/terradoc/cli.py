@@ -194,6 +194,12 @@ theme:
   colors:
     primary: "{preset['colors']['primary']}"
     accent: "{preset['colors']['accent']}"
+  # module_intensity:
+  #   dictionary: "minimal"
+  #   encyclopedia: "balanced"
+  #   fauna: "rich"
+  # term_color: ""
+  # term_weight: "600"
 """
 
     (project_dir / "terradoc.yaml").write_text(config_content, encoding="utf-8")

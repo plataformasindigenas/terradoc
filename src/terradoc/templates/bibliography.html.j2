@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% from "decor.html.j2" import motif_divider %}
 
 {% block title %}{{ t.bib_title | default(site.bibliography_label) }}{% endblock %}
 
@@ -27,6 +28,8 @@
             </div>
             <div class="stats" id="stats" aria-live="polite"></div>
         </div>
+
+        {{ motif_divider(intensity=intensity) }}
 
         <div class="results-container" id="results" aria-live="polite">
             <div class="empty-state">
