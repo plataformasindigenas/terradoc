@@ -7,6 +7,7 @@
     {% if theme.favicon %}
     <link rel="icon" href="{{ theme.favicon }}">
     {% endif %}
+    <link rel="stylesheet" href="css/fonts.css">
     <style>
         :root {
             --td-color-primary: {{ theme.colors.primary | default('#3D352F') }};
@@ -18,6 +19,7 @@
             --td-color-border: {{ theme.colors.border | default('#E8E4DF') }};
             --td-radius: {{ theme.border_radius | default('4px') }};
             --td-font-family: {{ theme.font_family | default("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif") }};
+            --td-font-headings: {{ theme.font_family_headings | default('inherit') }};
         }
         * { box-sizing: border-box; }
         body {
@@ -30,7 +32,7 @@
             color: var(--td-color-text);
             text-align: center;
         }
-        h1 { color: var(--td-color-primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h1 { color: var(--td-color-primary); font-size: 2.5rem; margin-bottom: 0.5rem; font-family: var(--td-font-headings); }
         .subtitle { color: var(--td-color-text-secondary); font-size: 1.2rem; margin-bottom: 2rem; }
         .logo {
             width: 88px;
@@ -57,10 +59,10 @@
             min-width: 200px;
         }
         .lang-card:hover { border-color: var(--td-color-accent); }
-        .lang-card h2 { margin: 0 0 0.25rem 0; color: var(--td-color-primary); }
+        .lang-card h2 { margin: 0 0 0.25rem 0; color: var(--td-color-primary); font-family: var(--td-font-headings); }
     </style>
 </head>
-<body>
+<body class="td-style-{{ theme.style | default('terra') }}">
     {% if theme.logo %}
     <img src="{{ theme.logo }}" alt="" class="logo">
     {% endif %}

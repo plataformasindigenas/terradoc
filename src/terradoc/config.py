@@ -250,6 +250,10 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
     if config_path and config_path.exists():
         with open(config_path, "r", encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
+        if not isinstance(raw, dict):
+            raise ValueError(
+                f"Invalid terradoc.yaml at {config_path}: expected a YAML mapping at top level"
+            )
 
         config = TerradocConfig()
         for key in ("project_name", "project_subtitle", "site_title",
@@ -268,16 +272,28 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
 
         if "theme" in raw:
             theme_raw = raw["theme"]
+            if not isinstance(theme_raw, dict):
+                raise ValueError(
+                    "Invalid 'theme' in terradoc.yaml: expected a YAML mapping/object"
+                )
             preset_name = theme_raw.get("preset", "terra")
             preset = THEME_PRESETS.get(preset_name, THEME_PRESETS["terra"])
 
             # Apply preset base values
             preset_colors = dict(preset["colors"])
             if "colors" in theme_raw:
+                if not isinstance(theme_raw["colors"], dict):
+                    raise ValueError(
+                        "Invalid 'theme.colors' in terradoc.yaml: expected a YAML mapping/object"
+                    )
                 preset_colors.update(theme_raw["colors"])
             config.theme.colors = ThemeColors(**preset_colors)
 
             if "colors_dark" in theme_raw:
+                if not isinstance(theme_raw["colors_dark"], dict):
+                    raise ValueError(
+                        "Invalid 'theme.colors_dark' in terradoc.yaml: expected a YAML mapping/object"
+                    )
                 config.theme.colors_dark = ThemeColors(**theme_raw["colors_dark"])
 
             config.theme.style = preset.get("style", "terra")

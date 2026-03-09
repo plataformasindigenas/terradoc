@@ -158,3 +158,12 @@ def test_base_template_has_fonts_css_link():
     base_template = importlib.resources.files("terradoc.templates") / "base.html.j2"
     content = base_template.read_text()
     assert "fonts.css" in content
+
+
+def test_language_picker_loads_fonts_css_and_style_class():
+    """language picker keeps standalone layout but includes theme font/style hooks."""
+    import importlib.resources
+    template = importlib.resources.files("terradoc.templates") / "language_picker.html.j2"
+    content = template.read_text()
+    assert "css/fonts.css" in content
+    assert 'class="td-style-{{ theme.style' in content

@@ -3,6 +3,7 @@
 import tempfile
 from pathlib import Path
 
+import pytest
 import yaml
 
 from terradoc.config import THEME_PRESETS, ModuleConfig, TerradocConfig, ThemeColors, ThemeConfig, load_config
@@ -273,3 +274,55 @@ def test_theme_config_to_dict_includes_style():
     d = theme.to_dict()
     assert d["style"] == "terra"
     assert "colors" in d
+
+
+def test_load_config_rejects_non_mapping_top_level():
+    """Malformed top-level YAML should raise a clear error."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write("- not-a-mapping\n")
+        tmp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError, match="expected a YAML mapping at top level"):
+            load_config(tmp_path)
+    finally:
+        tmp_path.unlink()
+
+
+def test_load_config_rejects_non_mapping_theme():
+    """theme must be a mapping/object."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump({"theme": ["invalid"]}, f)
+        tmp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError, match="Invalid 'theme'"):
+            load_config(tmp_path)
+    finally:
+        tmp_path.unlink()
+
+
+def test_load_config_rejects_non_mapping_theme_colors():
+    """theme.colors must be a mapping/object."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump({"theme": {"colors": ["invalid"]}}, f)
+        tmp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError, match="Invalid 'theme.colors'"):
+            load_config(tmp_path)
+    finally:
+        tmp_path.unlink()
+
+
+def test_load_config_rejects_non_mapping_theme_colors_dark():
+    """theme.colors_dark must be a mapping/object."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump({"theme": {"colors_dark": ["invalid"]}}, f)
+        tmp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError, match="Invalid 'theme.colors_dark'"):
+            load_config(tmp_path)
+    finally:
+        tmp_path.unlink()
