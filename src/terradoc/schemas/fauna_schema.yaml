@@ -12,4 +12,3 @@ fields:
   classification_bororo: str?
   info: str?
   pic_link: str?
-  dictionary_ids: list?

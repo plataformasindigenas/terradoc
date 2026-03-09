@@ -336,6 +336,34 @@ def _resolve_references(refs: list, bib_data: dict) -> list[dict]:
     return resolved
 
 
+def _print_completeness_report(records: list[dict]) -> None:
+    """Print a data completeness summary to stdout."""
+    total = len(records)
+    if total == 0:
+        return
+
+    no_abstract = [e["id"] for e in records if not e.get("abstract")]
+    no_categories = [e["id"] for e in records if not e.get("categories")]
+    no_content = [e["id"] for e in records if not e.get("content_html")]
+    broken_refs = [
+        e["id"] for e in records
+        if any(r.get("error") for r in e.get("resolved_references", []))
+    ]
+    broken_links = [
+        e["id"] for e in records
+        if 'class="broken-link"' in (e.get("content_html") or "")
+    ]
+
+    print(f"\n  Data completeness ({total} entries):")
+    print(f"    Without abstract:    {len(no_abstract)}")
+    print(f"    Without categories:  {len(no_categories)}")
+    print(f"    Without body:        {len(no_content)}")
+    if broken_links:
+        print(f"    With broken links:   {len(broken_links)}")
+    if broken_refs:
+        print(f"    With broken refs:    {len(broken_refs)}")
+
+
 def convert_encyclopedia(config: TerradocConfig) -> int:
     """Convert encyclopedia markdown to JSON."""
     print("=== Converting Encyclopedia ===")
@@ -358,6 +386,21 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
             all_ids.add(eid)
 
     bib_data = _load_bib_data(config.data_dir, config.bib_file)
+
+    # Validate bibliography keys upfront
+    bib_errors: list[str] = []
+    for record in records:
+        entry = asdict(record) if is_dataclass(record) else dict(record)
+        refs = entry.get("references") or []
+        for key in refs:
+            if key not in bib_data:
+                bib_errors.append(
+                    f"  {entry.get('id', '<unknown>')}: unresolved bib key '{key}'"
+                )
+    if bib_errors:
+        msg = "Unresolved bibliography references:\n" + "\n".join(bib_errors)
+        raise ValueError(msg)
+
     md = build_markdown_renderer()
     normalized_records = []
     index_records = []
@@ -477,6 +520,9 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
     print(f"  Exported index ({len(index_records)} entries) to {index_file}")
+
+    _print_completeness_report(normalized_records)
+
     return len(normalized_records)
 
 

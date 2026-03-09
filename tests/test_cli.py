@@ -95,6 +95,80 @@ def test_cli_init_then_build_smoke():
             assert (project_dir / "docs" / "encyclopedia-data.json").exists()
 
 
+def test_cli_categories_no_encyclopedia():
+    """categories command fails when no encyclopedia dir exists."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            result = runner.invoke(main, ["categories"])
+            assert result.exit_code != 0
+            assert "No encyclopedia directory" in result.output
+
+
+def test_cli_categories_dumps_paths():
+    """categories command outputs sorted unique category paths."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            data_dir = Path("data")
+            data_dir.mkdir()
+            enc_dir = data_dir / "encyclopedia"
+            enc_dir.mkdir()
+
+            (enc_dir / "entry-a.md").write_text("""---
+id: entry-a
+title: Entry A
+categories:
+  - nature/fauna
+  - society
+---
+Body A.
+""", encoding="utf-8")
+            (enc_dir / "entry-b.md").write_text("""---
+id: entry-b
+title: Entry B
+categories:
+  - society
+  - nature/flora
+---
+Body B.
+""", encoding="utf-8")
+
+            result = runner.invoke(main, ["categories"])
+            assert result.exit_code == 0
+            assert "nature/fauna" in result.output
+            assert "nature/flora" in result.output
+            assert "society" in result.output
+
+
+def test_cli_categories_writes_file():
+    """categories --output writes to a file."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            data_dir = Path("data")
+            data_dir.mkdir()
+            enc_dir = data_dir / "encyclopedia"
+            enc_dir.mkdir()
+
+            (enc_dir / "entry-a.md").write_text("""---
+id: entry-a
+title: Entry A
+categories:
+  - nature
+---
+Body.
+""", encoding="utf-8")
+
+            result = runner.invoke(main, ["categories", "-o", "data/categories.yaml"])
+            assert result.exit_code == 0
+
+            out = Path("data/categories.yaml")
+            assert out.exists()
+            content = out.read_text()
+            assert "nature" in content
+
+
 def test_resolve_schema_local():
     """resolve_schema prefers local schema files."""
     with tempfile.TemporaryDirectory() as tmp:

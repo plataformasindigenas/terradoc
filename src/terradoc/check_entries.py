@@ -10,6 +10,29 @@ import yaml
 
 HTML_TAG_RE = re.compile(r"<\s*[a-zA-Z][^>]*>")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def load_categories_vocabulary(data_dir: Path) -> set[str] | None:
+    """Load optional categories vocabulary from data/categories.yaml.
+
+    Returns a set of valid category paths, or None if no vocabulary file exists.
+    """
+    vocab_file = data_dir / "categories.yaml"
+    if not vocab_file.exists():
+        return None
+
+    with open(vocab_file, "r", encoding="utf-8") as f:
+        raw = yaml.safe_load(f)
+
+    if not isinstance(raw, list):
+        print(
+            f"WARNING: {vocab_file} must be a YAML list of category paths, ignoring",
+            file=sys.stderr,
+        )
+        return None
+
+    return {str(c) for c in raw}
 
 
 def _parse_front_matter(path: Path) -> tuple[dict, str]:
@@ -46,6 +69,8 @@ def check_entries(data_dir: Path) -> int:
 
     errors: list[str] = []
     seen_ids: set[str] = set()
+    see_also_map: dict[str, list[str]] = {}  # entry_id -> see_also targets
+    valid_categories = load_categories_vocabulary(data_dir)
 
     for path in md_files:
         if path.name == "README.md":
@@ -61,8 +86,18 @@ def check_entries(data_dir: Path) -> int:
         title = front_matter.get("title") or front_matter.get("headword")
         if not entry_id:
             errors.append(f"{path}: missing 'id'")
+        elif not ID_RE.match(str(entry_id)):
+            errors.append(
+                f"{path.name}: id '{entry_id}' must match [a-z0-9][a-z0-9-]* "
+                "(lowercase, no spaces/underscores/accents)"
+            )
         if not title:
             errors.append(f"{path}: missing 'title'")
+
+        if entry_id and entry_id != path.stem:
+            errors.append(
+                f"{path.name}: filename stem '{path.stem}' doesn't match id '{entry_id}'"
+            )
 
         if entry_id in seen_ids:
             errors.append(f"{path}: duplicate id '{entry_id}'")
@@ -85,6 +120,29 @@ def check_entries(data_dir: Path) -> int:
 
         if HTML_TAG_RE.search(body):
             errors.append(f"{path}: HTML tags found in body (not allowed)")
+
+        # Validate categories against vocabulary
+        if valid_categories:
+            cats = front_matter.get("categories") or front_matter.get("keywords") or []
+            if isinstance(cats, list):
+                for cat in cats:
+                    if cat not in valid_categories:
+                        errors.append(
+                            f"{path.name}: category '{cat}' not in categories.yaml"
+                        )
+
+        # Collect see_also for cross-entry validation
+        see_also = front_matter.get("see_also")
+        if entry_id and see_also and isinstance(see_also, list):
+            see_also_map[entry_id] = see_also
+
+    # Cross-entry validation: see_also referential integrity
+    for source_id, targets in see_also_map.items():
+        for target in targets:
+            if target not in seen_ids:
+                errors.append(
+                    f"{source_id}: see_also target '{target}' does not exist"
+                )
 
     if errors:
         print("Encyclopedia entry check failed:", file=sys.stderr)
