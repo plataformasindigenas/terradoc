@@ -331,6 +331,32 @@
             z-index: 1;
         }
 
+        /* ── Sections label ── */
+        .sections-label {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 3.5rem 0 2.5rem;
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+        .sections-label-line {
+            flex: 1;
+            height: 1px;
+            background: var(--td-color-border-dark);
+            opacity: 0.35;
+        }
+        .sections-label-text {
+            font-family: var(--td-font-headings);
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--td-color-primary);
+            opacity: 0.7;
+            white-space: nowrap;
+        }
+
         /* ── Section teasers — unified card layout ── */
         .index-section {
             margin-bottom: 4rem;
@@ -455,46 +481,6 @@
         .about-card-red p {
             color: white;
         }
-        .about-quote {
-            border-left: 4px solid var(--td-color-primary);
-            padding: 1.5rem 2rem;
-            margin: 2rem 0;
-            background: var(--td-color-surface);
-            border-radius: 0 var(--td-radius) var(--td-radius) 0;
-        }
-        .about-quote blockquote {
-            margin: 0;
-            font-size: 1.1rem;
-            font-style: italic;
-            color: var(--td-color-text-secondary);
-            line-height: 1.7;
-        }
-        .about-quote cite {
-            display: block;
-            margin-top: 0.75rem;
-            font-size: 0.9rem;
-            font-style: normal;
-            color: var(--td-color-text-muted);
-        }
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            text-align: center;
-            margin-top: 2rem;
-        }
-        .stat-item {
-            padding: 1rem;
-        }
-        .stat-number {
-            font-family: var(--td-font-headings);
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--td-color-primary);
-        }
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--td-color-text-muted);
         }
 
         /* Legacy card classes for compatibility */
@@ -856,7 +842,14 @@
         </svg>
     </div>
 
-    <div id="sections">
+    {# ── Sections label ── #}
+    <div class="sections-label" id="sections">
+        <span class="sections-label-line"></span>
+        <span class="sections-label-text">{{ t.index_sections_title | default('Explore') }}</span>
+        <span class="sections-label-line"></span>
+    </div>
+
+    <div>
 
     {# ── Section teasers — unified card layout ── #}
     {# Image mapping: dictionary=hero_images[0], encyclopedia=hero_images[1], fauna=fauna.jpeg, recordings=hero_images[2] #}
@@ -921,21 +914,6 @@
             </div>
         </div>
 
-        {% if t.index_quote %}
-        <div class="about-quote">
-            <blockquote>{{ t.index_quote }}</blockquote>
-            {% if t.index_quote_attribution %}<cite>&mdash; {{ t.index_quote_attribution }}</cite>{% endif %}
-        </div>
-        {% endif %}
-
-        <div class="stats-row">
-            {% for mod in modules %}
-            <div class="stat-item">
-                <div class="stat-number">{{ data[0][mod.slug + '_count'] | default('0') }}</div>
-                <div class="stat-label">{{ t['stat_' + mod.slug + '_entries'] | default(t['card_' + mod.slug + '_label'] | default(mod.name)) }}</div>
-            </div>
-            {% endfor %}
-        </div>
     </section>
 
     </div>
