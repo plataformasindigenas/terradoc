@@ -148,7 +148,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>{{ t.footer_credits | default(t.footer_generated | default('Generated with') ~ ' aptoro & kodudo') }}</p>
+                <p>{{ t.footer_generated | default('Generated with') }} <a href="https://pypi.org/project/terradoc/">terradoc</a>, <a href="https://pypi.org/project/aptoro/">aptoro</a> &amp; <a href="https://pypi.org/project/kodudo/">kodudo</a></p>
                 <p>{{ t.footer_license | default('') }}</p>
             </div>
         </div>
