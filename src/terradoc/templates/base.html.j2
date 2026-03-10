@@ -113,9 +113,9 @@
         <div class="td-container">
             <div class="footer-grid">
                 <div class="footer-brand-col">
-                    <a href="{{ np }}index.html" class="brand" style="color:white;text-decoration:none;font-family:var(--td-font-headings);font-weight:700;font-size:1.15rem;">
+                    <a href="{{ np }}index.html" class="brand" style="color:white;text-decoration:none;font-family:var(--td-font-headings);font-weight:700;font-size:1.15rem;display:inline-flex;align-items:center;gap:0.6rem;">
                         {% if theme.logo %}
-                        <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo" style="filter:brightness(10);">
+                        <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo" style="width:56px;height:56px;">
                         {% else %}
                         <span class="td-logo-mark" aria-hidden="true" style="--td-color-primary:#fff;"><span class="ring-outer"><span class="ring-inner"><span class="ring-dot"></span></span></span></span>
                         {% endif %}
