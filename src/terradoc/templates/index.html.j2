@@ -331,54 +331,55 @@
             z-index: 1;
         }
 
-        /* ── Section teasers ── */
+        /* ── Section teasers — unified card layout ── */
         .index-section {
             margin-bottom: 4rem;
         }
         .index-section .td-section-heading h2 {
             font-size: 1.75rem;
         }
+        .teaser-card {
+            display: grid;
+            grid-template-columns: 2fr 3fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        .teaser-card-image {
+            border-radius: var(--td-radius);
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+        .teaser-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .teaser-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
         .teaser-desc {
             color: var(--td-color-text-secondary);
             max-width: 640px;
             line-height: 1.7;
-            margin: 0.5rem 0 1.25rem;
+            margin: 0.25rem 0 1rem;
         }
         .teaser-count {
             font-family: var(--td-font-headings);
-            font-size: 2.5rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--td-color-primary);
             line-height: 1;
-            margin-right: 0.5rem;
         }
         .teaser-count-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--td-color-text-muted);
         }
         .teaser-stat {
             display: flex;
             align-items: baseline;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* ── Encyclopedia split teaser ── */
-        .enc-teaser-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            align-items: center;
-        }
-        .enc-teaser-image {
-            border-radius: var(--td-radius);
-            overflow: hidden;
-            aspect-ratio: 4/3;
-        }
-        .enc-teaser-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            gap: 0.4rem;
         }
 
         /* ── Fauna cards grid ── */
@@ -592,7 +593,7 @@
                 width: 220px;
                 height: 220px;
             }
-            .enc-teaser-grid {
+            .teaser-card {
                 grid-template-columns: 1fr;
             }
             .about-cards {
@@ -857,54 +858,37 @@
 
     <div id="sections">
 
-    {# ── Dictionary teaser ── #}
-    {% if 'dictionary' in modules | map(attribute='slug') | list %}
-    <section class="index-section td-fade-in">
-        {{ section_heading(t.card_dictionary_title | default('Dictionary'), '') }}
-        <div class="teaser-stat">
-            <span class="teaser-count">{{ data[0].dictionary_count | default('0') }}</span>
-            <span class="teaser-count-label">{{ t.card_dictionary_label | default('entries') }}</span>
-        </div>
-        <p class="teaser-desc">{{ t.card_dictionary_desc | default('') }}</p>
-        <a href="dictionary.html" class="td-pill td-pill-outline">{{ t.index_view_all_dictionary | default(t.card_cta | default('Explore')) }} &rarr;</a>
-    </section>
-    {% endif %}
+    {# ── Section teasers — unified card layout ── #}
+    {# Image mapping: dictionary=hero_images[0], encyclopedia=hero_images[1], fauna=fauna.jpeg, recordings=hero_images[2] #}
+    {% set teaser_images = {
+        'dictionary': theme.hero_images[0] if theme.hero_images|length > 0 else '',
+        'encyclopedia': theme.hero_images[1] if theme.hero_images|length > 1 else '',
+        'fauna': 'images/fauna.jpeg',
+        'recordings': theme.hero_images[2] if theme.hero_images|length > 2 else ''
+    } %}
 
-    {# ── Encyclopedia teaser ── #}
-    {% if 'encyclopedia' in modules | map(attribute='slug') | list %}
+    {% for mod_slug in ['dictionary', 'encyclopedia', 'fauna', 'recordings'] %}
+    {% if mod_slug in modules | map(attribute='slug') | list %}
     <section class="index-section td-fade-in">
-        {{ section_heading(t.card_encyclopedia_title | default('Encyclopedia'), '') }}
-        <div class="enc-teaser-grid">
-            <div>
-                <div class="teaser-stat">
-                    <span class="teaser-count">{{ data[0].encyclopedia_count | default('0') }}</span>
-                    <span class="teaser-count-label">{{ t.card_encyclopedia_label | default('articles') }}</span>
-                </div>
-                <p class="teaser-desc">{{ t.card_encyclopedia_desc | default('') }}</p>
-                <a href="encyclopedia.html" class="td-pill td-pill-outline">{{ t.index_view_all_encyclopedia | default(t.card_cta | default('Explore')) }} &rarr;</a>
-            </div>
-            {% set enc_img = theme.hero_images[1] if theme.hero_images|length > 1 else theme.hero_image %}
-            {% if enc_img %}
-            <div class="enc-teaser-image">
-                <img src="{{ base_path | default('') }}{{ enc_img }}" alt="" loading="lazy">
+        {{ section_heading(t['card_' + mod_slug + '_title'] | default(mod_slug | capitalize), '') }}
+        <div class="teaser-card">
+            {% if teaser_images[mod_slug] %}
+            <div class="teaser-card-image">
+                <img src="{{ base_path | default('') }}{{ teaser_images[mod_slug] }}" alt="" loading="lazy">
             </div>
             {% endif %}
+            <div class="teaser-card-body">
+                <div class="teaser-stat">
+                    <span class="teaser-count">{{ data[0][mod_slug + '_count'] | default('0') }}</span>
+                    <span class="teaser-count-label">{{ t['card_' + mod_slug + '_label'] | default(mod_slug) }}</span>
+                </div>
+                <p class="teaser-desc">{{ t['card_' + mod_slug + '_desc'] | default('') }}</p>
+                <a href="{{ mod_slug }}.html" class="td-pill td-pill-outline">{{ t['index_view_all_' + mod_slug] | default(t.card_cta | default('Explore')) }} &rarr;</a>
+            </div>
         </div>
     </section>
     {% endif %}
-
-    {# ── Fauna teaser ── #}
-    {% if 'fauna' in modules | map(attribute='slug') | list %}
-    <section class="index-section td-fade-in">
-        {{ section_heading(t.card_fauna_title | default('Fauna'), '') }}
-        <div class="teaser-stat">
-            <span class="teaser-count">{{ data[0].fauna_count | default('0') }}</span>
-            <span class="teaser-count-label">{{ t.card_fauna_label | default('species') }}</span>
-        </div>
-        <p class="teaser-desc">{{ t.card_fauna_desc | default('') }}</p>
-        <a href="fauna.html" class="td-pill td-pill-outline">{{ t.index_view_all_fauna | default(t.card_cta | default('Explore')) }} &rarr;</a>
-    </section>
-    {% endif %}
+    {% endfor %}
 
     {# ── Gallery teaser ── #}
     <section class="index-section td-fade-in">
