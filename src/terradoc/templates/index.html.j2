@@ -714,10 +714,6 @@
                         <filter id="vh-soft" x="-10%" y="-10%" width="120%" height="120%">
                             <feGaussianBlur stdDeviation="6"/>
                         </filter>
-                        {# Soft blur for house dots — stamp feel #}
-                        <filter id="vh-dot" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="1.2"/>
-                        </filter>
                     </defs>
                     {# Moiety fills — Tugarege (red/top) and Ecerae (dark/bottom) #}
                     <circle class="hero-moiety-top" cx="250" cy="250" r="230" style="fill:var(--td-color-primary)" opacity="0.3" clip-path="url(#vh-top)" filter="url(#vh-soft)"/>
@@ -737,19 +733,6 @@
                         <circle class="hero-baito-pulse" cx="250" cy="250" r="35" style="fill:var(--td-color-accent)" opacity="0.15"/>
                         <circle cx="250" cy="250" r="18" style="fill:var(--td-color-dark, #0B0F17)" opacity="0.18"/>
                     </g>
-                    {# Clan houses — 5 on upper moiety #}
-                    {# 10 dots at 36° intervals, offset 18° so none sit on the dividing line #}
-                    <circle cx="31" cy="179" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="115" cy="64" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="250" cy="20" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="385" cy="64" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="469" cy="179" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    {# Clan houses — 5 on lower moiety #}
-                    <circle cx="469" cy="321" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="385" cy="436" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="250" cy="480" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="115" cy="436" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
-                    <circle cx="31" cy="321" r="14" style="fill:#D4A03A" opacity="0.55" filter="url(#vh-dot)"/>
                 </svg>
 
                 {# Main hero photo #}
