@@ -109,7 +109,7 @@
         }
         .hero-photo-sat:hover {
             transform: scale(1.22);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            box-shadow: 0 8px 32px rgba(200,31,45,0.2);
             z-index: 10;
         }
         .hero-photo-sat img {
@@ -275,14 +275,30 @@
         /* ── Hero stats strip ── */
         .hero-stats {
             display: flex;
-            gap: 2rem;
-            margin-top: 2rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--td-color-border);
+            gap: 0;
+            margin-top: 0.75rem;
+            padding-top: 0;
+            border-top: none;
         }
         .hero-stat {
             display: flex;
             flex-direction: column;
+            padding: 0 1.5rem;
+            position: relative;
+        }
+        .hero-stat:first-child {
+            padding-left: 0;
+        }
+        .hero-stat:not(:first-child)::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+            width: 5px;
+            height: 5px;
+            background: var(--td-color-gold, #D4A03A);
+            opacity: 0.6;
         }
         .hero-stat-num {
             font-family: var(--td-font-headings);
@@ -343,8 +359,8 @@
         .sections-label-line {
             flex: 1;
             height: 1px;
-            background: var(--td-color-border-dark);
-            opacity: 0.35;
+            background: var(--td-color-gold, #D4A03A);
+            opacity: 0.4;
         }
         .sections-label-text {
             font-family: var(--td-font-headings);
@@ -352,9 +368,17 @@
             font-weight: 600;
             letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: var(--td-color-primary);
-            opacity: 0.7;
+            color: var(--td-color-gold, #D4A03A);
+            opacity: 0.85;
             white-space: nowrap;
+        }
+        .sections-label-diamond {
+            width: 10px;
+            height: 10px;
+            background: var(--td-color-gold, #D4A03A);
+            transform: rotate(45deg);
+            opacity: 0.4;
+            flex-shrink: 0;
         }
 
         /* ── Section teasers — unified card layout ── */
@@ -369,6 +393,30 @@
             grid-template-columns: 2fr 3fr;
             gap: 2rem;
             align-items: center;
+            border-left: 4px solid var(--td-color-primary);
+            border-image: repeating-linear-gradient(
+                to bottom,
+                var(--teaser-accent, var(--td-color-primary)) 0px,
+                var(--teaser-accent, var(--td-color-primary)) 8px,
+                transparent 8px,
+                transparent 14px,
+                var(--teaser-accent, var(--td-color-primary)) 14px,
+                var(--teaser-accent, var(--td-color-primary)) 20px,
+                transparent 20px,
+                transparent 30px
+            ) 4;
+            padding-left: 1.5rem;
+        }
+        .teaser-card[data-section="dictionary"],
+        .teaser-card[data-section="recordings"] {
+            --teaser-accent: var(--td-color-primary);
+        }
+        .teaser-card[data-section="encyclopedia"],
+        .teaser-card[data-section="videos"] {
+            --teaser-accent: var(--td-color-dark, #0B0F17);
+        }
+        .teaser-card[data-section="fauna"] {
+            --teaser-accent: var(--td-color-gold, #D4A03A);
         }
         .teaser-card-image {
             border-radius: var(--td-radius);
@@ -379,6 +427,11 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.35s ease, filter 0.35s ease;
+        }
+        .teaser-card-image:hover img {
+            transform: scale(1.04);
+            filter: saturate(1.1) brightness(0.95);
         }
         .teaser-card-body {
             display: flex;
@@ -646,6 +699,7 @@
 
                 {# ── Hero stats ── #}
                 {% if theme.hero_stats %}
+                <div style="width:60px;height:2px;background:var(--td-color-gold, #D4A03A);opacity:0.5;margin-top:2rem;border-radius:1px;" aria-hidden="true"></div>
                 <div class="hero-stats">
                     {% for slug in theme.hero_stats %}
                     <div class="hero-stat">
@@ -796,7 +850,9 @@
     {# ── Sections label ── #}
     <div class="sections-label" id="sections">
         <span class="sections-label-line"></span>
+        <span class="sections-label-diamond"></span>
         <span class="sections-label-text">{{ t.index_sections_title | default('Explore') }}</span>
+        <span class="sections-label-diamond"></span>
         <span class="sections-label-line"></span>
     </div>
 
@@ -816,7 +872,7 @@
     {% if mod_slug in modules | map(attribute='slug') | list %}
     <section class="index-section td-fade-in">
         {{ section_heading(t['card_' + mod_slug + '_title'] | default(mod_slug | capitalize), '') }}
-        <div class="teaser-card">
+        <div class="teaser-card" data-section="{{ mod_slug }}">
             {% if teaser_images[mod_slug] %}
             <div class="teaser-card-image">
                 <img src="{{ base_path | default('') }}{{ teaser_images[mod_slug] }}" alt="" loading="lazy">

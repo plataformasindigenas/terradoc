@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "decor.html.j2" import motif_divider %}
+{% from "decor.html.j2" import motif_divider, page_badge %}
 
 {% block title %}{{ t.vid_title | default('Videos') }}{% endblock %}
 
@@ -146,7 +146,7 @@
 
 {% block content %}
     <div class="vid-header">
-        <h1>{{ t.vid_title | default('Videos') }}</h1>
+        <h1>{{ t.vid_title | default('Videos') }} {{ page_badge() }}</h1>
         <p class="subtitle">{{ t.vid_subtitle | default('') }} &mdash; {{ data | length }} {{ t.vid_count_label | default('videos') }}</p>
     </div>
 

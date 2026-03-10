@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "decor.html.j2" import section_spine %}
+{% from "decor.html.j2" import section_spine, page_badge %}
 
 {% block title %}{{ t.dict_title | default(site.dictionary_label) }}{% endblock %}
 
@@ -354,7 +354,7 @@
 
 {% block content %}
     <div class="dict-header">
-        <h1>{{ t.dict_title | default(site.dictionary_label) }}</h1>
+        <h1>{{ t.dict_title | default(site.dictionary_label) }} {{ page_badge() }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ meta.record_count }} {{ t.entries_label | default('entradas') }}</p>
     </div>
 
