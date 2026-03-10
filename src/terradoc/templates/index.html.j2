@@ -6,41 +6,168 @@
 {% block extra_styles %}
         /* ── Hero ── */
         .index-hero {
-            min-height: 90vh;
+            min-height: 92vh;
             display: flex;
             align-items: center;
             position: relative;
             overflow: hidden;
-            padding: 6rem 0 4rem;
-            margin: -5rem -2rem 3rem;
+            padding: 7rem 0 2rem;
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+            background: linear-gradient(180deg, #E8E0D3 0%, #EDE9E0 45%, var(--td-color-bg) 100%);
         }
         .index-hero-inner {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 3rem;
+            gap: 2rem;
             align-items: center;
-            max-width: 1080px;
+            max-width: 1120px;
             margin: 0 auto;
             padding: 0 2rem;
             width: 100%;
             position: relative;
             z-index: 2;
         }
+        .index-hero-text {
+            padding-right: 1rem;
+        }
         .index-hero-text h1 {
-            font-size: 3.5rem;
-            line-height: 1.1;
+            font-size: 4rem;
+            line-height: 1.05;
             letter-spacing: -0.03em;
             color: var(--td-color-text);
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.35rem 0;
         }
-        .index-hero-text p {
-            font-size: 1.25rem;
+        .hero-tagline {
+            font-size: 1.3rem;
+            color: var(--td-color-primary);
+            font-weight: 500;
+            font-family: var(--td-font-headings);
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.01em;
+        }
+        .index-hero-text .hero-subtitle {
+            font-size: 1.1rem;
             color: var(--td-color-text-muted);
-            max-width: 480px;
-            margin: 0 0 2rem 0;
+            max-width: 420px;
+            margin: 0 0 1.75rem 0;
             line-height: 1.6;
         }
+
+        /* ── Hero visual — photo cluster + village motif ── */
         .index-hero-visual {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 480px;
+            justify-self: center;
+        }
+        .hero-village-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            mix-blend-mode: multiply;
+        }
+        .hero-photo-main {
+            position: absolute;
+            width: 86%;
+            aspect-ratio: 1;
+            overflow: hidden;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            clip-path: circle(32.5% at center);
+            filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18));
+            transition: clip-path 0.6s ease, filter 0.6s ease, z-index 0s;
+            cursor: pointer;
+            background: var(--td-color-bg);
+        }
+        .hero-photo-main:hover {
+            clip-path: circle(46% at center);
+            filter: drop-shadow(0 12px 40px rgba(0,0,0,0.28));
+            z-index: 10;
+        }
+        .hero-photo-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hero-photo-main:hover ~ .hero-photo-sat {
+            opacity: 0.35;
+        }
+        .hero-photo-sat {
+            position: absolute;
+            border-radius: 50%;
+            overflow: hidden;
+            z-index: 4;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.5s ease, z-index 0s;
+            cursor: pointer;
+        }
+        .hero-photo-sat:hover {
+            transform: scale(1.22);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            z-index: 10;
+        }
+        .hero-photo-sat img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hero-photo-sat-1 {
+            width: 27%;
+            aspect-ratio: 1;
+            top: 1%;
+            right: 7%;
+        }
+        .hero-photo-sat-2 {
+            width: 23%;
+            aspect-ratio: 1;
+            bottom: 10%;
+            right: 1%;
+        }
+        .hero-photo-sat-3 {
+            width: 25%;
+            aspect-ratio: 1;
+            bottom: 3%;
+            left: 5%;
+        }
+        .hero-photo-sat-4 {
+            width: 21%;
+            aspect-ratio: 1;
+            top: 6%;
+            left: 1%;
+        }
+
+        /* ── Hero stats strip ── */
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--td-color-border);
+        }
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+        }
+        .hero-stat-num {
+            font-family: var(--td-font-headings);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--td-color-primary);
+            line-height: 1.1;
+        }
+        .hero-stat-label {
+            font-size: 0.78rem;
+            color: var(--td-color-text-muted);
+            margin-top: 0.15rem;
+        }
+
+        /* ── Fallback: single-photo hero (no hero_images) ── */
+        .index-hero-visual-single {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -302,16 +429,33 @@
         }
 
         /* ── Responsive ── */
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .index-hero-inner {
                 grid-template-columns: 1fr;
                 text-align: center;
             }
-            .index-hero-text h1 {
-                font-size: 2.5rem;
+            .index-hero-text {
+                padding-right: 0;
+                order: 1;
             }
-            .index-hero-text p {
-                margin: 0 auto 2rem;
+            .index-hero-text h1 {
+                font-size: 3rem;
+            }
+            .index-hero-text .hero-subtitle {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .index-hero-visual {
+                order: 2;
+                max-width: 360px;
+            }
+            .hero-stats {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+            .hero-stat {
+                align-items: center;
             }
             .hero-photo-disc {
                 width: 220px;
@@ -327,10 +471,36 @@
         @media (max-width: 600px) {
             .index-hero {
                 min-height: auto;
-                padding: 4rem 0 2rem;
+                padding: 5rem 0 2rem;
             }
             .index-hero-text h1 {
-                font-size: 2rem;
+                font-size: 2.4rem;
+            }
+            .hero-tagline {
+                font-size: 1.1rem;
+            }
+            .index-hero-visual {
+                max-width: 280px;
+            }
+            .hero-photo-sat-2,
+            .hero-photo-sat-4 {
+                display: none;
+            }
+            .hero-photo-sat-1 {
+                width: 30%;
+                top: 0;
+                right: 2%;
+            }
+            .hero-photo-sat-3 {
+                width: 28%;
+                bottom: 0;
+                left: 2%;
+            }
+            .hero-stats {
+                gap: 1rem;
+            }
+            .hero-stat-num {
+                font-size: 1.3rem;
             }
             .gallery-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -344,10 +514,93 @@
         <div class="index-hero-inner">
             <div class="index-hero-text">
                 <h1>{{ t.index_hero_title | default(site.title) }}</h1>
-                <p>{{ t.index_hero_subtitle | default(site.tagline) }}</p>
+                {% if t.index_hero_tagline %}
+                <p class="hero-tagline">{{ t.index_hero_tagline }}</p>
+                {% endif %}
+                <p class="hero-subtitle">{{ t.index_hero_subtitle | default(site.tagline) }}</p>
                 <a href="#sections" class="td-pill td-pill-red">{{ t.index_hero_cta | default('Explorar') }} &rarr;</a>
+
+                {# ── Hero stats ── #}
+                {% if theme.hero_stats %}
+                <div class="hero-stats">
+                    {% for slug in theme.hero_stats %}
+                    <div class="hero-stat">
+                        <span class="hero-stat-num">{{ data[0][slug + '_count'] | default('0') }}</span>
+                        <span class="hero-stat-label">{{ t['card_' + slug + '_label'] | default(slug) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
+
+            {# ── Photo cluster with village circle motif ── #}
+            {% if theme.hero_images %}
             <div class="index-hero-visual">
+                {# Village circle motif SVG — two-moiety layout (like logo) #}
+                <svg class="hero-village-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                        <clipPath id="vh-top"><rect x="0" y="0" width="500" height="250"/></clipPath>
+                        <clipPath id="vh-bot"><rect x="0" y="250" width="500" height="250"/></clipPath>
+                        {# Soft blur for moiety fills — painterly edges #}
+                        <filter id="vh-soft" x="-10%" y="-10%" width="120%" height="120%">
+                            <feGaussianBlur stdDeviation="6"/>
+                        </filter>
+                        {# Soft blur for house dots — stamp feel #}
+                        <filter id="vh-dot" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="1.2"/>
+                        </filter>
+                    </defs>
+                    {# Moiety fills — Tugarege (red/top) and Ecerae (dark/bottom) #}
+                    <circle cx="250" cy="250" r="230" style="fill:var(--td-color-primary)" opacity="0.45" clip-path="url(#vh-top)" filter="url(#vh-soft)"/>
+                    <circle cx="250" cy="250" r="230" style="fill:var(--td-color-dark, #0B0F17)" opacity="0.45" clip-path="url(#vh-bot)" filter="url(#vh-soft)"/>
+                    {# Two-toned outer ring — red arc top, dark arc bottom #}
+                    <g>
+                        <path d="M480,250 A230,230 0 0,0 20,250" fill="none" style="stroke:var(--td-color-primary)" stroke-width="2.5" opacity="0.16"/>
+                        <path d="M480,250 A230,230 0 0,1 20,250" fill="none" style="stroke:var(--td-color-dark, #0B0F17)" stroke-width="2.5" opacity="0.16"/>
+                        {# Dividing line (east-west) #}
+                        <line x1="20" y1="250" x2="480" y2="250" style="stroke:var(--td-color-text-muted, #6B6F5A)" stroke-width="1" opacity="0.12"/>
+                        {# Middle ring #}
+                        <circle cx="250" cy="250" r="165" fill="none" style="stroke:var(--td-color-primary)" stroke-width="1" opacity="0.06"/>
+                    </g>
+                    {# Baito center — gray ring, gold fill, dark inner dot #}
+                    <g>
+                        <circle cx="250" cy="250" r="50" fill="none" style="stroke:var(--td-color-border-dark, #B8AFA2)" stroke-width="1.5" opacity="0.15"/>
+                        <circle cx="250" cy="250" r="35" style="fill:var(--td-color-accent)" opacity="0.15"/>
+                        <circle cx="250" cy="250" r="18" style="fill:var(--td-color-dark, #0B0F17)" opacity="0.18"/>
+                    </g>
+                    {# Clan houses — 5 on upper moiety #}
+                    {# 10 dots at 36° intervals, offset 18° so none sit on the dividing line #}
+                    <circle cx="31" cy="179" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="115" cy="64" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="250" cy="20" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="385" cy="64" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="469" cy="179" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    {# Clan houses — 5 on lower moiety #}
+                    <circle cx="469" cy="321" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="385" cy="436" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="250" cy="480" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="115" cy="436" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                    <circle cx="31" cy="321" r="14" style="fill:var(--td-color-border-dark, #B8AFA2)" opacity="0.95" filter="url(#vh-dot)"/>
+                </svg>
+
+                {# Main hero photo #}
+                {% if theme.hero_image %}
+                <div class="hero-photo-main">
+                    <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="{{ t.index_hero_title | default(site.title) }}">
+                </div>
+                {% endif %}
+
+                {# Satellite photos #}
+                {% for img in theme.hero_images[:4] %}
+                <div class="hero-photo-sat hero-photo-sat-{{ loop.index }}">
+                    <img src="{{ base_path | default('') }}{{ img }}" alt="" loading="lazy">
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            {# ── Fallback: single photo with rings ── #}
+            <div class="index-hero-visual-single">
                 <div class="hero-rings-bg">
                     {{ target_rings("400px") }}
                 </div>
@@ -357,9 +610,10 @@
                 </div>
                 {% endif %}
             </div>
-        </div>
-        <div class="hero-small-target">
-            {{ target_motif_small("64px") }}
+            <div class="hero-small-target">
+                {{ target_motif_small("64px") }}
+            </div>
+            {% endif %}
         </div>
     </section>
 
