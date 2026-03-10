@@ -128,6 +128,8 @@ class ThemeConfig:
     font_family_mono: str = "'IBM Plex Mono', 'Consolas', monospace"
     border_radius: str = "28px"
     hero_image: str = ""
+    hero_images: list[str] = field(default_factory=list)
+    hero_stats: list[str] = field(default_factory=list)
     style: str = "terra"
     module_intensity: dict[str, str] = field(default_factory=dict)
     term_color: str = ""
@@ -144,6 +146,8 @@ class ThemeConfig:
             "font_family_mono": self.font_family_mono,
             "border_radius": self.border_radius,
             "hero_image": self.hero_image,
+            "hero_images": self.hero_images,
+            "hero_stats": self.hero_stats,
             "style": self.style,
             "module_intensity": self.module_intensity,
             "term_color": self.term_color,
@@ -335,6 +339,11 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             ):
                 if theme_key in theme_raw:
                     setattr(config.theme, theme_key, theme_raw[theme_key])
+
+            # List overrides
+            for list_key in ("hero_images", "hero_stats"):
+                if list_key in theme_raw and isinstance(theme_raw[list_key], list):
+                    setattr(config.theme, list_key, theme_raw[list_key])
 
         if "modules" in raw:
             for mod_name, mod_cfg in raw["modules"].items():
