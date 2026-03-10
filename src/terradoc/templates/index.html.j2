@@ -857,10 +857,11 @@
         'dictionary': theme.hero_images[0] if theme.hero_images|length > 0 else '',
         'encyclopedia': theme.hero_images[1] if theme.hero_images|length > 1 else '',
         'fauna': 'images/fauna.jpeg',
-        'recordings': theme.hero_images[2] if theme.hero_images|length > 2 else ''
+        'recordings': theme.hero_images[2] if theme.hero_images|length > 2 else '',
+        'videos': theme.hero_images[3] if theme.hero_images|length > 3 else ''
     } %}
 
-    {% for mod_slug in ['dictionary', 'encyclopedia', 'fauna', 'recordings'] %}
+    {% for mod_slug in ['dictionary', 'encyclopedia', 'fauna', 'recordings', 'videos'] %}
     {% if mod_slug in modules | map(attribute='slug') | list %}
     <section class="index-section td-fade-in">
         {{ section_heading(t['card_' + mod_slug + '_title'] | default(mod_slug | capitalize), '') }}
@@ -882,18 +883,6 @@
     </section>
     {% endif %}
     {% endfor %}
-
-    {# ── Gallery teaser ── #}
-    <section class="index-section td-fade-in">
-        {{ section_heading(t.index_gallery_title | default('Images & Sounds'), t.index_gallery_subtitle | default('')) }}
-        <div class="gallery-grid">
-            {% if theme.hero_image %}
-            <div class="gallery-item">
-                <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="" loading="lazy">
-            </div>
-            {% endif %}
-        </div>
-    </section>
 
     {# ── About ── #}
     <section class="index-section td-fade-in">

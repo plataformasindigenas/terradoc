@@ -230,7 +230,7 @@ class TerradocConfig:
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""
-        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography", "recordings")
+        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography", "recordings", "videos")
         return [
             {"slug": name, "name": self.module_label(name)}
             for name in module_order

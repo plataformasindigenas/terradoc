@@ -565,6 +565,41 @@ def convert_recordings(config: TerradocConfig) -> int:
     return len(normalized_records)
 
 
+def convert_videos(config: TerradocConfig) -> int:
+    """Convert videos YAML to JSON."""
+    print("=== Converting Videos ===")
+
+    videos_file = config.data_dir / "videos.yaml"
+    if not videos_file.exists():
+        print(f"  Videos file not found: {videos_file}")
+        return 0
+
+    schema = aptoro.load_schema(str(config.resolve_schema("videos")))
+
+    with open(videos_file, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or []
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_file = _write_dataset(
+        config,
+        "videos.json",
+        "videos",
+        f"{config.culture_name} Cultural Videos",
+        normalized_records,
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
 # Registry of converters
 CONVERTERS = {
     "dictionary": convert_dictionary,
@@ -572,6 +607,7 @@ CONVERTERS = {
     "encyclopedia": convert_encyclopedia,
     "bibliography": convert_bibliography,
     "recordings": convert_recordings,
+    "videos": convert_videos,
 }
 
 
