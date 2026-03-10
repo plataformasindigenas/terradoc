@@ -883,9 +883,10 @@
                 <p class="teaser-desc">{{ t.card_encyclopedia_desc | default('') }}</p>
                 <a href="encyclopedia.html" class="td-pill td-pill-outline">{{ t.index_view_all_encyclopedia | default(t.card_cta | default('Explore')) }} &rarr;</a>
             </div>
-            {% if theme.hero_image %}
+            {% set enc_img = theme.hero_images[1] if theme.hero_images|length > 1 else theme.hero_image %}
+            {% if enc_img %}
             <div class="enc-teaser-image">
-                <img src="{{ base_path | default('') }}{{ theme.hero_image }}" alt="" loading="lazy">
+                <img src="{{ base_path | default('') }}{{ enc_img }}" alt="" loading="lazy">
             </div>
             {% endif %}
         </div>
