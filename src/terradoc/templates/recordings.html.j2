@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "decor.html.j2" import motif_divider %}
+{% from "decor.html.j2" import motif_divider, page_badge %}
 
 {% block title %}{{ t.rec_title | default('Corpus') }}{% endblock %}
 
@@ -183,7 +183,7 @@
 
 {% block content %}
     <div class="rec-header">
-        <h1>{{ t.rec_title | default('Corpus') }}</h1>
+        <h1>{{ t.rec_title | default('Corpus') }} {{ page_badge() }}</h1>
         <p class="subtitle">{{ t.rec_subtitle | default(meta.description | default('')) }} &mdash; {{ data | length }} {{ t.rec_count_label | default('recordings') }}</p>
     </div>
 

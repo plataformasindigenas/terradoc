@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "decor.html.j2" import motif_divider %}
+{% from "decor.html.j2" import motif_divider, page_badge %}
 
 {% block title %}{{ t.bib_title | default(site.bibliography_label) }}{% endblock %}
 
@@ -27,7 +27,7 @@
 
 {% block content %}
     <div class="bib-header">
-        <h1>{{ t.bib_title | default(site.bibliography_label) }}</h1>
+        <h1>{{ t.bib_title | default(site.bibliography_label) }} {{ page_badge() }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.references_label | default('referências') }}</p>
     </div>
 
