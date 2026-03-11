@@ -10,6 +10,7 @@ import yaml
 @dataclass
 class ModuleConfig:
     enabled: bool = True
+    graph: bool = False
 
 
 @dataclass
@@ -227,6 +228,10 @@ class TerradocConfig:
     def is_module_enabled(self, name: str) -> bool:
         mod = self.modules.get(name)
         return mod.enabled if mod else False
+
+    def is_graph_enabled(self, name: str) -> bool:
+        mod = self.modules.get(name)
+        return mod.graph if mod else False
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""

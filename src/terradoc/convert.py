@@ -16,6 +16,7 @@ from terradoc.markdown_utils import (
     assert_no_html,
     build_category_tree,
     build_markdown_renderer,
+    extract_wikilink_targets,
     html_to_text,
     process_wikilinks,
 )
@@ -418,7 +419,10 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
         content_md = entry.get("content_md") or ""
         assert_no_html(content_md, entry.get("id", "<unknown>"))
 
+        # Extract wikilink targets before converting to HTML
+        wikilink_targets = []
         if "[[" in content_md:
+            wikilink_targets = extract_wikilink_targets(content_md, all_ids)
             content_md = process_wikilinks(content_md, all_ids)
 
         content_html = md.render(content_md) if content_md else ""
@@ -432,6 +436,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
         else:
             entry["resolved_references"] = []
 
+        entry["_wikilink_targets"] = wikilink_targets
         normalized_records.append(entry)
 
         index_records.append({
@@ -442,6 +447,8 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
             "variants": entry.get("variants", []),
             "entry_type": entry.get("entry_type", ""),
             "has_content": bool(content_html),
+            "see_also": entry.get("see_also", []),
+            "wikilink_targets": wikilink_targets,
         })
 
     output_file = _write_dataset(
@@ -521,6 +528,69 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     index_file.write_text(
         json.dumps(index_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+    # --- Generate graph data (opt-in) ---
+    if config.is_graph_enabled("encyclopedia"):
+        graph_nodes = []
+        graph_edges = []
+        category_set = set()
+
+        for rec in index_records:
+            eid = rec["id"]
+            graph_nodes.append({
+                "id": eid,
+                "title": rec["title"],
+                "abstract": rec.get("abstract", ""),
+                "categories": rec["categories"],
+                "has_content": rec["has_content"],
+                "type": "entry",
+            })
+
+            # Edges: entry → category (star topology)
+            for cat in rec["categories"]:
+                top_cat = cat.split("/")[0]
+                category_set.add(top_cat)
+                graph_edges.append({
+                    "source": eid,
+                    "target": f"cat:{top_cat}",
+                    "type": "category",
+                })
+
+            # Edges: see_also
+            for target in rec.get("see_also") or []:
+                graph_edges.append({
+                    "source": eid,
+                    "target": target,
+                    "type": "see_also",
+                })
+
+            # Edges: wikilinks
+            for target in rec.get("wikilink_targets") or []:
+                graph_edges.append({
+                    "source": eid,
+                    "target": target,
+                    "type": "wikilink",
+                })
+
+        # Add category nodes
+        for cat in sorted(category_set):
+            graph_nodes.append({
+                "id": f"cat:{cat}",
+                "title": cat,
+                "type": "category",
+            })
+
+        graph_data = {
+            "nodes": graph_nodes,
+            "edges": graph_edges,
+            "categories": sorted(category_set),
+        }
+
+        graph_file = config.data_dir / "encyclopedia_graph.json"
+        graph_file.write_text(
+            json.dumps(graph_data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"  Exported graph ({len(graph_nodes)} nodes, {len(graph_edges)} edges) to {graph_file}")
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
     print(f"  Exported index ({len(index_records)} entries) to {index_file}")

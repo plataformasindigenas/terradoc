@@ -124,8 +124,11 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
             continue
 
         client_index = {}
+        graph_data = {}
         if name == "encyclopedia":
             client_index = load_json_if_exists(config.data_dir / "encyclopedia_index.json")
+            if config.is_graph_enabled("encyclopedia"):
+                graph_data = load_json_if_exists(config.data_dir / "encyclopedia_graph.json")
 
         batch = kodudo.load_config(config_path)
 
@@ -164,6 +167,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
                 "page": name,
                 "current_page_path": output_filename,
                 "client_index": client_index,
+                "graph_data": graph_data,
                 "intensity": get_module_intensity(config, name),
             },
             output=locale_output,
@@ -173,7 +177,7 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
     if config.is_module_enabled("encyclopedia"):
         render_article_pages(locale, translations, config)
 
-    for name in ("dictionary-data", "encyclopedia-data", "recordings-data"):
+    for name in ("dictionary-data", "encyclopedia-data", "encyclopedia-graph", "recordings-data"):
         src = config.docs_dir / f"{name}.json"
         if src.exists():
             dst = locale_dir / f"{name}.json"

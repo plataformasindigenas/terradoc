@@ -80,6 +80,16 @@ def process_wikilinks(content_md: str, all_ids: set) -> str:
     return re.sub(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]", _replace_wikilink, content_md)
 
 
+def extract_wikilink_targets(content_md: str, all_ids: set) -> list[str]:
+    """Extract valid wikilink target IDs from markdown content."""
+    targets = []
+    for match in re.finditer(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]", content_md):
+        target = match.group(1).strip().lower().replace(" ", "-")
+        if target in all_ids:
+            targets.append(target)
+    return list(dict.fromkeys(targets))  # deduplicate preserving order
+
+
 def build_category_tree(entries: list[dict]) -> dict:
     """Build a nested category tree from hierarchical category paths.
 
