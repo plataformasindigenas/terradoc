@@ -181,12 +181,15 @@ class TerradocConfig:
         "encyclopedia": ModuleConfig(),
         "bibliography": ModuleConfig(),
         "recordings": ModuleConfig(),
+        "videos": ModuleConfig(),
     })
     module_labels: dict[str, str] = field(default_factory=lambda: {
         "dictionary": "Dictionary",
         "encyclopedia": "Encyclopedia",
         "fauna": "Fauna",
         "bibliography": "Bibliography",
+        "recordings": "Recordings",
+        "videos": "Videos",
     })
 
     # Paths (set after loading)

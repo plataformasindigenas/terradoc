@@ -12,7 +12,9 @@ from terradoc.convert import (
     _print_completeness_report,
     _resolve_references,
     convert_encyclopedia,
+    convert_videos,
     CONVERTERS,
+    run_all_converters,
 )
 
 
@@ -249,6 +251,72 @@ def test_fauna_schema_no_dead_fields():
     schema = aptoro.load_schema(str(cfg.resolve_schema("fauna")))
     field_names = [f.name for f in schema.fields]
     assert "dictionary_ids" not in field_names
+
+
+def test_videos_schema_is_packaged_and_loadable():
+    """Videos schema is bundled and can be loaded via resolve_schema."""
+    import aptoro
+
+    cfg = TerradocConfig()
+    schema_path = cfg.resolve_schema("videos")
+    assert schema_path.exists()
+    schema = aptoro.load_schema(str(schema_path))
+    field_names = [f.name for f in schema.fields]
+    assert "youtube_id" in field_names
+    assert "title" in field_names
+
+
+def test_convert_videos_happy_path():
+    """convert_videos validates and exports videos.yaml."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (tmp_path / "docs").mkdir()
+
+        (data_dir / "videos.yaml").write_text("""- youtube_id: abc123
+  title: Video A
+  category: ritual
+  duration: "10:00"
+  thumbnail: images/video-a.jpg
+""", encoding="utf-8")
+
+        config = TerradocConfig(base_dir=tmp_path)
+        count = convert_videos(config)
+        assert count == 1
+
+        exported = data_dir / "videos.json"
+        assert exported.exists()
+        text = exported.read_text(encoding="utf-8")
+        assert '"youtube_id": "abc123"' in text
+        assert '"title": "Video A"' in text
+
+
+def test_run_all_converters_preflight_fails_on_missing_enabled_schema(monkeypatch):
+    """Preflight fails early when an enabled module schema cannot be resolved."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "encyclopedia").mkdir()
+        (tmp_path / "docs").mkdir()
+
+        config = TerradocConfig(base_dir=tmp_path)
+        for mod_name in list(config.modules):
+            config.modules[mod_name].enabled = False
+        config.modules["videos"].enabled = True
+
+        original_resolve_schema = config.resolve_schema
+
+        def fake_resolve_schema(module_slug: str) -> Path:
+            if module_slug == "videos":
+                return tmp_path / "data" / "videos_schema.yaml"
+            return original_resolve_schema(module_slug)
+
+        monkeypatch.setattr(config, "resolve_schema", fake_resolve_schema)
+
+        with pytest.raises(FileNotFoundError, match="videos: missing schema file"):
+            run_all_converters(config)
 
 
 # ── Completeness report ──

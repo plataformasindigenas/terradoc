@@ -60,6 +60,17 @@ def _normalize_records(records: list) -> list[dict]:
     return [_record_to_dict(r) for r in records]
 
 
+def _load_schema(config: TerradocConfig, module_slug: str):
+    """Load schema for a module, failing with a clear path if missing."""
+    schema_path = config.resolve_schema(module_slug)
+    if not schema_path.exists():
+        raise FileNotFoundError(
+            f"Schema for module '{module_slug}' not found: {schema_path}. "
+            f"Expected '{module_slug}_schema.yaml' in package schemas or data/."
+        )
+    return aptoro.load_schema(str(schema_path))
+
+
 def convert_dictionary(config: TerradocConfig) -> int:
     """Convert dictionary TSV to JSON."""
     print("=== Converting Dictionary ===")
@@ -77,7 +88,7 @@ def convert_dictionary(config: TerradocConfig) -> int:
         print(f"  Exported 0 entries to {output_file}")
         return 0
 
-    schema = aptoro.load_schema(str(config.resolve_schema("dictionary")))
+    schema = _load_schema(config, "dictionary")
     data = aptoro.read(str(dictionary_file), format="csv", delimiter="\t")
 
     print(f"  Validating {len(data)} entries...")
@@ -118,7 +129,7 @@ def convert_fauna(config: TerradocConfig) -> int:
         print(f"  Exported 0 entries to {output_file}")
         return 0
 
-    schema = aptoro.load_schema(str(config.resolve_schema("fauna")))
+    schema = _load_schema(config, "fauna")
     data = aptoro.read(str(fauna_file), format="yaml")
 
     print(f"  Validating {len(data)} entries...")
@@ -154,7 +165,7 @@ def convert_bibliography(config: TerradocConfig) -> int:
     with open(bib_file, "r", encoding="utf-8") as f:
         bib_database = bparser.parse(f.read())
 
-    schema = aptoro.load_schema(str(config.resolve_schema("bibliography")))
+    schema = _load_schema(config, "bibliography")
 
     data = []
     for entry in bib_database.entries:
@@ -373,7 +384,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     """Convert encyclopedia markdown to JSON."""
     print("=== Converting Encyclopedia ===")
 
-    schema = aptoro.load_schema(str(config.resolve_schema("encyclopedia")))
+    schema = _load_schema(config, "encyclopedia")
     data = _load_encyclopedia_entries(config.data_dir)
 
     print(f"  Validating {len(data)} entries...")
@@ -609,7 +620,7 @@ def convert_recordings(config: TerradocConfig) -> int:
         print(f"  Recordings file not found: {recordings_file}")
         return 0
 
-    schema = aptoro.load_schema(str(config.resolve_schema("recordings")))
+    schema = _load_schema(config, "recordings")
 
     with open(recordings_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or []
@@ -644,7 +655,7 @@ def convert_videos(config: TerradocConfig) -> int:
         print(f"  Videos file not found: {videos_file}")
         return 0
 
-    schema = aptoro.load_schema(str(config.resolve_schema("videos")))
+    schema = _load_schema(config, "videos")
 
     with open(videos_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or []
@@ -681,8 +692,43 @@ CONVERTERS = {
 }
 
 
+REQUIRED_DATA_PATHS: dict[str, tuple[str, ...]] = {
+    "encyclopedia": ("encyclopedia",),
+}
+
+
+def _run_enabled_module_preflight(config: TerradocConfig) -> None:
+    """Fail early if enabled built-in modules are missing required resources."""
+    problems: list[str] = []
+
+    for name in CONVERTERS:
+        if not config.is_module_enabled(name):
+            continue
+
+        schema_path = config.resolve_schema(name)
+        if not schema_path.exists():
+            problems.append(
+                f"  - {name}: missing schema file at {schema_path}"
+            )
+
+        for rel_path in REQUIRED_DATA_PATHS.get(name, ()):
+            required_path = config.data_dir / rel_path
+            if not required_path.exists():
+                problems.append(
+                    f"  - {name}: missing required data path {required_path}"
+                )
+
+    if problems:
+        raise FileNotFoundError(
+            "Preflight validation failed for enabled modules:\n"
+            + "\n".join(problems)
+        )
+
+
 def run_all_converters(config: TerradocConfig) -> dict[str, int]:
     """Run all enabled converters and return counts."""
+    _run_enabled_module_preflight(config)
+
     counts = {}
     for name, converter in CONVERTERS.items():
         if config.is_module_enabled(name):

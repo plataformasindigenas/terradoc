@@ -52,6 +52,8 @@ def test_cli_init():
             assert (project_dir / "config" / "fauna.yaml").exists()
             assert (project_dir / "config" / "encyclopedia.yaml").exists()
             assert (project_dir / "config" / "bibliography.yaml").exists()
+            assert (project_dir / "config" / "recordings.yaml").exists()
+            assert (project_dir / "config" / "videos.yaml").exists()
             assert (project_dir / "config" / "templates" / "base.html.j2").exists()
             assert (project_dir / "locales").exists()
             assert (project_dir / "docs").exists()
