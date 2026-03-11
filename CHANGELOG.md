@@ -2,16 +2,17 @@
 
 All notable changes to terradoc are documented here.
 
-## [0.2.1] — 2026-03-11
+## [0.3.0] — 2026-03-11
 
-Refines the terra theme with visual polish, adds a new module, and introduces
-an opt-in knowledge graph for the encyclopedia.
+A major release that redesigns the terra theme, adds two new modules, and
+introduces build-time validation and an opt-in knowledge graph.
 
 ### Added
 
-- **Videos module.** New `videos` converter, template, and index teaser for
-  YouTube-hosted video collections. Supports category filtering, thumbnail
-  grid with play overlays, and oEmbed metadata.
+- **Videos module.** New `videos` converter, template, schema, and index
+  teaser for YouTube-hosted video collections. Supports category filtering,
+  thumbnail grid with play overlays, and oEmbed metadata. Bundled schema,
+  CLI scaffolding, and default module config included.
 - **Encyclopedia knowledge graph (opt-in).** Force-directed D3.js
   visualization showing entries connected by categories, `see_also` links,
   and wikilinks. Activated per-project with `encyclopedia: { graph: true }`
@@ -23,6 +24,11 @@ an opt-in knowledge graph for the encyclopedia.
 - **`ModuleConfig.graph` flag.** Modules can now declare opt-in features
   beyond `enabled`; `graph` (default `false`) gates encyclopedia graph
   generation and rendering.
+- **Build preflight validation.** `run_all_converters()` now checks all
+  enabled modules for missing schemas and required data paths before running
+  any converter, failing fast with a clear summary.
+- **`_load_schema` helper.** Consolidates schema loading across all
+  converters with a clear `FileNotFoundError` when a schema file is missing.
 - **Page badges.** Small split-circle moiety SVG badge on all inner page
   headings (dictionary, encyclopedia, fauna, bibliography, recordings,
   videos).
@@ -31,6 +37,9 @@ an opt-in knowledge graph for the encyclopedia.
 
 ### Changed
 
+- **Terra theme palette.** Updated defaults: primary `#C81F2D`, accent
+  `#D4A03A`, fonts `Sora`/`Inter`, border-radius `28px`. The terra preset
+  now uses a warmer, more distinctive color scheme.
 - **Hero redesign.** Village circle motif with photo cluster, floating
   satellite images, ambient SMIL pulse animations, and interactive peephole
   hover effect.
@@ -48,6 +57,8 @@ an opt-in knowledge graph for the encyclopedia.
   `calc(100vh - 16rem)` with `overflow-y: auto`.
 - **`see_also` and `wikilink_targets` in index JSON.** Encyclopedia index
   records now include these fields to support graph generation.
+- **Recordings and videos in CLI scaffolding.** `terradoc init` now
+  generates config files for all six modules.
 
 ### Fixed
 
