@@ -286,6 +286,145 @@
         width: 100%;
     }
 }
+
+/* ── Knowledge graph ── */
+.graph-section {
+    background: var(--td-color-surface);
+    border: 1px solid var(--td-color-border);
+    border-radius: var(--td-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--td-shadow-sm);
+}
+.graph-section h2 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.1rem;
+    color: var(--td-color-primary);
+    position: relative;
+    padding-left: 1rem;
+}
+.graph-section h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    width: 3px;
+    height: 1.1em;
+    background: var(--td-color-primary);
+    border-radius: 2px;
+}
+.graph-container {
+    position: relative;
+    width: 100%;
+    height: 520px;
+    border: 1px solid var(--td-color-border);
+    border-radius: calc(var(--td-radius) - 4px);
+    overflow: hidden;
+    background: var(--td-color-bg);
+}
+.graph-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.graph-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.graph-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--td-color-border);
+    background: var(--td-color-bg);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--td-font-family);
+    color: var(--td-color-text);
+}
+.graph-btn:hover {
+    background: var(--td-color-bg-light);
+    border-color: var(--td-color-border-dark);
+}
+.graph-btn.active {
+    background: var(--td-color-primary);
+    color: white;
+    border-color: var(--td-color-primary);
+}
+.graph-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--td-color-text-muted);
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+.graph-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.graph-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.graph-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--td-color-surface);
+    border: 1px solid var(--td-color-border-dark);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    max-width: 280px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.graph-tooltip.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+.graph-tooltip-title {
+    font-weight: 700;
+    font-family: var(--td-font-headings);
+    color: var(--td-color-primary);
+    margin-bottom: 0.3rem;
+}
+.graph-tooltip-abstract {
+    font-size: 0.8rem;
+    color: var(--td-color-text-secondary);
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.graph-tooltip-link {
+    font-size: 0.75rem;
+    color: var(--td-color-accent);
+    text-decoration: none;
+}
+.graph-tooltip-link:hover {
+    text-decoration: underline;
+}
+.graph-tooltip-cats {
+    font-size: 0.72rem;
+    color: var(--td-color-text-muted);
+    margin-bottom: 0.3rem;
+}
+@media (max-width: 700px) {
+    .graph-container {
+        height: 380px;
+    }
+}
 {% endblock %}
 
 {% block content %}
@@ -331,6 +470,22 @@
                 <div id="categories-section" class="portal-section" style="display:none;"></div>
                 <div id="highlights-section" class="portal-section" style="display:none;"></div>
             </div>
+        </div>
+
+        <div id="graph-section" class="graph-section js-only" style="display:none;">
+            <h2>{{ t.enc_graph_title | default('Mapa de conexões') }}</h2>
+            <div class="graph-controls">
+                <button class="graph-btn active" data-graph-filter="all">{{ t.enc_graph_all | default('Todos') }}</button>
+            </div>
+            <div class="graph-container" id="graph-container">
+                <div class="graph-tooltip" id="graph-tooltip">
+                    <div class="graph-tooltip-title" id="tooltip-title"></div>
+                    <div class="graph-tooltip-cats" id="tooltip-cats"></div>
+                    <div class="graph-tooltip-abstract" id="tooltip-abstract"></div>
+                    <a class="graph-tooltip-link" id="tooltip-link" href="#">{{ t.enc_read_more | default('Ler mais') }} &rarr;</a>
+                </div>
+            </div>
+            <div class="graph-legend" id="graph-legend"></div>
         </div>
 
         <div class="results-container" id="results" style="display:none;">
@@ -567,6 +722,416 @@
 
             // Ensure correct initial visibility
             updateView();
+    })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script>
+    (function() {
+        var GRAPH_DATA = {% if graph_data %}{{ graph_data | tojson }}{% else %}null{% endif %};
+        var CATEGORY_COLORS = {
+            'natureza': '#5B8C5A',
+            'cosmologia': '#7B5EA7',
+            'ritual': '#C81F2D',
+            'cultura-material': '#B7522C',
+            'sociedade': '#2E6B8A',
+            'linguística': '#8B7355',
+            'organização-social': '#D4A03A',
+            'nomes-próprios': '#6B8E6B',
+            'geografia': '#4A90A4',
+            'música': '#C06090',
+            'corpo': '#D2691E',
+            'etnografia': '#708090',
+            'saúde': '#3CB371',
+            'território': '#8FBC8F',
+            'tradição-oral': '#CD853F'
+        };
+        var DEFAULT_COLOR = '#999';
+
+        function catColor(cat) {
+            if (!cat) return DEFAULT_COLOR;
+            var top = cat.replace('cat:', '');
+            return CATEGORY_COLORS[top] || DEFAULT_COLOR;
+        }
+
+        function nodeColor(d) {
+            if (d.type === 'category') return catColor(d.id);
+            if (d.categories && d.categories.length > 0) {
+                return catColor(d.categories[0].split('/')[0]);
+            }
+            return DEFAULT_COLOR;
+        }
+
+        if (GRAPH_DATA && GRAPH_DATA.nodes) { initGraph(GRAPH_DATA); }
+
+        function initGraph(graph) {
+            var container = document.getElementById('graph-container');
+            var section = document.getElementById('graph-section');
+            if (!container || !section) return;
+            section.style.display = '';
+
+            var width = container.clientWidth;
+            var height = container.clientHeight;
+
+            // Build lookup maps
+            var nodeMap = {};
+            graph.nodes.forEach(function(n) { nodeMap[n.id] = n; });
+
+            // Build adjacency
+            var adj = {};
+            graph.edges.forEach(function(e) {
+                if (!adj[e.source]) adj[e.source] = [];
+                if (!adj[e.target]) adj[e.target] = [];
+                adj[e.source].push(e);
+                adj[e.target].push(e);
+            });
+
+            // State: which nodes are visible
+            var visibleNodes = new Set();
+            var visibleEdges = [];
+            var expandedCats = new Set();
+
+            // Start with category nodes only
+            graph.categories.forEach(function(c) { visibleNodes.add('cat:' + c); });
+
+            // Build filter buttons
+            var controlsEl = container.parentElement.querySelector('.graph-controls');
+            graph.categories.forEach(function(cat) {
+                var btn = document.createElement('button');
+                btn.className = 'graph-btn';
+                btn.setAttribute('data-graph-filter', cat);
+                btn.textContent = cat;
+                btn.style.borderColor = catColor(cat);
+                btn.addEventListener('click', function() {
+                    toggleCategory(cat);
+                });
+                controlsEl.appendChild(btn);
+            });
+
+            // Legend
+            var legendEl = document.getElementById('graph-legend');
+            var legendItems = [
+                { label: T.enc_graph_legend_category || 'Categoria', size: 14, color: 'var(--td-color-primary)' },
+                { label: T.enc_graph_legend_entry || 'Verbete', size: 8, color: 'var(--td-color-text-muted)' },
+            ];
+            legendItems.forEach(function(item) {
+                var el = document.createElement('span');
+                el.className = 'graph-legend-item';
+                el.innerHTML = '<span class="graph-legend-dot" style="width:' + item.size + 'px;height:' + item.size + 'px;background:' + item.color + ';"></span>' + item.label;
+                legendEl.appendChild(el);
+            });
+
+            // SVG setup
+            var svg = d3.select(container).append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            var g = svg.append('g');
+
+            // Zoom
+            var zoom = d3.zoom()
+                .scaleExtent([0.3, 4])
+                .on('zoom', function(event) {
+                    g.attr('transform', event.transform);
+                });
+            svg.call(zoom);
+
+            var linkGroup = g.append('g').attr('class', 'links');
+            var nodeGroup = g.append('g').attr('class', 'nodes');
+
+            // Tooltip
+            var tooltip = document.getElementById('graph-tooltip');
+            var tooltipTitle = document.getElementById('tooltip-title');
+            var tooltipCats = document.getElementById('tooltip-cats');
+            var tooltipAbstract = document.getElementById('tooltip-abstract');
+            var tooltipLink = document.getElementById('tooltip-link');
+
+            // Force simulation
+            var simulation = d3.forceSimulation()
+                .force('link', d3.forceLink().id(function(d) { return d.id; }).distance(function(d) {
+                    if (d.source.type === 'category' || d.target.type === 'category') return 120;
+                    return 60;
+                }))
+                .force('charge', d3.forceManyBody().strength(function(d) {
+                    return d.type === 'category' ? -400 : -80;
+                }))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(function(d) {
+                    return d.type === 'category' ? 30 : 8;
+                }))
+                .on('tick', ticked);
+
+            function getVisibleData() {
+                var nodes = [];
+                var nodeSet = new Set();
+                visibleNodes.forEach(function(id) {
+                    if (nodeMap[id]) {
+                        nodes.push(nodeMap[id]);
+                        nodeSet.add(id);
+                    }
+                });
+
+                var edges = [];
+                graph.edges.forEach(function(e) {
+                    var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                    var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                    if (nodeSet.has(sid) && nodeSet.has(tid)) {
+                        edges.push({ source: sid, target: tid, type: e.type });
+                    }
+                });
+
+                return { nodes: nodes, edges: edges };
+            }
+
+            function update() {
+                var data = getVisibleData();
+
+                // Links
+                var link = linkGroup.selectAll('line').data(data.edges, function(d) {
+                    return (d.source.id || d.source) + '-' + (d.target.id || d.target);
+                });
+                link.exit().remove();
+                var linkEnter = link.enter().append('line')
+                    .attr('stroke', function(d) {
+                        if (d.type === 'see_also') return 'var(--td-color-accent)';
+                        if (d.type === 'wikilink') return 'var(--td-color-gold)';
+                        return 'var(--td-color-border-dark)';
+                    })
+                    .attr('stroke-opacity', function(d) {
+                        return d.type === 'category' ? 0.3 : 0.6;
+                    })
+                    .attr('stroke-width', function(d) {
+                        return d.type === 'category' ? 1 : 1.5;
+                    });
+                link = linkEnter.merge(link);
+
+                // Nodes
+                var node = nodeGroup.selectAll('g.node').data(data.nodes, function(d) { return d.id; });
+                node.exit().remove();
+
+                var nodeEnter = node.enter().append('g')
+                    .attr('class', 'node')
+                    .style('cursor', 'pointer')
+                    .call(d3.drag()
+                        .on('start', dragstarted)
+                        .on('drag', dragged)
+                        .on('end', dragended));
+
+                nodeEnter.append('circle')
+                    .attr('r', function(d) { return d.type === 'category' ? 18 : 5; })
+                    .attr('fill', function(d) { return nodeColor(d); })
+                    .attr('stroke', function(d) { return d.type === 'category' ? 'white' : 'none'; })
+                    .attr('stroke-width', function(d) { return d.type === 'category' ? 2 : 0; })
+                    .attr('opacity', function(d) { return d.type === 'category' ? 1 : 0.85; });
+
+                nodeEnter.filter(function(d) { return d.type === 'category'; })
+                    .append('text')
+                    .text(function(d) { return d.title; })
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '0.35em')
+                    .attr('font-size', '7px')
+                    .attr('font-weight', '700')
+                    .attr('font-family', 'var(--td-font-headings)')
+                    .attr('fill', 'white')
+                    .attr('pointer-events', 'none');
+
+                nodeEnter.on('click', function(event, d) {
+                    event.stopPropagation();
+                    if (d.type === 'category') {
+                        toggleCategory(d.title);
+                    } else {
+                        showTooltip(d, event);
+                    }
+                });
+
+                nodeEnter.on('mouseenter', function(event, d) {
+                    if (d.type === 'entry') {
+                        showTooltip(d, event);
+                    }
+                });
+
+                node = nodeEnter.merge(node);
+
+                // Restart simulation
+                simulation.nodes(data.nodes);
+                simulation.force('link').links(data.edges);
+                simulation.alpha(0.6).restart();
+            }
+
+            function ticked() {
+                linkGroup.selectAll('line')
+                    .attr('x1', function(d) { return d.source.x; })
+                    .attr('y1', function(d) { return d.source.y; })
+                    .attr('x2', function(d) { return d.target.x; })
+                    .attr('y2', function(d) { return d.target.y; });
+
+                nodeGroup.selectAll('g.node')
+                    .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+            }
+
+            function toggleCategory(cat) {
+                var catId = 'cat:' + cat;
+                if (expandedCats.has(cat)) {
+                    // Collapse: remove entry nodes that belong only to this category
+                    expandedCats.delete(cat);
+                    graph.edges.forEach(function(e) {
+                        var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                        var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                        if (e.type === 'category' && tid === catId) {
+                            // Check if this entry belongs to another expanded category
+                            var keepEntry = false;
+                            var entryNode = nodeMap[sid];
+                            if (entryNode && entryNode.categories) {
+                                entryNode.categories.forEach(function(c) {
+                                    if (expandedCats.has(c.split('/')[0])) keepEntry = true;
+                                });
+                            }
+                            if (!keepEntry) visibleNodes.delete(sid);
+                        }
+                    });
+                    // Update button
+                    var btns = controlsEl.querySelectorAll('[data-graph-filter="' + cat + '"]');
+                    btns.forEach(function(b) { b.classList.remove('active'); });
+                } else {
+                    // Expand: add entry nodes
+                    expandedCats.add(cat);
+                    graph.edges.forEach(function(e) {
+                        var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                        var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                        if (e.type === 'category' && tid === catId) {
+                            visibleNodes.add(sid);
+                        }
+                    });
+                    // Also add see_also/wikilink targets that are visible
+                    var newEntries = new Set();
+                    visibleNodes.forEach(function(id) { newEntries.add(id); });
+                    graph.edges.forEach(function(e) {
+                        var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                        var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                        if (e.type !== 'category') {
+                            if (newEntries.has(sid)) visibleNodes.add(tid);
+                            if (newEntries.has(tid)) visibleNodes.add(sid);
+                        }
+                    });
+                    // Update button
+                    var btns = controlsEl.querySelectorAll('[data-graph-filter="' + cat + '"]');
+                    btns.forEach(function(b) { b.classList.add('active'); });
+                }
+
+                // Update 'all' button
+                var allBtn = controlsEl.querySelector('[data-graph-filter="all"]');
+                if (expandedCats.size === graph.categories.length) {
+                    allBtn.classList.add('active');
+                } else if (expandedCats.size === 0) {
+                    allBtn.classList.add('active');
+                } else {
+                    allBtn.classList.remove('active');
+                }
+
+                update();
+            }
+
+            // 'All' button handler
+            controlsEl.querySelector('[data-graph-filter="all"]').addEventListener('click', function() {
+                if (expandedCats.size === graph.categories.length) {
+                    // Collapse all
+                    expandedCats.clear();
+                    visibleNodes.clear();
+                    graph.categories.forEach(function(c) { visibleNodes.add('cat:' + c); });
+                    controlsEl.querySelectorAll('.graph-btn').forEach(function(b) { b.classList.remove('active'); });
+                    controlsEl.querySelector('[data-graph-filter="all"]').classList.add('active');
+                } else {
+                    // Expand all
+                    graph.categories.forEach(function(cat) {
+                        if (!expandedCats.has(cat)) {
+                            expandedCats.add(cat);
+                            graph.edges.forEach(function(e) {
+                                var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                                var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                                if (e.type === 'category' && tid === 'cat:' + cat) {
+                                    visibleNodes.add(sid);
+                                }
+                            });
+                        }
+                    });
+                    // Add see_also/wikilink connections
+                    var allEntries = new Set(visibleNodes);
+                    graph.edges.forEach(function(e) {
+                        var sid = typeof e.source === 'object' ? e.source.id : e.source;
+                        var tid = typeof e.target === 'object' ? e.target.id : e.target;
+                        if (e.type !== 'category') {
+                            if (allEntries.has(sid)) visibleNodes.add(tid);
+                            if (allEntries.has(tid)) visibleNodes.add(sid);
+                        }
+                    });
+                    controlsEl.querySelectorAll('.graph-btn').forEach(function(b) { b.classList.add('active'); });
+                }
+                update();
+            });
+
+            function showTooltip(d, event) {
+                tooltipTitle.textContent = d.title || d.id;
+                tooltipCats.textContent = (d.categories || []).join(' · ');
+                tooltipAbstract.textContent = d.abstract || '';
+                tooltipAbstract.style.display = d.abstract ? '' : 'none';
+
+                if (d.has_content) {
+                    tooltipLink.href = 'encyclopedia/' + encodeURIComponent(d.id) + '.html';
+                    tooltipLink.style.display = '';
+                } else {
+                    tooltipLink.style.display = 'none';
+                }
+
+                tooltip.classList.add('visible');
+
+                // Position
+                var rect = container.getBoundingClientRect();
+                var x = event.clientX - rect.left + 15;
+                var y = event.clientY - rect.top - 10;
+
+                // Prevent overflow
+                if (x + 290 > rect.width) x = x - 310;
+                if (y + 150 > rect.height) y = y - 150;
+                if (x < 0) x = 10;
+                if (y < 0) y = 10;
+
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            }
+
+            // Hide tooltip on click outside
+            svg.on('click', function() {
+                tooltip.classList.remove('visible');
+            });
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            // Handle resize
+            window.addEventListener('resize', function() {
+                width = container.clientWidth;
+                height = container.clientHeight;
+                svg.attr('width', width).attr('height', height);
+                simulation.force('center', d3.forceCenter(width / 2, height / 2));
+                simulation.alpha(0.3).restart();
+            });
+
+            // Initial render
+            update();
+        }
     })();
     </script>
 {% endblock %}

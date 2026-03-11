@@ -38,3 +38,10 @@ def copy_data_to_docs(config: TerradocConfig):
         if src.exists():
             shutil.copy2(src, dst)
             print(f"  Copied {src.name} → {dst}")
+
+        if config.is_graph_enabled("encyclopedia"):
+            src = config.data_dir / "encyclopedia_graph.json"
+            dst = config.docs_dir / "encyclopedia-graph.json"
+            if src.exists():
+                shutil.copy2(src, dst)
+                print(f"  Copied {src.name} → {dst}")
