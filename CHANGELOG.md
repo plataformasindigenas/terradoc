@@ -2,6 +2,60 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.2.1] — 2026-03-11
+
+Refines the terra theme with visual polish, adds a new module, and introduces
+an opt-in knowledge graph for the encyclopedia.
+
+### Added
+
+- **Videos module.** New `videos` converter, template, and index teaser for
+  YouTube-hosted video collections. Supports category filtering, thumbnail
+  grid with play overlays, and oEmbed metadata.
+- **Encyclopedia knowledge graph (opt-in).** Force-directed D3.js
+  visualization showing entries connected by categories, `see_also` links,
+  and wikilinks. Activated per-project with `encyclopedia: { graph: true }`
+  in `terradoc.yaml`. Includes expand/collapse by category, zoom/pan/drag,
+  color-coded nodes, and tooltips with abstract and article link.
+- **Wikilink target extraction.** New `extract_wikilink_targets()` utility
+  captures link targets before conversion to HTML, enabling graph edge
+  generation and future link analysis.
+- **`ModuleConfig.graph` flag.** Modules can now declare opt-in features
+  beyond `enabled`; `graph` (default `false`) gates encyclopedia graph
+  generation and rendering.
+- **Page badges.** Small split-circle moiety SVG badge on all inner page
+  headings (dictionary, encyclopedia, fauna, bibliography, recordings,
+  videos).
+- **`--td-color-gold` CSS variable.** Configurable gold accent color for
+  decorative elements (stat separators, fauna borders, section labels).
+
+### Changed
+
+- **Hero redesign.** Village circle motif with photo cluster, floating
+  satellite images, ambient SMIL pulse animations, and interactive peephole
+  hover effect.
+- **Section teasers.** Unified card layout with organic dashed left borders,
+  per-section accent colors via `data-section` attribute and CSS custom
+  properties, and warm hover states.
+- **Section headings.** Flex layout with red accent bar, nested diamond SVG
+  motif, and consistent styling across all templates.
+- **Footer overhaul.** Prominent organic SVG adugo spine, removed resources
+  column, credits now link terradoc/aptoro/kodudo to PyPI.
+- **Dictionary layout.** `dict-layout` constrained to viewport height
+  (`calc(100vh - 10rem)`) so the word list scrolls within the visible area
+  instead of extending the page.
+- **Encyclopedia categories.** Category list capped at
+  `calc(100vh - 16rem)` with `overflow-y: auto`.
+- **`see_also` and `wikilink_targets` in index JSON.** Encyclopedia index
+  records now include these fields to support graph generation.
+
+### Fixed
+
+- **Navbar overlap on inner pages.** CSS shorthand `padding: 0 2rem` in
+  `.td-style-terra .td-container` was resetting `padding-top` to 0,
+  overriding the navbar clearance. Changed to `padding-left`/`padding-right`
+  only across all responsive breakpoints.
+
 ## [0.2.0] — 2026-03-09
 
 A major feature release adding a complete theming system and data validation

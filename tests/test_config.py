@@ -35,9 +35,9 @@ def test_enabled_modules():
 def test_theme_colors_defaults():
     """Theme colors have correct defaults (terra palette)."""
     colors = ThemeColors()
-    assert colors.primary == "#2D4A3E"
-    assert colors.accent == "#C2703E"
-    assert colors.bg == "#F7F5F0"
+    assert colors.primary == "#C81F2D"
+    assert colors.accent == "#D4A03A"
+    assert colors.bg == "#F4F1EA"
 
 
 def test_load_config_from_yaml():
@@ -97,7 +97,7 @@ def test_load_config_from_yaml():
         assert cfg.theme.logo == "images/custom-logo.svg"
         assert cfg.theme.favicon == "images/custom-favicon.svg"
         # Unset colors use preset defaults (terra by default)
-        assert cfg.theme.colors.bg == "#F7F5F0"
+        assert cfg.theme.colors.bg == "#F4F1EA"
     finally:
         tmp_path.unlink()
 
@@ -118,9 +118,9 @@ def test_theme_to_dict():
     """ThemeColors.to_dict returns all color values."""
     colors = ThemeColors()
     d = colors.to_dict()
-    assert len(d) == 19
-    assert d["primary"] == "#2D4A3E"
-    assert d["accent"] == "#C2703E"
+    assert len(d) == 20
+    assert d["primary"] == "#C81F2D"
+    assert d["accent"] == "#D4A03A"
 
 
 def test_theme_config_to_dict_includes_assets():
@@ -188,9 +188,9 @@ def test_default_theme_is_terra():
     """Default ThemeConfig uses terra style."""
     theme = ThemeConfig()
     assert theme.style == "terra"
-    assert theme.border_radius == "8px"
-    assert "'Bitter'" in theme.font_family_headings
-    assert "'Source Sans 3'" in theme.font_family
+    assert theme.border_radius == "28px"
+    assert "'Sora'" in theme.font_family_headings
+    assert "'Inter'" in theme.font_family
 
 
 def test_preset_loading_terra():
@@ -213,9 +213,9 @@ def test_preset_loading_terra():
         # Overridden color
         assert cfg.theme.colors.primary == "#FF0000"
         # Other colors come from terra preset
-        assert cfg.theme.colors.accent == "#C2703E"
+        assert cfg.theme.colors.accent == "#D4A03A"
         assert cfg.theme.style == "terra"
-        assert cfg.theme.border_radius == "8px"
+        assert cfg.theme.border_radius == "28px"
     finally:
         tmp_path.unlink()
 
