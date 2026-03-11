@@ -18,6 +18,7 @@ def test_default_config():
     assert cfg.site_context()["title"] == "Terradoc Project"
     assert cfg.is_module_enabled("dictionary") is True
     assert cfg.is_module_enabled("fauna") is True
+    assert cfg.is_module_enabled("videos") is True
     assert cfg.is_module_enabled("nonexistent") is False
 
 
@@ -30,6 +31,8 @@ def test_enabled_modules():
     assert "encyclopedia" in slugs
     assert "fauna" in slugs
     assert "bibliography" in slugs
+    assert "recordings" in slugs
+    assert "videos" in slugs
 
 
 def test_theme_colors_defaults():
@@ -155,6 +158,7 @@ def test_load_config_merges_labels_with_defaults():
         # Default keys still present
         assert cfg.module_labels["encyclopedia"] == "Encyclopedia"
         assert cfg.module_labels["fauna"] == "Fauna"
+        assert cfg.module_labels["videos"] == "Videos"
         # Overridden locale label
         assert cfg.locale_labels["pt"] == "Brazilian Portuguese"
         # Default locale label still present

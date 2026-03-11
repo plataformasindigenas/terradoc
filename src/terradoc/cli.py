@@ -30,6 +30,14 @@ output: ../docs/encyclopedia.html
 template: templates/bibliography.html.j2
 output: ../docs/bibliography.html
 """,
+    "recordings.yaml": """input: ../data/recordings.json
+template: templates/recordings.html.j2
+output: ../docs/recordings.html
+""",
+    "videos.yaml": """input: ../data/videos.json
+template: templates/videos.html.j2
+output: ../docs/videos.html
+""",
 }
 
 DEFAULT_LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Project logo">
@@ -180,12 +188,15 @@ modules:
   encyclopedia: {{ enabled: true }}
   bibliography: {{ enabled: false }}
   recordings: {{ enabled: false }}
+  videos: {{ enabled: false }}
 
 module_labels:
   dictionary: "Dictionary"
   encyclopedia: "Encyclopedia"
   fauna: "Fauna"
   bibliography: "Bibliography"
+  recordings: "Recordings"
+  videos: "Videos"
 
 theme:
   preset: "{theme_preset}"

@@ -115,12 +115,16 @@ my-project/
     fauna.yaml
     encyclopedia.yaml
     bibliography.yaml
+    recordings.yaml
+    videos.yaml
   data/
     encyclopedia/        # Markdown articles with YAML front matter
     categories.yaml      # Optional: controlled category vocabulary
     dictionary.tsv
     fauna.yaml
     references.bib
+    recordings.yaml
+    videos.yaml
   locales/
   docs/
 ```
@@ -199,6 +203,7 @@ modules:
   encyclopedia: { enabled: true }
   bibliography: { enabled: true }
   recordings: { enabled: false }
+  videos: { enabled: false }
 
 theme:
   preset: "terra"               # or "classic"
