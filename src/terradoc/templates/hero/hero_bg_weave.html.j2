@@ -1,0 +1,55 @@
+{#- Hero background animation: weave preset.
+    Expanding geometric bands — concentric rectangles with rounded corners
+    radiating outward. A generic, culturally neutral pattern suitable for
+    communities without a specific animation preset. -#}
+<style>
+    .hero-weave-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        shape-rendering: geometricPrecision;
+    }
+    .hero-weave-bg rect {
+        fill: none;
+        vector-effect: non-scaling-stroke;
+        stroke-linecap: round;
+    }
+    .hw-primary { stroke: var(--td-color-primary); }
+    .hw-accent { stroke: var(--td-color-accent, var(--td-color-primary)); }
+    .hw-dash {
+        stroke-dasharray: 12 24 8 32 16 20;
+        stroke-dashoffset: 10;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .hero-weave-bg { display: none; }
+    }
+</style>
+<svg class="hero-weave-bg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    {# Source 1 — center-left, expanding rounded rectangles #}
+    {% for sz, delay in [(120, 0), (180, -2), (240, -4)] %}
+    <rect class="hw-primary hw-dash" x="{{ 280 - sz//2 }}" y="{{ 300 - sz//2 }}" width="{{ sz }}" height="{{ sz }}" rx="8" opacity="0" stroke-width="2.5">
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="11s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </rect>
+    {% endfor %}
+    {# Source 2 — top-right, expanding rounded rectangles #}
+    {% for sz, delay in [(100, -3), (160, -5), (220, -7)] %}
+    <rect class="hw-accent hw-dash" x="{{ 850 - sz//2 }}" y="{{ 180 - sz//2 }}" width="{{ sz }}" height="{{ sz }}" rx="8" opacity="0" stroke-width="2">
+        <animate attributeName="opacity" values="0;0.18;0.13;0" keyTimes="0;0.16;0.72;1" dur="13s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </rect>
+    {% endfor %}
+    {# Source 3 — bottom-center, expanding rounded rectangles #}
+    {% for sz, delay in [(110, -1), (170, -4), (230, -6)] %}
+    <rect class="hw-primary hw-dash" x="{{ 600 - sz//2 }}" y="{{ 500 - sz//2 }}" width="{{ sz }}" height="{{ sz }}" rx="8" opacity="0" stroke-width="2.5">
+        <animate attributeName="opacity" values="0;0.2;0.16;0" keyTimes="0;0.16;0.72;1" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </rect>
+    {% endfor %}
+    {# Source 4 — top-center #}
+    {% for sz, delay in [(90, -5), (150, -8), (200, -10)] %}
+    <rect class="hw-accent hw-dash" x="{{ 500 - sz//2 }}" y="{{ 120 - sz//2 }}" width="{{ sz }}" height="{{ sz }}" rx="8" opacity="0" stroke-width="2">
+        <animate attributeName="opacity" values="0;0.16;0.12;0" keyTimes="0;0.16;0.72;1" dur="14s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </rect>
+    {% endfor %}
+</svg>

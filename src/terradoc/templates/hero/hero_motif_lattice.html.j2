@@ -1,0 +1,50 @@
+{#- Hero photo frame motif: lattice preset.
+    Concentric circles representing the Enawenê-Nawê village-cosmos layout
+    (circle within circle, sacred at center). Golden center represents the
+    Yãkwa house (haitì). Subtle diagonal lattice lines evoke the waitiwina. -#}
+<style>
+    @keyframes hero-center-pulse {
+        0%, 100% { opacity: 0.14; }
+        50% { opacity: 0.24; }
+    }
+    @keyframes hero-ring-shimmer {
+        0%, 100% { opacity: 0.12; }
+        50% { opacity: 0.18; }
+    }
+    .hero-center-pulse { animation: hero-center-pulse 5s ease-in-out infinite; }
+    .hero-ring-outer { animation: hero-ring-shimmer 8s ease-in-out infinite; }
+    .hero-ring-middle { animation: hero-ring-shimmer 8s ease-in-out -4s infinite; }
+    @media (prefers-reduced-motion: reduce) {
+        .hero-center-pulse, .hero-ring-outer, .hero-ring-middle { animation: none; }
+    }
+</style>
+<svg class="hero-village-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+        <clipPath id="vh-inner"><circle cx="250" cy="250" r="230"/></clipPath>
+        <filter id="vh-soft" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="6"/>
+        </filter>
+    </defs>
+    {# Outer circle — village perimeter #}
+    <circle class="hero-ring-outer" cx="250" cy="250" r="230" fill="none" style="stroke:var(--td-color-primary)" stroke-width="4" opacity="0.12"/>
+    {# Subtle lattice lines within the circle — waitiwina reference #}
+    <g clip-path="url(#vh-inner)" opacity="0.08">
+        <line x1="50" y1="50" x2="450" y2="450" style="stroke:var(--td-color-primary)" stroke-width="1.5"/>
+        <line x1="450" y1="50" x2="50" y2="450" style="stroke:var(--td-color-primary)" stroke-width="1.5"/>
+        <line x1="150" y1="20" x2="480" y2="350" style="stroke:var(--td-color-primary)" stroke-width="1.2"/>
+        <line x1="20" y1="150" x2="350" y2="480" style="stroke:var(--td-color-primary)" stroke-width="1.2"/>
+        <line x1="350" y1="20" x2="20" y2="350" style="stroke:var(--td-color-primary)" stroke-width="1.2"/>
+        <line x1="480" y1="150" x2="150" y2="480" style="stroke:var(--td-color-primary)" stroke-width="1.2"/>
+    </g>
+    {# Middle ring — inner village circle #}
+    <circle class="hero-ring-middle" cx="250" cy="250" r="165" fill="none" style="stroke:var(--td-color-primary)" stroke-width="2" opacity="0.12"/>
+    {# Inner ring #}
+    <circle cx="250" cy="250" r="100" fill="none" style="stroke:var(--td-color-accent, var(--td-color-primary))" stroke-width="1.5" opacity="0.08"/>
+    {# Yãkwa house center — golden pulsing core #}
+    <g>
+        <circle cx="250" cy="250" r="50" fill="none" style="stroke:var(--td-color-border-dark, #B8AFA2)" stroke-width="3" opacity="0.12"/>
+        <circle class="hero-center-pulse" cx="250" cy="250" r="35" style="fill:var(--td-color-primary)" opacity="0.14"/>
+        {# Small triangle at center — Yãkwa house silhouette #}
+        <path d="M250,232 L238,260 L262,260 Z" style="fill:var(--td-color-accent, var(--td-color-primary))" opacity="0.2"/>
+    </g>
+</svg>

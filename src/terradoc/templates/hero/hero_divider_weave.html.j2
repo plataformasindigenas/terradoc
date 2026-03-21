@@ -1,0 +1,11 @@
+{#- Section divider: weave preset.
+    Clean geometric divider — horizontal line with small diamond accents
+    at regular intervals. Culturally neutral. -#}
+<svg viewBox="0 0 1200 28" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    {# Central spine line #}
+    <line x1="0" y1="14" x2="1200" y2="14" stroke="var(--td-color-primary)" stroke-width="1.5" stroke-linecap="round" opacity="0.12"/>
+    {# Diamond accents at regular intervals #}
+    {% for x in [120, 240, 360, 480, 600, 720, 840, 960, 1080] %}
+    <rect x="{{ x - 4 }}" y="10" width="8" height="8" rx="1" transform="rotate(45 {{ x }} 14)" fill="var(--td-color-primary)" opacity="0.12"/>
+    {% endfor %}
+</svg>

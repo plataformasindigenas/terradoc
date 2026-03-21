@@ -1,0 +1,75 @@
+{#- Hero background animation: lattice preset.
+    Diagonal crossing lines expanding outward, evoking the waitiwina woven
+    fishing dams of the Enawenê-Nawê. Golden yellow and accent red lines
+    create a cross-hatched lattice that pulses and grows. -#}
+<style>
+    .hero-lattice-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        shape-rendering: geometricPrecision;
+    }
+    .hero-lattice-bg line {
+        fill: none;
+        vector-effect: non-scaling-stroke;
+        stroke-linecap: round;
+    }
+    .hl-primary { stroke: var(--td-color-primary); }
+    .hl-accent { stroke: var(--td-color-accent, var(--td-color-primary)); }
+    .hl-dash-weave {
+        stroke-dasharray: 8 20 4 28 12 16;
+        stroke-dashoffset: 7;
+    }
+    .hl-dash-trap {
+        stroke-dasharray: 18 24 6 32 10 20;
+        stroke-dashoffset: 13;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .hero-lattice-bg { display: none; }
+    }
+</style>
+<svg class="hero-lattice-bg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    {# Lattice source 1 — top-left, primary diagonal lines expanding #}
+    {% for spread, delay in [(80, 0), (130, -2), (180, -4)] %}
+    <g opacity="0">
+        <line class="hl-primary hl-dash-weave" x1="{{ 200 - spread }}" y1="{{ 180 - spread }}" x2="{{ 200 + spread }}" y2="{{ 180 + spread }}" stroke-width="2.5"/>
+        <line class="hl-primary hl-dash-weave" x1="{{ 200 + spread }}" y1="{{ 180 - spread }}" x2="{{ 200 - spread }}" y2="{{ 180 + spread }}" stroke-width="2.5"/>
+        <animate attributeName="opacity" values="0;0.22;0.18;0" keyTimes="0;0.16;0.72;1" dur="11s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </g>
+    {% endfor %}
+    {# Lattice source 2 — top-right, accent diamond lattice #}
+    {% for spread, delay in [(70, -3), (120, -5), (160, -7)] %}
+    <g opacity="0">
+        <line class="hl-accent hl-dash-trap" x1="{{ 900 - spread }}" y1="{{ 160 - spread }}" x2="{{ 900 + spread }}" y2="{{ 160 + spread }}" stroke-width="2"/>
+        <line class="hl-accent hl-dash-trap" x1="{{ 900 + spread }}" y1="{{ 160 - spread }}" x2="{{ 900 - spread }}" y2="{{ 160 + spread }}" stroke-width="2"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="13s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </g>
+    {% endfor %}
+    {# Lattice source 3 — center-bottom, primary cross-hatching #}
+    {% for spread, delay in [(90, -1), (140, -3), (190, -6)] %}
+    <g opacity="0">
+        <line class="hl-primary hl-dash-weave" x1="{{ 550 - spread }}" y1="{{ 480 - spread }}" x2="{{ 550 + spread }}" y2="{{ 480 + spread }}" stroke-width="2.5"/>
+        <line class="hl-primary hl-dash-weave" x1="{{ 550 + spread }}" y1="{{ 480 - spread }}" x2="{{ 550 - spread }}" y2="{{ 480 + spread }}" stroke-width="2.5"/>
+        <animate attributeName="opacity" values="0;0.2;0.16;0" keyTimes="0;0.16;0.72;1" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </g>
+    {% endfor %}
+    {# Lattice source 4 — bottom-right, accent weave #}
+    {% for spread, delay in [(75, -2), (115, -4), (155, -8)] %}
+    <g opacity="0">
+        <line class="hl-accent hl-dash-trap" x1="{{ 1000 - spread }}" y1="{{ 520 - spread }}" x2="{{ 1000 + spread }}" y2="{{ 520 + spread }}" stroke-width="2"/>
+        <line class="hl-accent hl-dash-trap" x1="{{ 1000 + spread }}" y1="{{ 520 - spread }}" x2="{{ 1000 - spread }}" y2="{{ 520 + spread }}" stroke-width="2"/>
+        <animate attributeName="opacity" values="0;0.18;0.14;0" keyTimes="0;0.16;0.72;1" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </g>
+    {% endfor %}
+    {# Lattice source 5 — center-top, primary lattice #}
+    {% for spread, delay in [(85, -5), (135, -7), (175, -9)] %}
+    <g opacity="0">
+        <line class="hl-primary hl-dash-weave" x1="{{ 700 - spread }}" y1="{{ 120 - spread }}" x2="{{ 700 + spread }}" y2="{{ 120 + spread }}" stroke-width="2.5"/>
+        <line class="hl-primary hl-dash-weave" x1="{{ 700 + spread }}" y1="{{ 120 - spread }}" x2="{{ 700 - spread }}" y2="{{ 120 + spread }}" stroke-width="2.5"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="14s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </g>
+    {% endfor %}
+</svg>

@@ -135,6 +135,9 @@ class ThemeConfig:
     module_intensity: dict[str, str] = field(default_factory=dict)
     term_color: str = ""
     term_weight: str = "600"
+    hero_background: str = "moiety"
+    hero_motif: str = "moiety"
+    hero_divider: str = "moiety"
 
     def to_dict(self) -> dict:
         result = {
@@ -153,6 +156,9 @@ class ThemeConfig:
             "module_intensity": self.module_intensity,
             "term_color": self.term_color,
             "term_weight": self.term_weight,
+            "hero_background": self.hero_background,
+            "hero_motif": self.hero_motif,
+            "hero_divider": self.hero_divider,
         }
         return result
 
@@ -364,6 +370,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                 "logo", "favicon", "font_family", "font_family_headings",
                 "font_family_mono", "border_radius", "hero_image", "style",
                 "term_color", "term_weight",
+                "hero_background", "hero_motif", "hero_divider",
             ):
                 if theme_key in theme_raw:
                     setattr(config.theme, theme_key, theme_raw[theme_key])

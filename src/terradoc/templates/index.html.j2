@@ -159,59 +159,6 @@
             height: 100%;
         }
 
-        /* ── Hero background animations ── */
-        .hero-rings-bg-anim {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            shape-rendering: geometricPrecision;
-        }
-        .hero-rings-bg-anim circle,
-        .hero-rings-bg-anim rect {
-            fill: none;
-            vector-effect: non-scaling-stroke;
-            stroke-linecap: square;
-            stroke-linejoin: miter;
-            stroke-miterlimit: 2;
-            paint-order: stroke;
-        }
-        .hero-rings-bg-anim circle { stroke-width: 3; }
-        .hero-rings-bg-anim rect { stroke-width: 2.6; }
-        .hr-red { stroke: var(--td-color-primary); }
-        .hr-dark { stroke: var(--td-color-dark, #0B0F17); }
-        .hr-dash-bead {
-            stroke-dasharray: 4 18 2 26 6 20 3 30;
-            stroke-linecap: square;
-            stroke-dashoffset: 5;
-        }
-        .hr-dash-feather {
-            stroke-dasharray: 26 30 12 44 18 28;
-            stroke-linecap: round;
-            stroke-dashoffset: 11;
-        }
-        .hr-dash-trace {
-            stroke-dasharray: 14 40 4 22 10 48 6 34;
-            stroke-linecap: round;
-            stroke-dashoffset: 17;
-        }
-        .hr-dash-marks {
-            stroke-dasharray: 3 16 5 26 2 38 7 22 4 30;
-            stroke-linecap: square;
-            stroke-dashoffset: 9;
-        }
-        /* Subtle moiety rhythm contrast: red denser, dark more spacious */
-        .hr-red.hr-dash-bead { stroke-dasharray: 4 14 2 20 6 16 3 24; }
-        .hr-dark.hr-dash-bead { stroke-dasharray: 5 22 3 30 7 20 4 34; }
-        .hr-red.hr-dash-feather { stroke-dasharray: 22 24 10 36 14 22; }
-        .hr-dark.hr-dash-feather { stroke-dasharray: 28 34 12 50 20 30; }
-        .hr-red.hr-dash-trace { stroke-dasharray: 12 32 4 18 8 36 6 26; }
-        .hr-dark.hr-dash-trace { stroke-dasharray: 16 44 5 26 12 54 7 38; }
-        .hr-red.hr-dash-marks { stroke-dasharray: 3 12 5 20 2 30 7 18 4 24; }
-        .hr-dark.hr-dash-marks { stroke-dasharray: 4 20 6 32 3 44 8 26 5 36; }
-
         /* ── Hero ambient animations ── */
         @keyframes hero-sat-orbit-1 {
             0% { translate: 0 0; }
@@ -245,30 +192,13 @@
             86% { translate: 5px -5px; }
             100% { translate: 0 0; }
         }
-        @keyframes hero-baito-pulse {
-            0%, 100% { opacity: 0.12; }
-            50% { opacity: 0.20; }
-        }
-        @keyframes hero-moiety-shimmer {
-            0%, 100% { opacity: 0.42; }
-            50% { opacity: 0.48; }
-        }
         .hero-photo-sat-1 { animation: hero-sat-orbit-1 10.8s linear -1.3s infinite; }
         .hero-photo-sat-2 { animation: hero-sat-orbit-2 9.4s linear -3.8s infinite; }
         .hero-photo-sat-3 { animation: hero-sat-orbit-3 11.6s linear -6.1s infinite; }
         .hero-photo-sat-4 { animation: hero-sat-orbit-4 8.9s linear -2.7s infinite; }
-        .hero-baito-pulse { animation: hero-baito-pulse 4s ease-in-out infinite; }
-        .hero-moiety-top { animation: hero-moiety-shimmer 7s ease-in-out infinite; }
-        .hero-moiety-bot { animation: hero-moiety-shimmer 7s ease-in-out -3.5s infinite; }
         @media (prefers-reduced-motion: reduce) {
-            .hero-photo-sat-1, .hero-photo-sat-2, .hero-photo-sat-3, .hero-photo-sat-4,
-            .hero-baito-pulse, .hero-moiety-top, .hero-moiety-bot,
-            .hero-rings-bg-anim circle,
-            .hero-rings-bg-anim rect {
+            .hero-photo-sat-1, .hero-photo-sat-2, .hero-photo-sat-3, .hero-photo-sat-4 {
                 animation: none;
-            }
-            .hero-rings-bg-anim {
-                display: none;
             }
         }
 
@@ -633,61 +563,10 @@
 {% block content %}
     {# ── Hero ── #}
     <section class="index-hero">
-        {# Expanding rings — SMIL-animated for crisp rendering #}
-        <svg class="hero-rings-bg-anim" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            {# Source 1 — top-left, red circles, bead dash #}
-            {% for r, delay in [(100, 0), (130, -1), (160, -2)] %}
-            <circle class="hr-red hr-dash-bead" cx="180" cy="200" r="14" opacity="0">
-                <animate attributeName="r" values="14;{{ r }}" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-            </circle>
-            {% endfor %}
-            {# Source 2 — top-right, dark diamonds, trace dash #}
-            {% for sz, delay in [(80, -3), (110, -4), (140, -5)] %}
-            <g transform="translate(900,150)">
-                <rect class="hr-dark hr-dash-trace" x="-7" y="-7" width="14" height="14" rx="1" transform="rotate(45)" opacity="0">
-                    <animate attributeName="width" values="14;{{ sz }}" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="height" values="14;{{ sz }}" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="x" values="-7;{{ -sz//2 }}" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="y" values="-7;{{ -sz//2 }}" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                </rect>
-            </g>
-            {% endfor %}
-            {# Source 3 — center-bottom, red circles, marks dash #}
-            {% for r, delay in [(90, -6), (120, -7), (150, -8)] %}
-            <circle class="hr-red hr-dash-marks" cx="550" cy="500" r="14" opacity="0">
-                <animate attributeName="r" values="14;{{ r }}" dur="11s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="11s" begin="{{ delay }}s" repeatCount="indefinite"/>
-            </circle>
-            {% endfor %}
-            {# Source 4 — bottom-right, dark circles, feather dash #}
-            {% for r, delay in [(90, -2), (120, -3), (150, -4)] %}
-            <circle class="hr-dark hr-dash-feather" cx="1050" cy="550" r="14" opacity="0">
-                <animate attributeName="r" values="14;{{ r }}" dur="13s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="13s" begin="{{ delay }}s" repeatCount="indefinite"/>
-            </circle>
-            {% endfor %}
-            {# Source 5 — bottom-left, red diamonds, feather dash #}
-            {% for sz, delay in [(80, -8), (110, -9), (140, -10)] %}
-            <g transform="translate(350,600)">
-                <rect class="hr-red hr-dash-feather" x="-7" y="-7" width="14" height="14" rx="1" transform="rotate(45)" opacity="0">
-                    <animate attributeName="width" values="14;{{ sz }}" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="height" values="14;{{ sz }}" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="x" values="-7;{{ -sz//2 }}" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="y" values="-7;{{ -sz//2 }}" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                </rect>
-            </g>
-            {% endfor %}
-            {# Source 6 — top-center, dark circles, bead dash #}
-            {% for r, delay in [(110, -5), (140, -6), (170, -7)] %}
-            <circle class="hr-dark hr-dash-bead" cx="750" cy="100" r="14" opacity="0">
-                <animate attributeName="r" values="14;{{ r }}" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0;0.25;0.2;0" keyTimes="0;0.16;0.72;1" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-            </circle>
-            {% endfor %}
-        </svg>
+        {# Hero background animation — loaded from preset partial #}
+        {% if theme.hero_background and theme.hero_background != "none" %}
+        {% include "hero/hero_bg_" + theme.hero_background + ".html.j2" ignore missing %}
+        {% endif %}
         <div class="index-hero-inner">
             <div class="index-hero-text">
                 <h1>{{ t.index_hero_title | default(site.title) }}</h1>
@@ -714,35 +593,10 @@
             {# ── Photo cluster with village circle motif ── #}
             {% if theme.hero_images %}
             <div class="index-hero-visual">
-                {# Village circle motif SVG — two-moiety layout (like logo) #}
-                <svg class="hero-village-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <defs>
-                        <clipPath id="vh-top"><rect x="0" y="0" width="500" height="250"/></clipPath>
-                        <clipPath id="vh-bot"><rect x="0" y="250" width="500" height="250"/></clipPath>
-                        {# Soft blur for moiety fills — painterly edges #}
-                        <filter id="vh-soft" x="-10%" y="-10%" width="120%" height="120%">
-                            <feGaussianBlur stdDeviation="6"/>
-                        </filter>
-                    </defs>
-                    {# Moiety fills — Tugarege (red/top) and Ecerae (dark/bottom) #}
-                    <circle class="hero-moiety-top" cx="250" cy="250" r="230" style="fill:var(--td-color-primary)" opacity="0.3" clip-path="url(#vh-top)" filter="url(#vh-soft)"/>
-                    <circle class="hero-moiety-bot" cx="250" cy="250" r="230" style="fill:var(--td-color-dark, #0B0F17)" opacity="0.3" clip-path="url(#vh-bot)" filter="url(#vh-soft)"/>
-                    {# Two-toned outer ring — red arc top, dark arc bottom #}
-                    <g>
-                        <path d="M480,250 A230,230 0 0,0 20,250" fill="none" style="stroke:var(--td-color-primary)" stroke-width="4" opacity="0.16"/>
-                        <path d="M480,250 A230,230 0 0,1 20,250" fill="none" style="stroke:var(--td-color-dark, #0B0F17)" stroke-width="4" opacity="0.16"/>
-                        {# Dividing line (east-west) #}
-                        <line x1="20" y1="250" x2="480" y2="250" style="stroke:var(--td-color-text-muted, #6B6F5A)" stroke-width="1" opacity="0.12"/>
-                        {# Middle ring #}
-                        <circle cx="250" cy="250" r="165" fill="none" style="stroke:var(--td-color-primary)" stroke-width="1" opacity="0.06"/>
-                    </g>
-                    {# Baito center — gray ring, gold fill, dark inner dot #}
-                    <g>
-                        <circle cx="250" cy="250" r="50" fill="none" style="stroke:var(--td-color-border-dark, #B8AFA2)" stroke-width="4" opacity="0.15"/>
-                        <circle class="hero-baito-pulse" cx="250" cy="250" r="35" style="fill:var(--td-color-accent)" opacity="0.15"/>
-                        <circle cx="250" cy="250" r="18" style="fill:var(--td-color-dark, #0B0F17)" opacity="0.18"/>
-                    </g>
-                </svg>
+                {# Photo frame motif — loaded from preset partial #}
+                {% if theme.hero_motif and theme.hero_motif != "none" %}
+                {% include "hero/hero_motif_" + theme.hero_motif + ".html.j2" ignore missing %}
+                {% endif %}
 
                 {# Main hero photo #}
                 {% if theme.hero_image %}
@@ -778,74 +632,12 @@
         </div>
     </section>
 
-    {# ── Adugo spine divider — horizontal spine with organic side bars ── #}
+    {# ── Section divider — loaded from preset partial ── #}
+    {% if theme.hero_divider and theme.hero_divider != "none" %}
     <div class="hero-adugo-spine" aria-hidden="true">
-        <svg viewBox="0 0 1200 28" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            {# Central spine line #}
-            <line x1="0" y1="14" x2="1200" y2="14" stroke="var(--td-color-primary)" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
-            {# Organic side bars — irregular spacing, lengths, and thickness #}
-            <g stroke="var(--td-color-primary)" stroke-linecap="round" opacity="0.12">
-                {# Left section — sparse #}
-                <line x1="45" y1="5" x2="45" y2="23" stroke-width="2.5"/>
-                <line x1="68" y1="7" x2="68" y2="21" stroke-width="3.5"/>
-                <line x1="105" y1="3" x2="105" y2="25" stroke-width="2"/>
-                <line x1="120" y1="8" x2="120" y2="20" stroke-width="4"/>
-                <line x1="160" y1="6" x2="160" y2="22" stroke-width="2.8"/>
-                <line x1="195" y1="4" x2="195" y2="24" stroke-width="3.2"/>
-                <line x1="210" y1="9" x2="210" y2="19" stroke-width="2.2"/>
-                {# Left-center — denser #}
-                <line x1="265" y1="5" x2="265" y2="23" stroke-width="3"/>
-                <line x1="280" y1="7" x2="280" y2="21" stroke-width="2.4"/>
-                <line x1="298" y1="3" x2="298" y2="25" stroke-width="3.8"/>
-                <line x1="320" y1="6" x2="320" y2="22" stroke-width="2.6"/>
-                <line x1="335" y1="8" x2="335" y2="20" stroke-width="3.5"/>
-                <line x1="358" y1="4" x2="358" y2="24" stroke-width="2.2"/>
-                <line x1="372" y1="6" x2="372" y2="22" stroke-width="4"/>
-                <line x1="395" y1="2" x2="395" y2="26" stroke-width="2.8"/>
-                <line x1="408" y1="7" x2="408" y2="21" stroke-width="3.2"/>
-                <line x1="430" y1="5" x2="430" y2="23" stroke-width="2.5"/>
-                {# Center — densest #}
-                <line x1="468" y1="3" x2="468" y2="25" stroke-width="3.5"/>
-                <line x1="482" y1="6" x2="482" y2="22" stroke-width="2.8"/>
-                <line x1="498" y1="1" x2="498" y2="27" stroke-width="4.2"/>
-                <line x1="515" y1="5" x2="515" y2="23" stroke-width="2.4"/>
-                <line x1="528" y1="7" x2="528" y2="21" stroke-width="3.8"/>
-                <line x1="545" y1="4" x2="545" y2="24" stroke-width="2.6"/>
-                <line x1="558" y1="2" x2="558" y2="26" stroke-width="3.2"/>
-                <line x1="575" y1="6" x2="575" y2="22" stroke-width="4"/>
-                <line x1="590" y1="1" x2="590" y2="27" stroke-width="2.5"/>
-                <line x1="600" y1="5" x2="600" y2="23" stroke-width="3.6"/>
-                <line x1="615" y1="3" x2="615" y2="25" stroke-width="2.2"/>
-                <line x1="628" y1="7" x2="628" y2="21" stroke-width="4.2"/>
-                <line x1="645" y1="2" x2="645" y2="26" stroke-width="3"/>
-                <line x1="660" y1="5" x2="660" y2="23" stroke-width="2.8"/>
-                <line x1="672" y1="4" x2="672" y2="24" stroke-width="3.5"/>
-                <line x1="690" y1="6" x2="690" y2="22" stroke-width="2.4"/>
-                <line x1="705" y1="3" x2="705" y2="25" stroke-width="3.8"/>
-                <line x1="720" y1="7" x2="720" y2="21" stroke-width="2.6"/>
-                <line x1="738" y1="1" x2="738" y2="27" stroke-width="4"/>
-                {# Right-center — denser #}
-                <line x1="770" y1="5" x2="770" y2="23" stroke-width="3.2"/>
-                <line x1="790" y1="4" x2="790" y2="24" stroke-width="2.5"/>
-                <line x1="808" y1="7" x2="808" y2="21" stroke-width="3.8"/>
-                <line x1="828" y1="3" x2="828" y2="25" stroke-width="2.8"/>
-                <line x1="842" y1="6" x2="842" y2="22" stroke-width="3.5"/>
-                <line x1="865" y1="8" x2="865" y2="20" stroke-width="2.2"/>
-                <line x1="880" y1="4" x2="880" y2="24" stroke-width="4"/>
-                <line x1="900" y1="6" x2="900" y2="22" stroke-width="2.6"/>
-                <line x1="920" y1="5" x2="920" y2="23" stroke-width="3.2"/>
-                <line x1="938" y1="7" x2="938" y2="21" stroke-width="3"/>
-                {# Right section — sparse #}
-                <line x1="980" y1="4" x2="980" y2="24" stroke-width="3.5"/>
-                <line x1="1005" y1="8" x2="1005" y2="20" stroke-width="2.4"/>
-                <line x1="1040" y1="6" x2="1040" y2="22" stroke-width="3.8"/>
-                <line x1="1075" y1="3" x2="1075" y2="25" stroke-width="2.2"/>
-                <line x1="1095" y1="7" x2="1095" y2="21" stroke-width="3.5"/>
-                <line x1="1130" y1="5" x2="1130" y2="23" stroke-width="2.8"/>
-                <line x1="1160" y1="9" x2="1160" y2="19" stroke-width="4"/>
-            </g>
-        </svg>
+        {% include "hero/hero_divider_" + theme.hero_divider + ".html.j2" ignore missing %}
     </div>
+    {% endif %}
 
     {# ── Sections label ── #}
     <div class="sections-label" id="sections">
