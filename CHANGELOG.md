@@ -2,6 +2,17 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.3.1] — 2026-03-21
+
+### Added
+
+- **Ethnobotany module.** New `ethnobotany` converter, schema, showcase
+  template, and cross-linker support. The template groups entries by
+  botanical family, displays usage (Bororo and Portuguese), fruiting period,
+  environment, and abundance per village. Cross-links to dictionary by
+  scientific name and to encyclopedia entries tagged `natureza/flora`.
+  Bundled schema, CLI scaffolding, and default module config included.
+
 ## [0.3.0] — 2026-03-11
 
 A major release that redesigns the terra theme, adds two new modules, and
