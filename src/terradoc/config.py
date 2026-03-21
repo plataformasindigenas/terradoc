@@ -138,6 +138,9 @@ class ThemeConfig:
     hero_background: str = "moiety"
     hero_motif: str = "moiety"
     hero_divider: str = "moiety"
+    hero_height: str = ""
+    page_badge: str = "moiety"
+    grain_pattern: str = "dots"
 
     def to_dict(self) -> dict:
         result = {
@@ -159,6 +162,9 @@ class ThemeConfig:
             "hero_background": self.hero_background,
             "hero_motif": self.hero_motif,
             "hero_divider": self.hero_divider,
+            "hero_height": self.hero_height,
+            "page_badge": self.page_badge,
+            "grain_pattern": self.grain_pattern,
         }
         return result
 
@@ -371,6 +377,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                 "font_family_mono", "border_radius", "hero_image", "style",
                 "term_color", "term_weight",
                 "hero_background", "hero_motif", "hero_divider",
+                "hero_height", "page_badge", "grain_pattern",
             ):
                 if theme_key in theme_raw:
                     setattr(config.theme, theme_key, theme_raw[theme_key])

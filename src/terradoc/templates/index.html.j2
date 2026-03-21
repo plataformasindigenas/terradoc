@@ -6,7 +6,7 @@
 {% block extra_styles %}
         /* ── Hero ── */
         .index-hero {
-            min-height: 92vh;
+            min-height: {% if theme.hero_height == "large" %}92vh{% else %}70vh{% endif %};
             display: flex;
             align-items: center;
             position: relative;

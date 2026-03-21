@@ -67,6 +67,19 @@
             }
         }
         {% endif %}
+        {% if theme.grain_pattern and theme.grain_pattern != "dots" %}
+        {% if theme.grain_pattern == "lattice" %}
+        .td-style-terra::before {
+            background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='0' x2='24' y2='24' stroke='%23B8AFA2' stroke-width='0.4' opacity='0.3'/%3E%3Cline x1='24' y1='0' x2='0' y2='24' stroke='%23B8AFA2' stroke-width='0.4' opacity='0.3'/%3E%3C/svg%3E");
+        }
+        {% elif theme.grain_pattern == "weave" %}
+        .td-style-terra::before {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='8' width='6' height='3' rx='1.5' fill='%23B8AFA2' opacity='0.2'/%3E%3Crect x='12' y='2' width='3' height='6' rx='1.5' fill='%23B8AFA2' opacity='0.2'/%3E%3C/svg%3E");
+        }
+        {% elif theme.grain_pattern == "none" %}
+        .td-style-terra::before { background-image: none; }
+        {% endif %}
+        {% endif %}
         {% block extra_styles %}{% endblock %}
     </style>
 </head>

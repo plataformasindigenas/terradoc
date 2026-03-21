@@ -342,7 +342,7 @@
 
 {% block content %}
     <header>
-        <h1>{{ category_marker(intensity=intensity) }} {{ t.fauna_title | default(site.fauna_label) }} {{ page_badge() }}</h1>
+        <h1>{{ category_marker(intensity=intensity) }} {{ t.fauna_title | default(site.fauna_label) }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ data | length }} {{ t.species_label | default('espécies') }}</p>
     </header>
 
