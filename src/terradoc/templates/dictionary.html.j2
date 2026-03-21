@@ -356,7 +356,7 @@
 
 {% block content %}
     <div class="dict-header">
-        <h1>{{ t.dict_title | default(site.dictionary_label) }} {{ page_badge() }}</h1>
+        <h1>{{ t.dict_title | default(site.dictionary_label) }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="subtitle">{{ meta.description }} &mdash; {{ meta.record_count }} {{ t.entries_label | default('entradas') }}</p>
     </div>
 

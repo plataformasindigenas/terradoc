@@ -146,7 +146,7 @@
 
 {% block content %}
     <div class="vid-header">
-        <h1>{{ t.vid_title | default('Videos') }} {{ page_badge() }}</h1>
+        <h1>{{ t.vid_title | default('Videos') }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="subtitle">{{ t.vid_subtitle | default('') }} &mdash; {{ data | length }} {{ t.vid_count_label | default('videos') }}</p>
     </div>
 

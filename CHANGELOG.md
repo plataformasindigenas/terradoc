@@ -2,6 +2,34 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.6.0] — 2026-03-21
+
+### Added
+
+- **Configurable page badge.** New `theme.page_badge` config field selects the
+  SVG badge rendered on inner page headings. Three presets:
+  - `moiety` (default): Split-circle Bororo moiety badge (Tugarege/Ecerae).
+  - `lattice`: Circle with diagonal lattice lines and Yãkwa triangle
+    (Enawenê-Nawê).
+  - `weave`: Simple concentric circles (culturally neutral).
+  - `none`: Disables the badge.
+- **Configurable grain texture.** New `theme.grain_pattern` config field
+  controls the subtle background texture overlay. Presets:
+  - `dots` (default): Small dot grid (sand/parchment feel).
+  - `lattice`: Diagonal crossing lines (woven fibre feel).
+  - `weave`: Small rounded rectangles (basket-weave feel).
+  - `none`: Disables the grain overlay.
+- **Configurable hero height.** New `theme.hero_height` config field: set to
+  `"large"` for a 92 vh hero, otherwise defaults to 70 vh.
+
+### Changed
+
+- **Enhanced lattice motif.** The `lattice` hero motif now features dashed
+  lattice lines with a subtle drift animation, denser centre cross-hatching,
+  and a more prominent Yãkwa house triangle with roof ridge and golden peak.
+- **Enhanced lattice divider.** The `lattice` section divider now includes a
+  small Yãkwa triangle at the centre of the river wave pattern.
+
 ## [0.5.1] — 2026-03-21
 
 ### Fixed

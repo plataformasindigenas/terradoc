@@ -429,7 +429,7 @@
 
 {% block content %}
     <div class="enc-welcome">
-        <h1>{{ t.enc_title | default(site.encyclopedia_label) }} {{ page_badge() }}</h1>
+        <h1>{{ t.enc_title | default(site.encyclopedia_label) }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="enc-welcome-text">{{ t.enc_welcome_text | default('') }}</p>
         <p class="enc-stat">{{ badge_circle(label=meta.record_count|string, intensity=intensity) }} {{ meta.record_count }} {{ t.articles_label | default('verbetes') }}</p>
     </div>

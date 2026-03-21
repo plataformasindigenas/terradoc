@@ -183,7 +183,7 @@
 
 {% block content %}
     <div class="rec-header">
-        <h1>{{ t.rec_title | default('Corpus') }} {{ page_badge() }}</h1>
+        <h1>{{ t.rec_title | default('Corpus') }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="subtitle">{{ t.rec_subtitle | default(meta.description | default('')) }} &mdash; {{ data | length }} {{ t.rec_count_label | default('recordings') }}</p>
     </div>
 

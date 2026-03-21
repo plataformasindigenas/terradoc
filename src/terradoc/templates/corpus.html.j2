@@ -183,7 +183,7 @@
 
 {% block content %}
     <div class="corpus-header">
-        <h1>{{ t.corpus_title | default('Corpus') }} {{ page_badge() }}</h1>
+        <h1>{{ t.corpus_title | default('Corpus') }} {{ page_badge(badge_type=theme.page_badge|default("moiety")) }}</h1>
         <p class="subtitle">{{ data | length }} {{ t.stat_corpus_entries | default('texts') }}</p>
     </div>
 
