@@ -2,6 +2,15 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.5.1] — 2026-03-21
+
+### Fixed
+
+- **Lattice background animation.** Lines in the `lattice` hero background
+  preset now animate their endpoints (`x1`/`y1`/`x2`/`y2`) to expand outward
+  from each source point, matching the expanding behaviour of the `moiety`
+  preset. Previously the lines appeared at full size and only faded in/out.
+
 ## [0.5.0] — 2026-03-21
 
 ### Added

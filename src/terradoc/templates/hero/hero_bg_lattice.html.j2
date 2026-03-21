@@ -32,44 +32,89 @@
     }
 </style>
 <svg class="hero-lattice-bg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    {# Lattice source 1 — top-left, primary diagonal lines expanding #}
-    {% for spread, delay in [(80, 0), (130, -2), (180, -4)] %}
-    <g opacity="0">
-        <line class="hl-primary hl-dash-weave" x1="{{ 200 - spread }}" y1="{{ 180 - spread }}" x2="{{ 200 + spread }}" y2="{{ 180 + spread }}" stroke-width="2.5"/>
-        <line class="hl-primary hl-dash-weave" x1="{{ 200 + spread }}" y1="{{ 180 - spread }}" x2="{{ 200 - spread }}" y2="{{ 180 + spread }}" stroke-width="2.5"/>
-        <animate attributeName="opacity" values="0;0.22;0.18;0" keyTimes="0;0.16;0.72;1" dur="11s" begin="{{ delay }}s" repeatCount="indefinite"/>
-    </g>
+    {# Source 1 — top-left, primary diagonal lines expanding #}
+    {% for spread, delay, dur in [(80, 0, 11), (130, -2, 11), (180, -4, 11)] %}
+    <line class="hl-primary hl-dash-weave" x1="200" y1="180" x2="200" y2="180" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="200;{{ 200 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="180;{{ 180 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="200;{{ 200 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="180;{{ 180 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.22;0.18;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
+    <line class="hl-primary hl-dash-weave" x1="200" y1="180" x2="200" y2="180" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="200;{{ 200 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="180;{{ 180 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="200;{{ 200 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="180;{{ 180 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.22;0.18;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
     {% endfor %}
-    {# Lattice source 2 — top-right, accent diamond lattice #}
-    {% for spread, delay in [(70, -3), (120, -5), (160, -7)] %}
-    <g opacity="0">
-        <line class="hl-accent hl-dash-trap" x1="{{ 900 - spread }}" y1="{{ 160 - spread }}" x2="{{ 900 + spread }}" y2="{{ 160 + spread }}" stroke-width="2"/>
-        <line class="hl-accent hl-dash-trap" x1="{{ 900 + spread }}" y1="{{ 160 - spread }}" x2="{{ 900 - spread }}" y2="{{ 160 + spread }}" stroke-width="2"/>
-        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="13s" begin="{{ delay }}s" repeatCount="indefinite"/>
-    </g>
+    {# Source 2 — top-right, accent diamond lattice #}
+    {% for spread, delay, dur in [(70, -3, 13), (120, -5, 13), (160, -7, 13)] %}
+    <line class="hl-accent hl-dash-trap" x1="900" y1="160" x2="900" y2="160" stroke-width="2" opacity="0">
+        <animate attributeName="x1" values="900;{{ 900 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="160;{{ 160 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="900;{{ 900 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="160;{{ 160 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
+    <line class="hl-accent hl-dash-trap" x1="900" y1="160" x2="900" y2="160" stroke-width="2" opacity="0">
+        <animate attributeName="x1" values="900;{{ 900 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="160;{{ 160 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="900;{{ 900 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="160;{{ 160 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
     {% endfor %}
-    {# Lattice source 3 — center-bottom, primary cross-hatching #}
-    {% for spread, delay in [(90, -1), (140, -3), (190, -6)] %}
-    <g opacity="0">
-        <line class="hl-primary hl-dash-weave" x1="{{ 550 - spread }}" y1="{{ 480 - spread }}" x2="{{ 550 + spread }}" y2="{{ 480 + spread }}" stroke-width="2.5"/>
-        <line class="hl-primary hl-dash-weave" x1="{{ 550 + spread }}" y1="{{ 480 - spread }}" x2="{{ 550 - spread }}" y2="{{ 480 + spread }}" stroke-width="2.5"/>
-        <animate attributeName="opacity" values="0;0.2;0.16;0" keyTimes="0;0.16;0.72;1" dur="12s" begin="{{ delay }}s" repeatCount="indefinite"/>
-    </g>
+    {# Source 3 — center-bottom, primary cross-hatching #}
+    {% for spread, delay, dur in [(90, -1, 12), (140, -3, 12), (190, -6, 12)] %}
+    <line class="hl-primary hl-dash-weave" x1="550" y1="480" x2="550" y2="480" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="550;{{ 550 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="480;{{ 480 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="550;{{ 550 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="480;{{ 480 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.16;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
+    <line class="hl-primary hl-dash-weave" x1="550" y1="480" x2="550" y2="480" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="550;{{ 550 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="480;{{ 480 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="550;{{ 550 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="480;{{ 480 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.16;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
     {% endfor %}
-    {# Lattice source 4 — bottom-right, accent weave #}
-    {% for spread, delay in [(75, -2), (115, -4), (155, -8)] %}
-    <g opacity="0">
-        <line class="hl-accent hl-dash-trap" x1="{{ 1000 - spread }}" y1="{{ 520 - spread }}" x2="{{ 1000 + spread }}" y2="{{ 520 + spread }}" stroke-width="2"/>
-        <line class="hl-accent hl-dash-trap" x1="{{ 1000 + spread }}" y1="{{ 520 - spread }}" x2="{{ 1000 - spread }}" y2="{{ 520 + spread }}" stroke-width="2"/>
-        <animate attributeName="opacity" values="0;0.18;0.14;0" keyTimes="0;0.16;0.72;1" dur="10s" begin="{{ delay }}s" repeatCount="indefinite"/>
-    </g>
+    {# Source 4 — bottom-right, accent weave #}
+    {% for spread, delay, dur in [(75, -2, 10), (115, -4, 10), (155, -8, 10)] %}
+    <line class="hl-accent hl-dash-trap" x1="1000" y1="520" x2="1000" y2="520" stroke-width="2" opacity="0">
+        <animate attributeName="x1" values="1000;{{ 1000 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="520;{{ 520 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="1000;{{ 1000 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="520;{{ 520 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.18;0.14;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
+    <line class="hl-accent hl-dash-trap" x1="1000" y1="520" x2="1000" y2="520" stroke-width="2" opacity="0">
+        <animate attributeName="x1" values="1000;{{ 1000 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="520;{{ 520 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="1000;{{ 1000 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="520;{{ 520 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.18;0.14;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
     {% endfor %}
-    {# Lattice source 5 — center-top, primary lattice #}
-    {% for spread, delay in [(85, -5), (135, -7), (175, -9)] %}
-    <g opacity="0">
-        <line class="hl-primary hl-dash-weave" x1="{{ 700 - spread }}" y1="{{ 120 - spread }}" x2="{{ 700 + spread }}" y2="{{ 120 + spread }}" stroke-width="2.5"/>
-        <line class="hl-primary hl-dash-weave" x1="{{ 700 + spread }}" y1="{{ 120 - spread }}" x2="{{ 700 - spread }}" y2="{{ 120 + spread }}" stroke-width="2.5"/>
-        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="14s" begin="{{ delay }}s" repeatCount="indefinite"/>
-    </g>
+    {# Source 5 — center-top, primary lattice #}
+    {% for spread, delay, dur in [(85, -5, 14), (135, -7, 14), (175, -9, 14)] %}
+    <line class="hl-primary hl-dash-weave" x1="700" y1="120" x2="700" y2="120" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="700;{{ 700 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="120;{{ 120 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="700;{{ 700 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="120;{{ 120 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
+    <line class="hl-primary hl-dash-weave" x1="700" y1="120" x2="700" y2="120" stroke-width="2.5" opacity="0">
+        <animate attributeName="x1" values="700;{{ 700 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y1" values="120;{{ 120 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="x2" values="700;{{ 700 - spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="120;{{ 120 + spread }}" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.2;0.15;0" keyTimes="0;0.16;0.72;1" dur="{{ dur }}s" begin="{{ delay }}s" repeatCount="indefinite"/>
+    </line>
     {% endfor %}
 </svg>
