@@ -1,4 +1,4 @@
-"""Cross-link datasets (dictionary, fauna, encyclopedia) by shared fields."""
+"""Cross-link datasets (dictionary, fauna, ethnobotany, encyclopedia) by shared fields."""
 
 import json
 
@@ -54,11 +54,12 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
 
 
 def cross_link_datasets(config: TerradocConfig):
-    """Cross-link dictionary, fauna, and encyclopedia entries by scientific name."""
+    """Cross-link dictionary, fauna, ethnobotany, and encyclopedia entries by shared fields."""
     print("=== Cross-linking Datasets ===")
 
     dict_file = config.data_dir / "dictionary.json"
     fauna_file = config.data_dir / "fauna.json"
+    ethnobotany_file = config.data_dir / "ethnobotany.json"
     enc_file = config.data_dir / "encyclopedia.json"
 
     files_to_check = []
@@ -66,6 +67,8 @@ def cross_link_datasets(config: TerradocConfig):
         files_to_check.append(dict_file)
     if config.is_module_enabled("fauna"):
         files_to_check.append(fauna_file)
+    if config.is_module_enabled("ethnobotany"):
+        files_to_check.append(ethnobotany_file)
     if config.is_module_enabled("encyclopedia"):
         files_to_check.append(enc_file)
 
@@ -73,7 +76,7 @@ def cross_link_datasets(config: TerradocConfig):
         print("  Missing JSON files, skipping cross-linking.")
         return
 
-    dictionary = fauna = encyclopedia = None
+    dictionary = fauna = ethnobotany = encyclopedia = None
 
     if config.is_module_enabled("dictionary") and dict_file.exists():
         with open(dict_file, "r", encoding="utf-8") as f:
@@ -83,12 +86,18 @@ def cross_link_datasets(config: TerradocConfig):
         with open(fauna_file, "r", encoding="utf-8") as f:
             fauna = json.load(f)
 
+    if config.is_module_enabled("ethnobotany") and ethnobotany_file.exists():
+        with open(ethnobotany_file, "r", encoding="utf-8") as f:
+            ethnobotany = json.load(f)
+
     if config.is_module_enabled("encyclopedia") and enc_file.exists():
         with open(enc_file, "r", encoding="utf-8") as f:
             encyclopedia = json.load(f)
 
     link_count = 0
     enc_link_count = 0
+    ethno_link_count = 0
+    ethno_enc_link_count = 0
 
     # Dictionary ↔ Fauna cross-links
     if dictionary and fauna:
@@ -129,6 +138,69 @@ def cross_link_datasets(config: TerradocConfig):
                     })
                 entry["_linked_dictionary"] = linked
 
+    # Dictionary ↔ Ethnobotany cross-links (by scientific_name)
+    if dictionary and ethnobotany:
+        ethno_by_sci: dict[str, list[dict]] = {}
+        for entry in ethnobotany["data"]:
+            sci = (entry.get("scientific_name") or "").strip().lower()
+            if sci:
+                ethno_by_sci.setdefault(sci, []).append(entry)
+
+        # Build dict_by_sci if not already built above
+        if not fauna:
+            dict_by_sci = {}
+            for entry in dictionary["data"]:
+                sci = (entry.get("scientific_name") or "").strip().lower()
+                if sci:
+                    dict_by_sci.setdefault(sci, []).append(entry)
+
+        for entry in dictionary["data"]:
+            sci = (entry.get("scientific_name") or "").strip().lower()
+            if sci and sci in ethno_by_sci:
+                linked = []
+                for e_entry in ethno_by_sci[sci]:
+                    linked.append({
+                        "id": e_entry["id"],
+                        "name_bororo": e_entry.get("name_bororo", ""),
+                        "name_portuguese": e_entry.get("name_portuguese", ""),
+                    })
+                entry.setdefault("_linked_ethnobotany", []).extend(linked)
+                ethno_link_count += 1
+
+        for entry in ethnobotany["data"]:
+            sci = (entry.get("scientific_name") or "").strip().lower()
+            if sci and sci in dict_by_sci:
+                linked = []
+                for d_entry in dict_by_sci[sci]:
+                    linked.append({
+                        "id": d_entry["id"],
+                        "entry": d_entry.get("entry", ""),
+                        "definition": d_entry.get("definition", ""),
+                    })
+                entry["_linked_dictionary"] = linked
+
+    # Ethnobotany ↔ Encyclopedia cross-links (entries tagged natureza/flora)
+    if ethnobotany and encyclopedia:
+        flora_entries: dict[str, dict] = {}
+        for entry in encyclopedia["data"]:
+            cats = entry.get("categories") or []
+            if any("natureza/flora" in (c or "").lower() for c in cats):
+                title = (entry.get("title") or "").strip().lower()
+                if title:
+                    flora_entries[title] = entry
+
+        for entry in ethnobotany["data"]:
+            for field_name in ("name_bororo", "name_portuguese", "scientific_name"):
+                val = (entry.get(field_name) or "").strip().lower()
+                if val and val in flora_entries:
+                    enc_entry = flora_entries[val]
+                    entry.setdefault("_linked_encyclopedia", []).append({
+                        "id": enc_entry["id"],
+                        "title": enc_entry.get("title", ""),
+                    })
+                    ethno_enc_link_count += 1
+                    break
+
     # Dictionary → Encyclopedia cross-links
     if dictionary and encyclopedia:
         enc_by_title = {}
@@ -156,6 +228,12 @@ def cross_link_datasets(config: TerradocConfig):
         fauna_file.write_text(
             json.dumps(fauna, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+    if ethnobotany:
+        ethnobotany_file.write_text(
+            json.dumps(ethnobotany, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
-    print(f"  Cross-linked {link_count} dictionary↔fauna entries by scientific name")
-    print(f"  Cross-linked {enc_link_count} dictionary→encyclopedia entries by title")
+    print(f"  Cross-linked {link_count} dictionary\u2194fauna entries by scientific name")
+    print(f"  Cross-linked {ethno_link_count} dictionary\u2194ethnobotany entries by scientific name")
+    print(f"  Cross-linked {ethno_enc_link_count} ethnobotany\u2194encyclopedia entries")
+    print(f"  Cross-linked {enc_link_count} dictionary\u2192encyclopedia entries by title")

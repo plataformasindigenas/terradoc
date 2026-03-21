@@ -30,6 +30,7 @@ def test_enabled_modules():
     assert "dictionary" in slugs
     assert "encyclopedia" in slugs
     assert "fauna" in slugs
+    assert "ethnobotany" in slugs
     assert "bibliography" in slugs
     assert "recordings" in slugs
     assert "videos" in slugs

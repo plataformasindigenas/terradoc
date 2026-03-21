@@ -153,6 +153,47 @@ def convert_fauna(config: TerradocConfig) -> int:
     return len(normalized_records)
 
 
+def convert_ethnobotany(config: TerradocConfig) -> int:
+    """Convert ethnobotany YAML to JSON."""
+    print("=== Converting Ethnobotany ===")
+
+    ethnobotany_file = config.data_dir / "ethnobotany.yaml"
+    if not ethnobotany_file.exists():
+        output_file = _write_dataset(
+            config,
+            "ethnobotany.json",
+            "ethnobotany",
+            f"{config.culture_name} Ethnobotany Entries",
+            [],
+        )
+        print(f"  Ethnobotany file not found: {ethnobotany_file}")
+        print(f"  Exported 0 entries to {output_file}")
+        return 0
+
+    schema = _load_schema(config, "ethnobotany")
+    data = aptoro.read(str(ethnobotany_file), format="yaml")
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_file = _write_dataset(
+        config,
+        "ethnobotany.json",
+        "ethnobotany",
+        f"{config.culture_name} Ethnobotany Entries",
+        normalized_records,
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
 def convert_bibliography(config: TerradocConfig) -> int:
     """Convert bibliography BibTeX to JSON."""
     print("=== Converting Bibliography ===")
@@ -685,6 +726,7 @@ def convert_videos(config: TerradocConfig) -> int:
 CONVERTERS = {
     "dictionary": convert_dictionary,
     "fauna": convert_fauna,
+    "ethnobotany": convert_ethnobotany,
     "encyclopedia": convert_encyclopedia,
     "bibliography": convert_bibliography,
     "recordings": convert_recordings,

@@ -178,6 +178,7 @@ class TerradocConfig:
     modules: dict[str, ModuleConfig] = field(default_factory=lambda: {
         "dictionary": ModuleConfig(),
         "fauna": ModuleConfig(),
+        "ethnobotany": ModuleConfig(),
         "encyclopedia": ModuleConfig(),
         "bibliography": ModuleConfig(),
         "recordings": ModuleConfig(),
@@ -187,6 +188,7 @@ class TerradocConfig:
         "dictionary": "Dictionary",
         "encyclopedia": "Encyclopedia",
         "fauna": "Fauna",
+        "ethnobotany": "Ethnobotany",
         "bibliography": "Bibliography",
         "recordings": "Recordings",
         "videos": "Videos",
@@ -238,7 +240,7 @@ class TerradocConfig:
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""
-        module_order = ("dictionary", "encyclopedia", "fauna", "bibliography", "recordings", "videos")
+        module_order = ("dictionary", "encyclopedia", "fauna", "ethnobotany", "bibliography", "recordings", "videos")
         return [
             {"slug": name, "name": self.module_label(name)}
             for name in module_order
