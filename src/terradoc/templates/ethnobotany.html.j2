@@ -446,7 +446,7 @@
             if (groups['__uncategorized__']) sorted.push('__uncategorized__');
             return sorted.map(function(k) {
                 groups[k].sort(function(a, b) {
-                    return (a.name_bororo || a.name_portuguese || '').localeCompare(b.name_bororo || b.name_portuguese || '');
+                    return (a.name_indigenous || a.name_portuguese || '').localeCompare(b.name_indigenous || b.name_portuguese || '');
                 });
                 return { category: k, label: k === '__uncategorized__' ? UNCATEGORIZED_LABEL : k, entries: groups[k] };
             });
@@ -487,7 +487,7 @@
             card.className = 'showcase-card';
             card.setAttribute('data-id', entry.id);
 
-            var displayName = entry.name_bororo || entry.name_portuguese || entry.scientific_name || ('# ' + entry.id);
+            var displayName = entry.name_indigenous || entry.name_portuguese || entry.scientific_name || ('# ' + entry.id);
 
             if (entry.pic_link) {
                 var img = document.createElement('img');
@@ -511,8 +511,8 @@
 
             var body = document.createElement('div');
             body.className = 'showcase-card-body';
-            body.innerHTML = '<div class="card-name">' + escapeHtml(entry.name_bororo || entry.name_portuguese || '') + '</div>' +
-                (entry.name_portuguese && entry.name_bororo ? '<div class="card-sub">' + escapeHtml(entry.name_portuguese) + '</div>' :
+            body.innerHTML = '<div class="card-name">' + escapeHtml(entry.name_indigenous || entry.name_portuguese || '') + '</div>' +
+                (entry.name_portuguese && entry.name_indigenous ? '<div class="card-sub">' + escapeHtml(entry.name_portuguese) + '</div>' :
                  entry.scientific_name ? '<div class="card-sub">' + escapeHtml(entry.scientific_name) + '</div>' : '');
             card.appendChild(body);
 
@@ -557,7 +557,7 @@
                 var img = document.createElement('img');
                 img.className = 'showcase-detail-img';
                 img.src = '../' + entry.pic_link;
-                img.alt = entry.name_bororo || entry.name_portuguese || '';
+                img.alt = entry.name_indigenous || entry.name_portuguese || '';
                 img.onerror = function() {
                     var ph = document.createElement('div');
                     ph.className = 'showcase-detail-placeholder';
@@ -577,14 +577,14 @@
             info.className = 'showcase-detail-info';
 
             var html = '';
-            if (entry.name_bororo) {
-                html += '<h3>' + escapeHtml(entry.name_bororo) + '</h3>';
+            if (entry.name_indigenous) {
+                html += '<h3>' + escapeHtml(entry.name_indigenous) + '</h3>';
             }
             if (entry.name_portuguese) {
                 html += '<div class="detail-portuguese">' + escapeHtml(entry.name_portuguese) + '</div>';
             }
-            if (!entry.name_bororo && entry.name_portuguese) {
-                // Promote portuguese to heading if no bororo name
+            if (!entry.name_indigenous && entry.name_portuguese) {
+                // Promote portuguese to heading if no indigenous name
                 html = '<h3>' + escapeHtml(entry.name_portuguese) + '</h3>' + html.replace(/<div class="detail-portuguese">.*?<\/div>/, '');
             }
             if (entry.scientific_name) {
@@ -594,9 +594,9 @@
                 html += '<div class="detail-field"><strong>' + escapeHtml(T.ethnobotany_detail_family || 'Família') + ':</strong> ' + escapeHtml(entry.family) + '</div>';
             }
 
-            // Usage (Bororo)
+            // Usage (indigenous)
             if (entry.usage) {
-                html += '<div class="detail-info-text"><strong>' + escapeHtml(T.ethnobotany_detail_usage || 'Uso (Bororo)') + ':</strong> ' + escapeHtml(entry.usage) + '</div>';
+                html += '<div class="detail-info-text"><strong>' + escapeHtml(T.ethnobotany_detail_usage || 'Uso (indígena)') + ':</strong> ' + escapeHtml(entry.usage) + '</div>';
             }
 
             // Descriptions of use (Portuguese)
@@ -695,7 +695,7 @@
         function matchesSearch(entry, query) {
             if (!query) return true;
             var q = normalize(query);
-            return normalize(entry.name_bororo).indexOf(q) !== -1 ||
+            return normalize(entry.name_indigenous).indexOf(q) !== -1 ||
                    normalize(entry.name_portuguese).indexOf(q) !== -1 ||
                    normalize(entry.scientific_name).indexOf(q) !== -1 ||
                    normalize(entry.family).indexOf(q) !== -1 ||

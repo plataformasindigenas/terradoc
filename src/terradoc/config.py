@@ -173,6 +173,9 @@ class TerradocConfig:
     default_locale: str = "pt"
     featured_article_id: str = ""
     bib_file: str = "references.bib"
+    ethnobotany_encyclopedia_categories: list[str] = field(
+        default_factory=lambda: ["natureza/flora"]
+    )
     theme: ThemeConfig = field(default_factory=ThemeConfig)
 
     modules: dict[str, ModuleConfig] = field(default_factory=lambda: {
@@ -294,6 +297,11 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                      "bib_file"):
             if key in raw:
                 setattr(config, key, raw[key])
+
+        if "ethnobotany_encyclopedia_categories" in raw:
+            val = raw["ethnobotany_encyclopedia_categories"]
+            if isinstance(val, list):
+                config.ethnobotany_encyclopedia_categories = [str(v) for v in val]
 
         if "locales" in raw:
             config.locales = raw["locales"]
