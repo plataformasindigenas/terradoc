@@ -2,6 +2,20 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.3.2] — 2026-03-21
+
+### Changed
+
+- **Generic field names for multi-community support.** Renamed all
+  Bororo-specific identifiers to generic ones: `name_bororo` →
+  `name_indigenous`, `classification_bororo` → `classification_indigenous`.
+  Schema names drop the `bororo_` prefix (e.g. `bororo_fauna` → `fauna`).
+  Templates use generic fallback labels ("indígena" instead of "Bororo").
+- **Configurable ethnobotany↔encyclopedia cross-link categories.** The
+  `ethnobotany_encyclopedia_categories` config field (default
+  `["natureza/flora"]`) controls which encyclopedia categories are linked
+  to ethnobotany entries, allowing per-project customization.
+
 ## [0.3.1] — 2026-03-21
 
 ### Added
