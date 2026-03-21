@@ -2,6 +2,22 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.3.3] — 2026-03-21
+
+### Changed
+
+- **Configurable module order.** New `module_order` field in `terradoc.yaml`
+  controls navigation bar and index card ordering. Defaults to the built-in
+  order; enabled modules not listed are appended automatically.
+- **Dynamic index page sections.** The index template now iterates enabled
+  modules instead of a hardcoded list, so ethnobotany and future modules
+  appear automatically.
+- **Theme-driven hero gradient.** Replaced hardcoded hex colors in the index
+  hero background with `--td-color-bg-light` and `--td-color-bg-infobox`
+  CSS variables, ensuring the gradient adapts to custom themes.
+- **Dynamic teaser image mapping.** Index section images are now assigned
+  from `theme.hero_images` in module order instead of a fixed mapping.
+
 ## [0.3.2] — 2026-03-21
 
 ### Changed

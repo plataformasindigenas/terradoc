@@ -116,15 +116,15 @@ def test_build_language_picker_custom_locale_labels():
 
         config = TerradocConfig(
             project_name="Labels",
-            locales=["bor", "en"],
-            locale_labels={"bor": "Bororo", "en": "English"},
+            locales=["pt", "en"],
+            locale_labels={"pt": "Português", "en": "English"},
             base_dir=tmp_path,
         )
 
         build_language_picker(config)
 
         index_html = (docs_dir / "index.html").read_text()
-        assert "Bororo" in index_html
+        assert "Português" in index_html
         assert "English" in index_html
 
 

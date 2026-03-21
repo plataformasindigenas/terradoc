@@ -79,7 +79,7 @@ If you are integrating Terradoc into a larger documentation workflow, the main e
 
 ## Core Capabilities
 
-- Modular site generation for dictionary, encyclopedia, fauna, bibliography, and recordings content
+- Modular site generation for dictionary, encyclopedia, fauna, ethnobotany, bibliography, recordings, and videos content
 - Multilingual rendering with locale-based navigation and page generation
 - Static-site output that can be hosted on GitHub Pages, institutional servers, or any basic web host
 - Bundled templates that can be overridden per project
@@ -113,6 +113,7 @@ my-project/
     index.yaml
     dictionary.yaml
     fauna.yaml
+    ethnobotany.yaml
     encyclopedia.yaml
     bibliography.yaml
     recordings.yaml
@@ -122,6 +123,7 @@ my-project/
     categories.yaml      # Optional: controlled category vocabulary
     dictionary.tsv
     fauna.yaml
+    ethnobotany.yaml
     references.bib
     recordings.yaml
     videos.yaml
@@ -201,9 +203,20 @@ modules:
   dictionary: { enabled: true }
   fauna: { enabled: true }
   encyclopedia: { enabled: true }
+  ethnobotany: { enabled: true }
   bibliography: { enabled: true }
   recordings: { enabled: false }
   videos: { enabled: false }
+
+# Optional: control navigation and index card order
+module_order:
+  - dictionary
+  - encyclopedia
+  - fauna
+  - ethnobotany
+  - bibliography
+  - recordings
+  - videos
 
 theme:
   preset: "terra"               # or "classic"
