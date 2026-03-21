@@ -187,6 +187,10 @@ class TerradocConfig:
         "recordings": ModuleConfig(),
         "videos": ModuleConfig(),
     })
+    module_order: list[str] = field(default_factory=lambda: [
+        "dictionary", "encyclopedia", "fauna", "ethnobotany",
+        "bibliography", "recordings", "videos",
+    ])
     module_labels: dict[str, str] = field(default_factory=lambda: {
         "dictionary": "Dictionary",
         "encyclopedia": "Encyclopedia",
@@ -243,10 +247,14 @@ class TerradocConfig:
 
     def enabled_modules(self) -> list[dict]:
         """Return list of enabled module info dicts for template rendering."""
-        module_order = ("dictionary", "encyclopedia", "fauna", "ethnobotany", "bibliography", "recordings", "videos")
+        # Use configured order; append any enabled modules not listed in order
+        ordered = list(self.module_order)
+        for name in self.modules:
+            if name not in ordered:
+                ordered.append(name)
         return [
             {"slug": name, "name": self.module_label(name)}
-            for name in module_order
+            for name in ordered
             if self.is_module_enabled(name)
         ]
 
@@ -362,6 +370,9 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             for list_key in ("hero_images", "hero_stats"):
                 if list_key in theme_raw and isinstance(theme_raw[list_key], list):
                     setattr(config.theme, list_key, theme_raw[list_key])
+
+        if "module_order" in raw and isinstance(raw["module_order"], list):
+            config.module_order = [str(m) for m in raw["module_order"]]
 
         if "modules" in raw:
             for mod_name, mod_cfg in raw["modules"].items():

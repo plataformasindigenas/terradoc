@@ -14,7 +14,7 @@
             padding: 7rem 0 2rem;
             width: 100vw;
             margin-left: calc(-50vw + 50%);
-            background: linear-gradient(180deg, #E8E0D3 0%, #EDE9E0 45%, var(--td-color-bg) 100%);
+            background: linear-gradient(180deg, var(--td-color-bg-light) 0%, var(--td-color-bg-infobox) 45%, var(--td-color-bg) 100%);
         }
         .index-hero-inner {
             display: grid;
@@ -860,16 +860,16 @@
 
     {# ── Section teasers — unified card layout ── #}
     {# Image mapping: dictionary=hero_images[0], encyclopedia=hero_images[1], fauna=fauna.jpeg, recordings=hero_images[2] #}
-    {% set teaser_images = {
-        'dictionary': theme.hero_images[0] if theme.hero_images|length > 0 else '',
-        'encyclopedia': theme.hero_images[1] if theme.hero_images|length > 1 else '',
-        'fauna': 'images/fauna.jpeg',
-        'recordings': theme.hero_images[2] if theme.hero_images|length > 2 else '',
-        'videos': theme.hero_images[3] if theme.hero_images|length > 3 else ''
-    } %}
+    {# Build teaser image mapping dynamically from hero_images list #}
+    {% set teaser_images = {} %}
+    {% for mod in modules %}
+        {% if loop.index0 < theme.hero_images|length %}
+            {% set _ = teaser_images.update({mod.slug: theme.hero_images[loop.index0]}) %}
+        {% endif %}
+    {% endfor %}
 
-    {% for mod_slug in ['dictionary', 'encyclopedia', 'fauna', 'recordings', 'videos'] %}
-    {% if mod_slug in modules | map(attribute='slug') | list %}
+    {% for mod in modules %}
+    {% set mod_slug = mod.slug %}
     <section class="index-section td-fade-in">
         {{ section_heading(t['card_' + mod_slug + '_title'] | default(mod_slug | capitalize), '') }}
         <div class="teaser-card" data-section="{{ mod_slug }}">
@@ -888,7 +888,6 @@
             </div>
         </div>
     </section>
-    {% endif %}
     {% endfor %}
 
 
