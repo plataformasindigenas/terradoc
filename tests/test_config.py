@@ -33,6 +33,7 @@ def test_enabled_modules():
     assert "ethnobotany" in slugs
     assert "bibliography" in slugs
     assert "recordings" in slugs
+    assert "corpus" in slugs
     assert "videos" in slugs
 
 

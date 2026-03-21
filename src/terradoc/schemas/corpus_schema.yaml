@@ -1,0 +1,12 @@
+name: corpus
+description: Corpus text entries
+version: "1.0"
+primary_key: id
+
+fields:
+  id: str
+  title: str
+  filename: str?
+  language: str?
+  description: str?
+  content: str

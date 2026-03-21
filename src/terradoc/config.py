@@ -185,11 +185,12 @@ class TerradocConfig:
         "encyclopedia": ModuleConfig(),
         "bibliography": ModuleConfig(),
         "recordings": ModuleConfig(),
+        "corpus": ModuleConfig(),
         "videos": ModuleConfig(),
     })
     module_order: list[str] = field(default_factory=lambda: [
         "dictionary", "encyclopedia", "fauna", "ethnobotany",
-        "bibliography", "recordings", "videos",
+        "bibliography", "recordings", "corpus", "videos",
     ])
     module_labels: dict[str, str] = field(default_factory=lambda: {
         "dictionary": "Dictionary",
@@ -198,6 +199,7 @@ class TerradocConfig:
         "ethnobotany": "Ethnobotany",
         "bibliography": "Bibliography",
         "recordings": "Recordings",
+        "corpus": "Corpus",
         "videos": "Videos",
     })
 

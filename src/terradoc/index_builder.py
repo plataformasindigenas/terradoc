@@ -32,6 +32,13 @@ def copy_data_to_docs(config: TerradocConfig):
             shutil.copy2(src, dst)
             print(f"  Copied {src.name} → {dst}")
 
+    if config.is_module_enabled("corpus"):
+        src = config.data_dir / "corpus.json"
+        dst = config.docs_dir / "corpus-data.json"
+        if src.exists():
+            shutil.copy2(src, dst)
+            print(f"  Copied {src.name} → {dst}")
+
     if config.is_module_enabled("encyclopedia"):
         src = config.data_dir / "encyclopedia_index.json"
         dst = config.docs_dir / "encyclopedia-data.json"
