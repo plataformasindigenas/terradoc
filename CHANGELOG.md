@@ -2,6 +2,37 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.5.0] — 2026-03-21
+
+### Added
+
+- **Modular hero animation presets.** Three new config fields
+  (`theme.hero_background`, `theme.hero_motif`, `theme.hero_divider`)
+  allow each project to independently select culturally appropriate
+  animations from built-in presets. Available presets:
+  - `moiety` (default): Bororo-inspired — expanding circles/diamonds
+    with dual moiety-coded dash patterns, two-toned village circle
+    with pulsing baito, adugo jaguar spine divider.
+  - `lattice`: Enawenê-Nawê-inspired — diagonal waitiwina fishing dam
+    lattice, concentric village circles with Yãkwa house triangle,
+    river wave divider with lattice cross marks.
+  - `weave`: Culturally neutral — expanding rounded rectangles, simple
+    concentric circles with accent ring, diamond-accented line divider.
+  - `none`: Disables the component entirely.
+- **Hero template partials.** Nine new `templates/hero/` partials
+  (`hero_bg_*.html.j2`, `hero_motif_*.html.j2`, `hero_divider_*.html.j2`)
+  keep each preset self-contained with its own CSS and SVG markup,
+  including `prefers-reduced-motion` support.
+
+### Changed
+
+- **Footer divider follows hero preset.** The footer spine divider in
+  `base.html.j2` now uses the same `hero_divider` preset as the index
+  page, ensuring visual consistency across all pages.
+- **Extracted inline hero SVG.** Background animation, photo frame motif,
+  and section divider SVGs moved from `index.html.j2` into includable
+  partials, reducing the main template by ~250 lines.
+
 ## [0.4.0] — 2026-03-21
 
 ### Added
