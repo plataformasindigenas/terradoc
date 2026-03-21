@@ -22,6 +22,10 @@ output: ../docs/dictionary.html
 template: templates/fauna.html.j2
 output: ../docs/fauna.html
 """,
+    "ethnobotany.yaml": """input: ../data/ethnobotany.json
+template: templates/ethnobotany.html.j2
+output: ../docs/ethnobotany.html
+""",
     "encyclopedia.yaml": """input: ../data/encyclopedia_index.json
 template: templates/encyclopedia.html.j2
 output: ../docs/encyclopedia.html
@@ -185,6 +189,7 @@ bib_file: "references.bib"
 modules:
   dictionary: {{ enabled: true }}
   fauna: {{ enabled: false }}
+  ethnobotany: {{ enabled: false }}
   encyclopedia: {{ enabled: true }}
   bibliography: {{ enabled: false }}
   recordings: {{ enabled: false }}
@@ -194,6 +199,7 @@ module_labels:
   dictionary: "Dictionary"
   encyclopedia: "Encyclopedia"
   fauna: "Fauna"
+  ethnobotany: "Ethnobotany"
   bibliography: "Bibliography"
   recordings: "Recordings"
   videos: "Videos"
