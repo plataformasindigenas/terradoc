@@ -1,6 +1,6 @@
 """Terradoc — Reusable engine for indigenous documentation platforms."""
 
-__version__ = "0.3.3"
+__version__ = "0.4.0"
 
 from terradoc.config import TerradocConfig, load_config
 

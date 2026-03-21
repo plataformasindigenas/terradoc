@@ -2,6 +2,16 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.4.0] — 2026-03-21
+
+### Added
+
+- **Corpus module.** New `corpus` converter, schema, and split-pane
+  template for displaying and searching annotated text collections.
+  Includes JavaScript full-text search with match highlighting,
+  language tags, and responsive layout. Bundled schema, CLI
+  scaffolding, index data copying, and default module config included.
+
 ## [0.3.3] — 2026-03-21
 
 ### Changed
