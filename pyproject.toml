@@ -57,7 +57,7 @@ version = {attr = "terradoc.__version__"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-terradoc = ["templates/*.j2", "static/js/*.js", "static/css/*.css", "static/fonts/*.woff2", "schemas/*.yaml"]
+terradoc = ["templates/*.j2", "templates/hero/*.j2", "static/js/*.js", "static/css/*.css", "static/fonts/*.woff2", "schemas/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
