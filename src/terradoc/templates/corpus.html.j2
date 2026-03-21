@@ -1,0 +1,332 @@
+{% extends "base.html.j2" %}
+{% from "decor.html.j2" import motif_divider, page_badge %}
+
+{% block title %}{{ t.corpus_title | default('Corpus') }}{% endblock %}
+
+{% block extra_styles %}
+        .corpus-header {
+            padding: 1.5rem 0 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .corpus-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1.5rem;
+            width: 4px;
+            height: 48px;
+            background: var(--td-color-primary);
+            border-radius: 2px;
+        }
+        .corpus-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+        .corpus-header .subtitle {
+            color: var(--td-color-text-muted);
+            margin: 0;
+        }
+        .corpus-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        .corpus-sidebar {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            overflow: hidden;
+            position: sticky;
+            top: 5.5rem;
+        }
+        .corpus-sidebar-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--td-color-border-light);
+        }
+        .corpus-sidebar-header h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            color: var(--td-color-primary);
+        }
+        .corpus-search-input {
+            width: 100%;
+            padding: 0.45rem 0.75rem;
+            border: 1px solid var(--td-color-border);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-family: var(--td-font-family);
+            background: var(--td-color-bg);
+            color: var(--td-color-text);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .corpus-search-input:focus {
+            border-color: var(--td-color-primary);
+            box-shadow: 0 0 0 3px var(--td-color-accent-ring);
+        }
+        .corpus-stats {
+            font-size: 0.8rem;
+            color: var(--td-color-text-muted);
+            padding: 0.5rem 1.25rem;
+            border-bottom: 1px solid var(--td-color-border-light);
+        }
+        .corpus-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .corpus-list-item {
+            padding: 0.6rem 1.25rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--td-color-border-light);
+            transition: background 0.15s;
+            font-size: 0.9rem;
+        }
+        .corpus-list-item:last-child {
+            border-bottom: none;
+        }
+        .corpus-list-item:hover {
+            background: var(--td-color-bg-light);
+        }
+        .corpus-list-item.active {
+            background: var(--td-color-accent-light);
+            border-left: 3px solid var(--td-color-primary);
+        }
+        .corpus-list-item-title {
+            font-weight: 600;
+            color: var(--td-color-primary);
+            line-height: 1.35;
+        }
+        .corpus-list-item-meta {
+            font-size: 0.75rem;
+            color: var(--td-color-text-muted);
+            margin-top: 0.15rem;
+        }
+        .corpus-lang-tag {
+            font-size: 0.7rem;
+            background: var(--td-color-accent-light);
+            color: var(--td-color-accent-muted);
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+        }
+        .corpus-main {
+            min-width: 0;
+        }
+        .corpus-detail {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            padding: 2rem;
+        }
+        .corpus-detail-title {
+            font-family: var(--td-font-headings);
+            font-weight: 600;
+            font-size: 1.35rem;
+            color: var(--td-color-primary);
+            margin: 0 0 0.5rem 0;
+        }
+        .corpus-detail-meta {
+            font-size: 0.85rem;
+            color: var(--td-color-text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .corpus-detail-desc {
+            font-size: 0.9rem;
+            color: var(--td-color-text-secondary);
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--td-color-border-light);
+        }
+        .corpus-detail-content {
+            font-size: 0.95rem;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .corpus-hint {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--td-color-text-muted);
+            font-size: 0.95rem;
+        }
+        .corpus-no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--td-color-text-muted);
+            font-size: 0.9rem;
+        }
+        .corpus-highlight {
+            background: var(--td-color-highlight);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .corpus-layout {
+                grid-template-columns: 1fr;
+            }
+            .corpus-sidebar {
+                position: static;
+            }
+            .corpus-list {
+                max-height: 40vh;
+            }
+        }
+{% endblock %}
+
+{% block content %}
+    <div class="corpus-header">
+        <h1>{{ t.corpus_title | default('Corpus') }} {{ page_badge() }}</h1>
+        <p class="subtitle">{{ data | length }} {{ t.stat_corpus_entries | default('texts') }}</p>
+    </div>
+
+    <div class="no-js-only">
+        {% for item in data %}
+        <div class="corpus-detail" style="margin-bottom:1.5rem;">
+            <h2 class="corpus-detail-title">{{ item.title }}</h2>
+            <div class="corpus-detail-meta">
+                {% if item.language %}<span class="corpus-lang-tag">{{ item.language }}</span>{% endif %}
+                {% if item.filename %}<span>{{ item.filename }}</span>{% endif %}
+            </div>
+            {% if item.description %}
+            <div class="corpus-detail-desc">{{ item.description }}</div>
+            {% endif %}
+            <div class="corpus-detail-content">{{ item.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="js-only">
+        <div class="corpus-layout">
+            <aside class="corpus-sidebar">
+                <div class="corpus-sidebar-header">
+                    <h3>{{ t.corpus_title | default('Corpus') }}</h3>
+                    <input type="text" id="corpus-search" class="corpus-search-input"
+                           placeholder="{{ t.corpus_search_placeholder | default('Search texts...') }}"
+                           autocomplete="off"
+                           aria-label="{{ t.corpus_search_placeholder | default('Search texts...') }}">
+                </div>
+                <div class="corpus-stats" id="corpus-stats" aria-live="polite"></div>
+                <ul class="corpus-list" id="corpus-list"></ul>
+            </aside>
+
+            <div class="corpus-main">
+                <div id="corpus-detail" class="corpus-detail">
+                    <div class="corpus-hint">{{ t.corpus_select_hint | default('Select a text from the list to view its content.') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    var T = {{ t | tojson }};
+    var allData = {{ data | tojson }};
+
+    (function() {
+        var searchInput = document.getElementById('corpus-search');
+        var listEl = document.getElementById('corpus-list');
+        var detailEl = document.getElementById('corpus-detail');
+        var statsEl = document.getElementById('corpus-stats');
+        var activeId = null;
+        var currentQuery = '';
+
+        function escapeRe(s) {
+            return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightText(text, query) {
+            if (!query) return escapeHtml(text);
+            var escaped = escapeHtml(text);
+            var re = new RegExp('(' + escapeRe(escapeHtml(query)) + ')', 'gi');
+            return escaped.replace(re, '<span class="corpus-highlight">$1</span>');
+        }
+
+        function statsText(count) {
+            if (count === 1) return '1 ' + (T.corpus_result_singular || 'text');
+            return count + ' ' + (T.corpus_result_plural || 'texts');
+        }
+
+        function filterList() {
+            var query = searchInput.value.trim().toLowerCase();
+            currentQuery = query;
+
+            var filtered = allData.filter(function(item) {
+                if (!query) return true;
+                var hay = [item.title, item.description || '', item.content, item.language || '', item.filename || ''].join(' ').toLowerCase();
+                return hay.indexOf(query) !== -1;
+            });
+
+            statsEl.textContent = statsText(filtered.length);
+
+            var html = '';
+            if (filtered.length === 0) {
+                html = '<li class="corpus-no-results">' + (T.corpus_no_results || 'No texts found.') + '</li>';
+            } else {
+                filtered.forEach(function(item) {
+                    var isActive = item.id === activeId ? ' active' : '';
+                    html += '<li class="corpus-list-item' + isActive + '" data-id="' + escapeHtml(item.id) + '">';
+                    html += '<div class="corpus-list-item-title">' + escapeHtml(item.title) + '</div>';
+                    html += '<div class="corpus-list-item-meta">';
+                    if (item.language) html += '<span class="corpus-lang-tag">' + escapeHtml(item.language) + '</span> ';
+                    if (item.filename) html += escapeHtml(item.filename);
+                    html += '</div>';
+                    html += '</li>';
+                });
+            }
+            listEl.innerHTML = html;
+        }
+
+        function showDetail(id) {
+            activeId = id;
+            var item = null;
+            for (var i = 0; i < allData.length; i++) {
+                if (allData[i].id === id) { item = allData[i]; break; }
+            }
+            if (!item) return;
+
+            var query = currentQuery;
+            var html = '';
+            html += '<h2 class="corpus-detail-title">' + highlightText(item.title, query) + '</h2>';
+            html += '<div class="corpus-detail-meta">';
+            if (item.language) html += '<span class="corpus-lang-tag">' + escapeHtml(item.language) + '</span>';
+            if (item.filename) html += '<span>' + escapeHtml(item.filename) + '</span>';
+            html += '</div>';
+            if (item.description) {
+                html += '<div class="corpus-detail-desc">' + highlightText(item.description, query) + '</div>';
+            }
+            html += '<div class="corpus-detail-content">' + highlightText(item.content, query) + '</div>';
+            detailEl.innerHTML = html;
+
+            // Update active state in list
+            var items = listEl.querySelectorAll('.corpus-list-item');
+            items.forEach(function(li) {
+                li.classList.toggle('active', li.getAttribute('data-id') === id);
+            });
+        }
+
+        listEl.addEventListener('click', function(e) {
+            var li = e.target.closest('.corpus-list-item');
+            if (!li) return;
+            var id = li.getAttribute('data-id');
+            if (id) showDetail(id);
+        });
+
+        searchInput.addEventListener('input', debounce(function() {
+            filterList();
+            if (activeId) showDetail(activeId);
+        }, 200));
+
+        filterList();
+        searchInput.focus();
+    })();
+    </script>
+{% endblock %}

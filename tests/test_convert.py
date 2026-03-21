@@ -19,8 +19,8 @@ from terradoc.convert import (
 
 
 def test_converters_registry_has_all_modules():
-    """CONVERTERS registry contains all 7 module converters."""
-    expected = {"dictionary", "fauna", "ethnobotany", "encyclopedia", "bibliography", "recordings", "videos"}
+    """CONVERTERS registry contains all 8 module converters."""
+    expected = {"dictionary", "fauna", "ethnobotany", "encyclopedia", "bibliography", "recordings", "corpus", "videos"}
     assert set(CONVERTERS.keys()) == expected
 
 

@@ -687,6 +687,41 @@ def convert_recordings(config: TerradocConfig) -> int:
     return len(normalized_records)
 
 
+def convert_corpus(config: TerradocConfig) -> int:
+    """Convert corpus YAML to JSON."""
+    print("=== Converting Corpus ===")
+
+    corpus_file = config.data_dir / "corpus.yaml"
+    if not corpus_file.exists():
+        print(f"  Corpus file not found: {corpus_file}")
+        return 0
+
+    schema = _load_schema(config, "corpus")
+
+    with open(corpus_file, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or []
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    normalized_records = _normalize_records(records)
+
+    output_file = _write_dataset(
+        config,
+        "corpus.json",
+        "corpus",
+        f"{config.culture_name} Corpus Text Entries",
+        normalized_records,
+    )
+
+    print(f"  Exported {len(normalized_records)} entries to {output_file}")
+    return len(normalized_records)
+
+
 def convert_videos(config: TerradocConfig) -> int:
     """Convert videos YAML to JSON."""
     print("=== Converting Videos ===")
@@ -730,6 +765,7 @@ CONVERTERS = {
     "encyclopedia": convert_encyclopedia,
     "bibliography": convert_bibliography,
     "recordings": convert_recordings,
+    "corpus": convert_corpus,
     "videos": convert_videos,
 }
 

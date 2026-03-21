@@ -38,6 +38,10 @@ output: ../docs/bibliography.html
 template: templates/recordings.html.j2
 output: ../docs/recordings.html
 """,
+    "corpus.yaml": """input: ../data/corpus.json
+template: templates/corpus.html.j2
+output: ../docs/corpus.html
+""",
     "videos.yaml": """input: ../data/videos.json
 template: templates/videos.html.j2
 output: ../docs/videos.html
@@ -193,6 +197,7 @@ modules:
   encyclopedia: {{ enabled: true }}
   bibliography: {{ enabled: false }}
   recordings: {{ enabled: false }}
+  corpus: {{ enabled: false }}
   videos: {{ enabled: false }}
 
 module_labels:
@@ -202,6 +207,7 @@ module_labels:
   ethnobotany: "Ethnobotany"
   bibliography: "Bibliography"
   recordings: "Recordings"
+  corpus: "Corpus"
   videos: "Videos"
 
 theme:
