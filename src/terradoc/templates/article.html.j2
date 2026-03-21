@@ -270,7 +270,7 @@ article header h1 {
     margin: 0.6rem 0;
     border-radius: 0 var(--td-radius) var(--td-radius) 0;
 }
-.example-bororo {
+.example-indigenous {
     font-size: 1.05rem;
     font-weight: 500;
     color: var(--td-color-primary);
@@ -510,7 +510,7 @@ article header h1 {
             <div class="examples-title">{{ t.enc_examples | default('Exemplos') }}</div>
             {% for ex in entry.examples %}
             <div class="example-block">
-                {% if ex.bororo %}<div class="example-bororo">"{{ ex.bororo }}"</div>{% endif %}
+                {% if ex.indigenous %}<div class="example-indigenous">"{{ ex.indigenous }}"</div>{% endif %}
                 {% if ex.translation %}<div class="example-translation">{{ ex.translation }}</div>{% endif %}
             </div>
             {% endfor %}
@@ -551,7 +551,7 @@ article header h1 {
             {% endif %}
             {% if has_fauna_links %}
                 {% for link in entry._linked_fauna %}
-                <a href="../fauna.html?search={{ link.name_bororo | urlencode }}">{{ t.see_in_fauna | default('Ver na Fauna') }}: {{ link.name_bororo }}</a>
+                <a href="../fauna.html?search={{ link.name_indigenous | urlencode }}">{{ t.see_in_fauna | default('Ver na Fauna') }}: {{ link.name_indigenous }}</a>
                 {% endfor %}
             {% endif %}
         </section>

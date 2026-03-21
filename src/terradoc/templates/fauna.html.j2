@@ -357,8 +357,8 @@
                 <option value="">{{ t.fauna_filter_all | default('Todas as categorias') }}</option>
                 {% set categories = [] %}
                 {% for item in data %}
-                    {% if item.classification_bororo and item.classification_bororo not in categories %}
-                        {% set _ = categories.append(item.classification_bororo) %}
+                    {% if item.classification_indigenous and item.classification_indigenous not in categories %}
+                        {% set _ = categories.append(item.classification_indigenous) %}
                     {% endif %}
                 {% endfor %}
                 {% for cat in categories | sort %}
@@ -418,16 +418,16 @@
             var groups = {};
             for (var i = 0; i < entries.length; i++) {
                 var e = entries[i];
-                var cat = e.classification_bororo || '__uncategorized__';
+                var cat = e.classification_indigenous || '__uncategorized__';
                 if (!groups[cat]) groups[cat] = [];
                 groups[cat].push(e);
             }
             var sorted = Object.keys(groups).filter(function(k) { return k !== '__uncategorized__'; }).sort();
             if (groups['__uncategorized__']) sorted.push('__uncategorized__');
             return sorted.map(function(k) {
-                // Sort entries within group by name_bororo
+                // Sort entries within group by name_indigenous
                 groups[k].sort(function(a, b) {
-                    return (a.name_bororo || '').localeCompare(b.name_bororo || '');
+                    return (a.name_indigenous || '').localeCompare(b.name_indigenous || '');
                 });
                 return { category: k, label: k === '__uncategorized__' ? UNCATEGORIZED_LABEL : k, entries: groups[k] };
             });
@@ -474,7 +474,7 @@
                 var img = document.createElement('img');
                 img.className = 'showcase-card-img';
                 img.src = '../' + entry.pic_link;
-                img.alt = entry.name_bororo || '';
+                img.alt = entry.name_indigenous || '';
                 img.loading = 'lazy';
                 img.onerror = function() {
                     var ph = document.createElement('div');
@@ -492,7 +492,7 @@
 
             var body = document.createElement('div');
             body.className = 'showcase-card-body';
-            body.innerHTML = '<div class="card-name">' + escapeHtml(entry.name_bororo) + '</div>' +
+            body.innerHTML = '<div class="card-name">' + escapeHtml(entry.name_indigenous) + '</div>' +
                 (entry.name_portuguese ? '<div class="card-sub">' + escapeHtml(entry.name_portuguese) + '</div>' : '');
             card.appendChild(body);
 
@@ -538,7 +538,7 @@
                 var img = document.createElement('img');
                 img.className = 'showcase-detail-img';
                 img.src = '../' + entry.pic_link;
-                img.alt = entry.name_bororo || '';
+                img.alt = entry.name_indigenous || '';
                 img.onerror = function() {
                     var ph = document.createElement('div');
                     ph.className = 'showcase-detail-placeholder';
@@ -557,7 +557,7 @@
             var info = document.createElement('div');
             info.className = 'showcase-detail-info';
 
-            var html = '<h3>' + escapeHtml(entry.name_bororo) + '</h3>';
+            var html = '<h3>' + escapeHtml(entry.name_indigenous) + '</h3>';
             if (entry.name_portuguese) {
                 html += '<div class="detail-portuguese">' + escapeHtml(entry.name_portuguese) + '</div>';
             }
@@ -567,8 +567,8 @@
             if (entry.category) {
                 html += '<div class="detail-field"><strong>' + escapeHtml(T.fauna_detail_family || 'Família') + ':</strong> ' + escapeHtml(entry.category) + '</div>';
             }
-            if (entry.classification_bororo) {
-                html += '<div class="detail-tag">' + escapeHtml(entry.classification_bororo) + '</div>';
+            if (entry.classification_indigenous) {
+                html += '<div class="detail-tag">' + escapeHtml(entry.classification_indigenous) + '</div>';
             }
             if (entry.info) {
                 html += '<div class="detail-info-text">' + escapeHtml(entry.info) + '</div>';
@@ -629,7 +629,7 @@
         function matchesSearch(entry, query) {
             if (!query) return true;
             var q = normalize(query);
-            return normalize(entry.name_bororo).indexOf(q) !== -1 ||
+            return normalize(entry.name_indigenous).indexOf(q) !== -1 ||
                    normalize(entry.name_portuguese).indexOf(q) !== -1 ||
                    normalize(entry.scientific_name).indexOf(q) !== -1 ||
                    normalize(entry.category).indexOf(q) !== -1 ||

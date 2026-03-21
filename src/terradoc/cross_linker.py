@@ -120,7 +120,7 @@ def cross_link_datasets(config: TerradocConfig):
                 for f_entry in fauna_by_sci[sci]:
                     linked.append({
                         "id": f_entry["id"],
-                        "name_bororo": f_entry.get("name_bororo", ""),
+                        "name_indigenous": f_entry.get("name_indigenous", ""),
                         "name_portuguese": f_entry.get("name_portuguese", ""),
                     })
                 entry["_linked_fauna"] = linked
@@ -161,7 +161,7 @@ def cross_link_datasets(config: TerradocConfig):
                 for e_entry in ethno_by_sci[sci]:
                     linked.append({
                         "id": e_entry["id"],
-                        "name_bororo": e_entry.get("name_bororo", ""),
+                        "name_indigenous": e_entry.get("name_indigenous", ""),
                         "name_portuguese": e_entry.get("name_portuguese", ""),
                     })
                 entry.setdefault("_linked_ethnobotany", []).extend(linked)
@@ -179,18 +179,22 @@ def cross_link_datasets(config: TerradocConfig):
                     })
                 entry["_linked_dictionary"] = linked
 
-    # Ethnobotany ↔ Encyclopedia cross-links (entries tagged natureza/flora)
+    # Ethnobotany ↔ Encyclopedia cross-links (by configurable category tags)
     if ethnobotany and encyclopedia:
+        target_cats = [c.lower() for c in config.ethnobotany_encyclopedia_categories]
         flora_entries: dict[str, dict] = {}
         for entry in encyclopedia["data"]:
             cats = entry.get("categories") or []
-            if any("natureza/flora" in (c or "").lower() for c in cats):
+            if any(
+                any(tc in (c or "").lower() for tc in target_cats)
+                for c in cats
+            ):
                 title = (entry.get("title") or "").strip().lower()
                 if title:
                     flora_entries[title] = entry
 
         for entry in ethnobotany["data"]:
-            for field_name in ("name_bororo", "name_portuguese", "scientific_name"):
+            for field_name in ("name_indigenous", "name_portuguese", "scientific_name"):
                 val = (entry.get(field_name) or "").strip().lower()
                 if val and val in flora_entries:
                     enc_entry = flora_entries[val]

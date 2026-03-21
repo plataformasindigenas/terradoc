@@ -5,7 +5,7 @@ primary_key: id
 
 fields:
   id: int
-  name_bororo: str?
+  name_indigenous: str?
   name_portuguese: str?
   scientific_name: str?
   family: str?
