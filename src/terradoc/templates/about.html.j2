@@ -1,0 +1,202 @@
+{% extends "base.html.j2" %}
+{% from "decor.html.j2" import section_heading, page_badge, hero_decor, motif_divider %}
+
+{% block title %}{{ t.about_title | default('About') }}{% endblock %}
+
+{% block extra_styles %}
+        /* ── About page ── */
+        .about-header {
+            text-align: center;
+            padding: 5rem 0 3rem;
+        }
+        .about-header .brand-logo-large {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1.25rem;
+            display: block;
+        }
+        .about-header h1 {
+            font-size: 2.6rem;
+            color: var(--td-color-text);
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        .about-header .about-subtitle {
+            font-size: 1.15rem;
+            color: var(--td-color-text-muted);
+            max-width: 540px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .about-sections {
+            max-width: 820px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            padding-bottom: 4rem;
+        }
+        .about-card {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            padding: 2rem 2.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .about-card p,
+        .about-card div.about-card-body {
+            color: var(--td-color-text-secondary);
+            line-height: 1.75;
+            margin: 0;
+        }
+        .about-card div.about-card-body p {
+            margin: 0 0 0.75rem;
+        }
+        .about-card div.about-card-body p:last-child {
+            margin-bottom: 0;
+        }
+        .about-card div.about-card-body a {
+            color: var(--td-color-accent);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .about-citation-block {
+            background: var(--td-color-bg-light);
+            border-left: 4px solid var(--td-color-accent-muted);
+            border-radius: 0 var(--td-radius) var(--td-radius) 0;
+            padding: 1.25rem 1.5rem;
+            font-family: var(--td-font-mono);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--td-color-text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .about-tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+        .about-tool-item {
+            background: var(--td-color-bg-light);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+        }
+        .about-tool-item h4 {
+            margin: 0 0 0.35rem;
+            font-size: 1.05rem;
+            color: var(--td-color-primary);
+            font-family: var(--td-font-headings);
+        }
+        .about-tool-item p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--td-color-text-muted);
+        }
+        .about-tool-item a {
+            color: var(--td-color-accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .about-tool-item a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .about-header h1 {
+                font-size: 2rem;
+            }
+            .about-card {
+                padding: 1.5rem 1.25rem;
+            }
+            .about-tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+{% endblock %}
+
+{% block content %}
+    {# ── Header ── #}
+    <div class="about-header">
+        {{ page_badge(badge_type=theme.page_badge|default("moiety"), size="48") }}
+        {% if theme.logo %}
+        <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo-large">
+        {% endif %}
+        <h1>{{ t.about_title | default(site.title) }}</h1>
+        {% if t.about_subtitle or site.tagline %}
+        <p class="about-subtitle">{{ t.about_subtitle | default(site.tagline) }}</p>
+        {% endif %}
+        {{ hero_decor("motif", "var(--td-color-gold, #D4A03A)", "80px") }}
+    </div>
+
+    <div class="about-sections">
+
+        {# ── Mission ── #}
+        {% if t.about_mission %}
+        <section class="td-fade-in">
+            {{ section_heading(t.about_mission_heading | default('Mission')) }}
+            <div class="about-card">
+                <div class="about-card-body">{{ t.about_mission }}</div>
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Team / Partners ── #}
+        {% if t.about_partners %}
+        <section class="td-fade-in">
+            {{ section_heading(t.about_partners_heading | default('Team & Partners')) }}
+            <div class="about-card">
+                <div class="about-card-body">{{ t.about_partners }}</div>
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Contact ── #}
+        {% if t.about_contact %}
+        <section class="td-fade-in">
+            {{ section_heading(t.about_contact_heading | default('Contact')) }}
+            <div class="about-card">
+                <div class="about-card-body">{{ t.about_contact }}</div>
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Citation ── #}
+        {% set citation_text = t.about_citation | default(t.footer_citation | default('')) %}
+        {% if citation_text %}
+        <section class="td-fade-in">
+            {{ section_heading(t.about_citation_heading | default('How to Cite')) }}
+            <div class="about-card">
+                <div class="about-citation-block">{{ citation_text }}</div>
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Tools ── #}
+        <section class="td-fade-in">
+            {{ section_heading(t.about_tools_heading | default('Built With')) }}
+            <div class="about-card">
+                {% if t.about_tools %}
+                <div class="about-card-body" style="margin-bottom:1rem;">{{ t.about_tools }}</div>
+                {% endif %}
+                <div class="about-tools-grid">
+                    <div class="about-tool-item">
+                        <h4><a href="https://pypi.org/project/terradoc/">terradoc</a></h4>
+                        <p>{{ t.about_tool_terradoc | default('Site generation framework for indigenous language documentation') }}</p>
+                    </div>
+                    <div class="about-tool-item">
+                        <h4><a href="https://pypi.org/project/aptoro/">aptoro</a></h4>
+                        <p>{{ t.about_tool_aptoro | default('Data conversion and processing pipeline') }}</p>
+                    </div>
+                    <div class="about-tool-item">
+                        <h4><a href="https://pypi.org/project/kodudo/">kodudo</a></h4>
+                        <p>{{ t.about_tool_kodudo | default('Template rendering engine') }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+{% endblock %}

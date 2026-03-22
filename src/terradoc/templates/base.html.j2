@@ -7,6 +7,15 @@
     <link rel="icon" href="{{ base_path | default('') }}{{ theme.favicon }}">
     {% endif %}
     <title>{% block title %}{{ title | default(site.title) }}{% endblock %} - {{ site.title }}</title>
+    <meta name="description" content="{{ t.meta_description | default(site.tagline | default('')) }}">
+    <meta property="og:title" content="{{ title | default(site.title) }} - {{ site.title }}">
+    <meta property="og:description" content="{{ t.meta_description | default(site.tagline | default('')) }}">
+    <meta property="og:type" content="website">
+    {% if theme.hero_image %}
+    <meta property="og:image" content="{{ theme.hero_image }}">
+    {% endif %}
+    <meta property="og:locale" content="{{ t.html_lang | default(locale | default('en')) }}">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="{{ base_path | default('') }}css/fonts.css">
     <link rel="stylesheet" href="{{ base_path | default('') }}css/terradoc.css">
     <script>document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');</script>
@@ -102,6 +111,7 @@
                 {% for mod in modules %}
                 <a href="{{ np }}{{ mod.slug }}.html"{% if page == mod.slug %} class="active" aria-current="page"{% endif %}>{{ t['nav_' + mod.slug] | default(mod.name) }}</a>
                 {% endfor %}
+                <a href="{{ np }}about.html"{% if page == 'about' %} class="active" aria-current="page"{% endif %}>{{ t.nav_about | default('About') }}</a>
             </div>
             {% if locale_switches and locale_switches | length > 1 %}
             <div class="lang-switch" aria-label="{{ t.lang_switch_label | default('Language selector') }}">
@@ -147,6 +157,7 @@
                         {% for mod in modules %}
                         <li><a href="{{ np }}{{ mod.slug }}.html">{{ t['nav_' + mod.slug] | default(mod.name) }}</a></li>
                         {% endfor %}
+                        <li><a href="{{ np }}about.html">{{ t.nav_about | default('About') }}</a></li>
                     </ul>
                 </div>
                 <div>

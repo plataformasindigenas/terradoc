@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import aptoro
-from bibtexparser import bparser  # type: ignore[import-untyped]
+import bibtexparser
 import yaml
 
 from terradoc.config import TerradocConfig
@@ -22,6 +22,23 @@ from terradoc.markdown_utils import (
 )
 
 csv.field_size_limit(sys.maxsize)
+
+
+def _parse_bibtex(text: str) -> list[dict]:
+    """Parse BibTeX text and return entries as plain dicts (v1-compatible format).
+
+    Uses bibtexparser v2 API: ``bibtexparser.parse()`` returns a Library whose
+    ``.entries`` are Entry objects with ``.key``, ``.entry_type``, and
+    ``.fields_dict`` (mapping field names to Field objects with ``.value``).
+    """
+    library = bibtexparser.parse_string(text)
+    entries: list[dict] = []
+    for entry in library.entries:
+        d: dict[str, str] = {"ID": entry.key, "ENTRYTYPE": entry.entry_type}
+        for name, field in entry.fields_dict.items():
+            d[name] = field.value
+        entries.append(d)
+    return entries
 
 
 def _dataset_meta(config: TerradocConfig, module_slug: str, description: str, count: int, version: str) -> dict:
@@ -204,12 +221,12 @@ def convert_bibliography(config: TerradocConfig) -> int:
         return 0
 
     with open(bib_file, "r", encoding="utf-8") as f:
-        bib_database = bparser.parse(f.read())
+        bib_entries = _parse_bibtex(f.read())
 
     schema = _load_schema(config, "bibliography")
 
     data = []
-    for entry in bib_database.entries:
+    for entry in bib_entries:
         record = {"id": entry.get("ID", "")}
         bibtex_type = entry.get("ENTRYTYPE", "misc")
         if bibtex_type.startswith("@"):
@@ -303,10 +320,10 @@ def _load_bib_data(data_dir: Path, bib_filename: str) -> dict:
         return {}
 
     with open(bib_file, "r", encoding="utf-8") as f:
-        bib_database = bparser.parse(f.read())
+        bib_entries = _parse_bibtex(f.read())
 
     bib_data = {}
-    for entry in bib_database.entries:
+    for entry in bib_entries:
         key = entry.get("ID", "")
         if key:
             bib_data[key] = entry

@@ -109,6 +109,41 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
     print(f"  [{locale}] Rendered {len(entries)} article pages in encyclopedia/")
 
 
+def render_about_page(locale: str, translations: dict, config: TerradocConfig):
+    """Render the about page for a given locale."""
+    template_path = config.template_dir / "about.html.j2"
+    if not template_path.exists():
+        return
+
+    modules = config.enabled_modules()
+    theme_dict = config.theme.to_dict()
+    site_dict = config.site_context()
+
+    html = kodudo.render(
+        data=[{}],
+        template=template_path,
+        context={
+            "t": translations,
+            "locale": locale,
+            "locale_switches": get_locale_switches(
+                locale, "../", "about.html", config
+            ),
+            "base_path": "../",
+            "page": "about",
+            "current_page_path": "about.html",
+            "site": site_dict,
+            "theme": theme_dict,
+            "modules": modules,
+            "intensity": "balanced",
+        },
+        template_dirs=(config.template_dir, config.bundled_template_dir),
+    )
+
+    output_path = config.docs_dir / locale / "about.html"
+    output_path.write_text(html, encoding="utf-8")
+    print(f"  [{locale}] Rendered about")
+
+
 def build_locale(locale: str, translations: dict, config: TerradocConfig):
     """Build all pages for a given locale."""
     locale_dir = config.docs_dir / locale
@@ -177,6 +212,9 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
     if config.is_module_enabled("encyclopedia"):
         render_article_pages(locale, translations, config)
 
+    # Always render the about page (standalone, not a module)
+    render_about_page(locale, translations, config)
+
     for name in ("dictionary-data", "encyclopedia-data", "encyclopedia-graph", "recordings-data"):
         src = config.docs_dir / f"{name}.json"
         if src.exists():
@@ -229,6 +267,62 @@ def copy_static_assets(config: TerradocConfig):
     print("  Copied static assets (js/, css/, fonts/) to docs/")
 
 
+def write_robots_txt(docs_dir: Path):
+    """Write a robots.txt file to the docs directory."""
+    content = "User-agent: *\nAllow: /\nSitemap: sitemap.xml\n"
+    (docs_dir / "robots.txt").write_text(content, encoding="utf-8")
+    print("  Generated robots.txt")
+
+
+def write_sitemap(docs_dir: Path, config: TerradocConfig, locales: list[str]):
+    """Generate a sitemap.xml listing all HTML pages in the docs directory."""
+    urls: list[str] = []
+    for html_file in sorted(docs_dir.rglob("*.html")):
+        rel = html_file.relative_to(docs_dir).as_posix()
+        urls.append(rel)
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>']
+    lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for url in urls:
+        lines.append(f"  <url><loc>{url}</loc></url>")
+    lines.append("</urlset>")
+
+    (docs_dir / "sitemap.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"  Generated sitemap.xml ({len(urls)} URLs)")
+
+
+def build_404_page(config: TerradocConfig):
+    """Render a custom 404 page to docs/404.html."""
+    site = config.site_context()
+    theme_dict = config.theme.to_dict()
+    translations = {}
+    if config.locales:
+        translations = load_locale(config.default_locale, config)
+
+    template_path = config.template_dir / "404.html.j2"
+    if not template_path.exists():
+        print("  Skipping 404 page (no template found)")
+        return
+
+    page_html = kodudo.render(
+        data=[{}],
+        template=template_path,
+        context={
+            "site": site,
+            "theme": theme_dict,
+            "t": translations,
+            "locale": config.default_locale,
+            "base_path": "",
+            "page": "404",
+            "modules": config.enabled_modules(),
+        },
+        template_dirs=(config.template_dir, config.bundled_template_dir),
+    )
+
+    (config.docs_dir / "404.html").write_text(page_html, encoding="utf-8")
+    print("  Generated 404.html")
+
+
 def build_site(config: TerradocConfig):
     """Build the complete site for all locales."""
     print("=== Building i18n Site ===\n")
@@ -242,4 +336,7 @@ def build_site(config: TerradocConfig):
         print()
 
     build_language_picker(config)
+    build_404_page(config)
+    write_robots_txt(config.docs_dir)
+    write_sitemap(config.docs_dir, config, config.locales)
     print("\n=== i18n Build Complete ===")

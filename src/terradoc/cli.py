@@ -232,8 +232,20 @@ theme:
 nav_brand: "{name}"
 nav_dictionary: Dicionário
 nav_encyclopedia: Enciclopédia
+nav_about: Sobre
 index_title: Início
 index_hero_title: "{name}"
+about_title: "Sobre"
+about_subtitle: ""
+about_mission_heading: "Missão"
+about_mission: ""
+about_partners_heading: "Equipe e Parceiros"
+about_partners: ""
+about_contact_heading: "Contato"
+about_contact: ""
+about_citation_heading: "Como Citar"
+about_citation: ""
+about_tools_heading: "Construído Com"
 """
     (project_dir / "locales" / "pt.yaml").write_text(
         pt_locale.format(name=name), encoding="utf-8"
@@ -243,8 +255,20 @@ index_hero_title: "{name}"
 nav_brand: "{name}"
 nav_dictionary: Dictionary
 nav_encyclopedia: Encyclopedia
+nav_about: About
 index_title: Home
 index_hero_title: "{name}"
+about_title: "About"
+about_subtitle: ""
+about_mission_heading: "Mission"
+about_mission: ""
+about_partners_heading: "Team & Partners"
+about_partners: ""
+about_contact_heading: "Contact"
+about_contact: ""
+about_citation_heading: "How to Cite"
+about_citation: ""
+about_tools_heading: "Built With"
 """
     (project_dir / "locales" / "en.yaml").write_text(
         en_locale.format(name=name), encoding="utf-8"

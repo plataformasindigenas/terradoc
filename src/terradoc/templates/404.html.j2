@@ -1,0 +1,100 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ t.page_not_found_title | default('Page not found') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+.td-404-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 3rem 1rem;
+}
+{% if theme.hero_image %}
+.td-404-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('{{ theme.hero_image }}') center/cover no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+}
+{% endif %}
+.td-404-content {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+}
+.td-404-logo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    display: block;
+}
+.td-404-logo-mark {
+    transform: scale(2.5);
+    display: inline-block;
+    margin-bottom: 2.5rem;
+}
+.td-404-code {
+    font-family: var(--td-font-headings);
+    font-size: 5rem;
+    font-weight: 800;
+    color: var(--td-color-accent);
+    line-height: 1;
+    margin: 0 0 0.5rem;
+    opacity: 0.7;
+}
+.td-404-heading {
+    font-family: var(--td-font-headings);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--td-color-primary);
+    margin: 0 0 1rem;
+}
+.td-404-message {
+    font-size: 1.05rem;
+    color: var(--td-color-text-muted);
+    margin: 0 0 2rem;
+    line-height: 1.6;
+}
+.td-404-home-link {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--td-color-accent);
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--td-radius);
+    font-family: var(--td-font-headings);
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+.td-404-home-link:hover {
+    background: var(--td-color-accent-muted);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="td-404-wrapper">
+    <div class="td-404-content">
+        {% if theme.logo %}
+        <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="{{ site.title }}" class="td-404-logo">
+        {% else %}
+        <div class="td-404-logo-mark">
+            <span class="td-logo-mark" aria-hidden="true"><span class="ring-outer"><span class="ring-inner"><span class="ring-dot"></span></span></span></span>
+        </div>
+        {% endif %}
+        <p class="td-404-code">404</p>
+        <h1 class="td-404-heading">{{ t.page_not_found_heading | default('Page not found') }}</h1>
+        <p class="td-404-message">{{ t.page_not_found_message | default('The page you are looking for does not exist or has been moved.') }}</p>
+        <a href="{{ base_path | default('') }}index.html" class="td-404-home-link">{{ t.page_not_found_home | default('Back to home') }}</a>
+    </div>
+</div>
+{% endblock %}
