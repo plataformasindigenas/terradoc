@@ -2,6 +2,33 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.7.0] — 2026-03-21
+
+### Added
+
+- **About page.** New `about.html.j2` template rendered for every locale.
+  Shows project logo, mission, team/partners, contact info, citation block
+  (monospace), and a tools grid linking to terradoc/aptoro/kodudo on PyPI.
+  Content driven entirely by `about_*` locale keys.
+- **Custom 404 page.** New `404.html.j2` template with terra-styled layout,
+  large logo, accent "404" text, and a home link button.
+- **SEO meta tags.** `base.html.j2` now emits `<meta name="description">`,
+  Open Graph (`og:title`, `og:description`, `og:type`, `og:image`,
+  `og:locale`), and Twitter Card tags.
+- **Sitemap and robots.txt.** `build_site` now generates `sitemap.xml` and
+  `robots.txt` in the output root.
+
+### Changed
+
+- **bibtexparser v2.** Updated from v1 to v2 API
+  (`bibtexparser.parse_string()` / `Library` / `Entry.fields_dict`).
+  Minimum dependency bumped to `bibtexparser>=2.0.0b7`.
+
+### Fixed
+
+- **About page badge.** `about.html.j2` now uses
+  `theme.page_badge` instead of hardcoding `"moiety"`.
+
 ## [0.6.0] — 2026-03-21
 
 ### Added
