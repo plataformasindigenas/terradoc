@@ -267,6 +267,26 @@ def copy_static_assets(config: TerradocConfig):
     print("  Copied static assets (js/, css/, fonts/) to docs/")
 
 
+def copy_audio_files(config: TerradocConfig):
+    """Mirror data/audio/*.webm → docs/audio/. Files starting with '_' (reports
+    like _import_report.md) are skipped."""
+    src_dir = config.data_dir / "audio"
+    if not src_dir.exists():
+        return
+    dest_dir = config.docs_dir / "audio"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for src_file in src_dir.iterdir():
+        if not src_file.is_file() or src_file.name.startswith("_"):
+            continue
+        if src_file.suffix.lower() != ".webm":
+            continue
+        shutil.copy2(str(src_file), str(dest_dir / src_file.name))
+        n += 1
+    if n:
+        print(f"  Copied {n} audio files to docs/audio/")
+
+
 def write_robots_txt(docs_dir: Path):
     """Write a robots.txt file to the docs directory."""
     content = "User-agent: *\nAllow: /\nSitemap: sitemap.xml\n"
@@ -328,6 +348,7 @@ def build_site(config: TerradocConfig):
     print("=== Building i18n Site ===\n")
 
     copy_static_assets(config)
+    copy_audio_files(config)
 
     for locale in config.locales:
         print(f"Building locale: {locale}")
