@@ -2,6 +2,45 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.8.0] — 2026-04-15
+
+### Added
+
+- **Convention-based dictionary audio.** New `attach_audio_to_dictionary` step
+  in the build pipeline scans `data/audio/` and attaches audio files to
+  dictionary entries by slug convention — `data/audio/<slug>.webm` as primary,
+  `data/audio/<slug>__<speaker>.webm` for per-speaker variants. No schema
+  changes required on the dictionary: the engine populates `entry.audio` at
+  build time from whatever files are present on disk. Slug derivation is
+  lowercase + diacritic strip + non-alphanumeric collapsed to `_`.
+- **Audio copy step.** `build_site.copy_audio_files` mirrors
+  `data/audio/*.webm` → `docs/audio/` as part of the static-asset phase
+  (parallel to `copy_static_assets`). Files beginning with `_` are skipped so
+  import reports and notes don't end up in the deployed site.
+- **Audio coverage badge.** The dictionary page header now shows a compact
+  pill ("🔊 N com áudio (X%)") when `meta.audio_coverage.entries_with_audio`
+  is non-zero. Two new locale keys consumed with fallbacks:
+  `dict_with_audio_label` and `audio_files_label`.
+
+### Changed
+
+- **Dictionary template audio URL prefix.** `dictionary.html.j2` now emits
+  `<audio src="{base}audio/…">` instead of `{base}recordings/…`, matching the
+  new `docs/audio/` output directory. Sites using the old `recordings` module
+  are unaffected — `attach_recordings_to_dictionary` still runs when the
+  `recordings` module is enabled, and it writes to the same `entry.audio`
+  field, so the template change is format-agnostic.
+
+### Notes for site maintainers
+
+- The new audio attach step is a **no-op** when `data/audio/` does not exist,
+  so existing sites (e.g. enawenenawe) build unchanged.
+- To adopt the new convention, drop WebM files into `data/audio/<slug>.webm`
+  using the same slug rule the engine applies to `entry.entry`. Multiple
+  recordings per entry: add `__<speaker>` suffixes.
+- `meta.audio_coverage` is written into `dictionary.json` automatically and
+  is available to any consumer of the generated JSON.
+
 ## [0.7.0] — 2026-03-21
 
 ### Added

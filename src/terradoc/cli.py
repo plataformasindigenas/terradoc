@@ -95,10 +95,18 @@ def build(config_path: str):
     counts = run_all_converters(cfg)
 
     # Step 3: Post-processing
-    from terradoc.cross_linker import attach_recordings_to_dictionary, cross_link_datasets
+    from terradoc.cross_linker import (
+        attach_audio_to_dictionary,
+        attach_recordings_to_dictionary,
+        cross_link_datasets,
+    )
 
     if cfg.is_module_enabled("recordings") and cfg.is_module_enabled("dictionary"):
         attach_recordings_to_dictionary(cfg)
+        click.echo()
+
+    if cfg.is_module_enabled("dictionary"):
+        attach_audio_to_dictionary(cfg)
         click.echo()
 
     cross_link_datasets(cfg)

@@ -1,10 +1,100 @@
 """Cross-link datasets (dictionary, fauna, ethnobotany, encyclopedia) by shared fields."""
 
 import json
+import re
+import unicodedata
+from collections import defaultdict
 
 import yaml
 
 from terradoc.config import TerradocConfig
+
+
+def _slugify(text: str) -> str:
+    """Lowercase, strip diacritics, collapse non-alnum runs to underscores."""
+    text = unicodedata.normalize("NFKD", text or "")
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return text
+
+
+def attach_audio_to_dictionary(config: TerradocConfig):
+    """Attach audio files from data/audio/ to dictionary entries via slug match.
+
+    Convention (Option 1D): for each dictionary entry, look up
+        data/audio/<slug>.webm   (primary)
+        data/audio/<slug>__*.webm (variants — usually per-speaker)
+    where slug = _slugify(entry.entry). Attach each match as
+    {file_path, speaker, format} on entry.audio so the existing dictionary
+    template renders <audio> players.
+    """
+    print("=== Attaching Audio to Dictionary ===")
+
+    audio_dir = config.data_dir / "audio"
+    dictionary_file = config.data_dir / "dictionary.json"
+
+    if not audio_dir.exists():
+        print("  No data/audio/ directory found, skipping.")
+        return
+    if not dictionary_file.exists():
+        print("  No dictionary.json found, skipping.")
+        return
+
+    # Index audio files by slug. For each slug, separate primary from variants.
+    by_slug: dict[str, list[dict]] = defaultdict(list)
+    for path in sorted(audio_dir.glob("*.webm")):
+        name = path.name
+        stem = path.stem
+        if "__" in stem:
+            slug, _, variant = stem.partition("__")
+            speaker = re.sub(r"\d+$", "", variant) or "unknown"
+            sort_key = (1, variant)
+        else:
+            slug = stem
+            speaker = "unknown"
+            sort_key = (0, "")
+        by_slug[slug].append({
+            "file_path": name,
+            "speaker": speaker,
+            "format": "webm",
+            "_sort": sort_key,
+        })
+
+    # Sort within each slug: primary first, then variants alphabetically by speaker
+    for slug in by_slug:
+        by_slug[slug].sort(key=lambda d: d["_sort"])
+        for d in by_slug[slug]:
+            d.pop("_sort", None)
+
+    with open(dictionary_file, "r", encoding="utf-8") as f:
+        dictionary = json.load(f)
+
+    attached = 0
+    files_attached = 0
+    for entry in dictionary["data"]:
+        slug = _slugify(entry.get("entry", ""))
+        if slug and slug in by_slug:
+            entry["audio"] = by_slug[slug]
+            attached += 1
+            files_attached += len(by_slug[slug])
+
+    # Coverage stats — written into meta so the template can render a badge
+    total = len(dictionary["data"])
+    pct = (100.0 * attached / total) if total else 0.0
+    dictionary.setdefault("meta", {})["audio_coverage"] = {
+        "entries_with_audio": attached,
+        "total_entries": total,
+        "percent": round(pct, 1),
+        "files": files_attached,
+    }
+
+    dictionary_file.write_text(
+        json.dumps(dictionary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    print(f"  Attached audio to {attached}/{total} entries ({pct:.1f}%)")
+    print(f"  Total audio files linked: {files_attached}")
 
 
 def attach_recordings_to_dictionary(config: TerradocConfig):
