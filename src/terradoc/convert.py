@@ -9,8 +9,6 @@ from typing import Any
 
 import aptoro
 import bibtexparser
-import yaml
-
 from terradoc.config import TerradocConfig
 from terradoc.markdown_utils import (
     assert_no_html,
@@ -88,25 +86,31 @@ def _load_schema(config: TerradocConfig, module_slug: str):
     return aptoro.load_schema(str(schema_path))
 
 
-def convert_dictionary(config: TerradocConfig) -> int:
-    """Convert dictionary TSV to JSON."""
-    print("=== Converting Dictionary ===")
+_SOURCE_EXTENSIONS = (".yaml", ".yml", ".tsv")
 
-    dictionary_file = config.data_dir / "dictionary.tsv"
-    if not dictionary_file.exists():
-        output_file = _write_dataset(
-            config,
-            "dictionary.json",
-            "dictionary",
-            f"{config.culture_name} Dictionary Entries",
-            [],
-        )
-        print(f"  Dictionary file not found: {dictionary_file}")
+
+def convert_module(config: TerradocConfig, slug: str) -> int:
+    """Convert a data module from its source file to JSON."""
+    label = config.module_label(slug)
+    print(f"=== Converting {label} ===")
+
+    source_file = None
+    for ext in _SOURCE_EXTENSIONS:
+        candidate = config.data_dir / f"{slug}{ext}"
+        if candidate.exists():
+            source_file = candidate
+            break
+
+    description = f"{config.culture_name} {label}"
+
+    if source_file is None:
+        output_file = _write_dataset(config, f"{slug}.json", slug, description, [])
+        print(f"  Source file not found for {slug}")
         print(f"  Exported 0 entries to {output_file}")
         return 0
 
-    schema = _load_schema(config, "dictionary")
-    data = aptoro.read(str(dictionary_file), format="csv", delimiter="\t")
+    schema = _load_schema(config, slug)
+    data = aptoro.read(str(source_file))
 
     print(f"  Validating {len(data)} entries...")
     try:
@@ -118,93 +122,7 @@ def convert_dictionary(config: TerradocConfig) -> int:
     normalized_records = _normalize_records(records)
 
     output_file = _write_dataset(
-        config,
-        "dictionary.json",
-        "dictionary",
-        f"{config.culture_name} Dictionary Entries",
-        normalized_records,
-    )
-
-    print(f"  Exported {len(normalized_records)} entries to {output_file}")
-    return len(normalized_records)
-
-
-def convert_fauna(config: TerradocConfig) -> int:
-    """Convert fauna YAML to JSON."""
-    print("=== Converting Fauna ===")
-
-    fauna_file = config.data_dir / "fauna.yaml"
-    if not fauna_file.exists():
-        output_file = _write_dataset(
-            config,
-            "fauna.json",
-            "fauna",
-            f"{config.culture_name} Fauna Dictionary",
-            [],
-        )
-        print(f"  Fauna file not found: {fauna_file}")
-        print(f"  Exported 0 entries to {output_file}")
-        return 0
-
-    schema = _load_schema(config, "fauna")
-    data = aptoro.read(str(fauna_file), format="yaml")
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    normalized_records = _normalize_records(records)
-
-    output_file = _write_dataset(
-        config,
-        "fauna.json",
-        "fauna",
-        f"{config.culture_name} Fauna Dictionary",
-        normalized_records,
-    )
-
-    print(f"  Exported {len(normalized_records)} entries to {output_file}")
-    return len(normalized_records)
-
-
-def convert_ethnobotany(config: TerradocConfig) -> int:
-    """Convert ethnobotany YAML to JSON."""
-    print("=== Converting Ethnobotany ===")
-
-    ethnobotany_file = config.data_dir / "ethnobotany.yaml"
-    if not ethnobotany_file.exists():
-        output_file = _write_dataset(
-            config,
-            "ethnobotany.json",
-            "ethnobotany",
-            f"{config.culture_name} Ethnobotany Entries",
-            [],
-        )
-        print(f"  Ethnobotany file not found: {ethnobotany_file}")
-        print(f"  Exported 0 entries to {output_file}")
-        return 0
-
-    schema = _load_schema(config, "ethnobotany")
-    data = aptoro.read(str(ethnobotany_file), format="yaml")
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    normalized_records = _normalize_records(records)
-
-    output_file = _write_dataset(
-        config,
-        "ethnobotany.json",
-        "ethnobotany",
-        f"{config.culture_name} Ethnobotany Entries",
-        normalized_records,
+        config, f"{slug}.json", slug, description, normalized_records,
     )
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
@@ -438,46 +356,29 @@ def _print_completeness_report(records: list[dict]) -> None:
         print(f"    With broken refs:    {len(broken_refs)}")
 
 
-def convert_encyclopedia(config: TerradocConfig) -> int:
-    """Convert encyclopedia markdown to JSON."""
-    print("=== Converting Encyclopedia ===")
-
-    schema = _load_schema(config, "encyclopedia")
-    data = _load_encyclopedia_entries(config.data_dir)
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    all_ids = set()
+def _validate_bib_keys(records: list, bib_data: dict) -> None:
+    """Raise if any record references a bibliography key not in bib_data."""
+    errors: list[str] = []
     for record in records:
         entry = _record_to_dict(record)
-        eid = entry.get("id", "")
-        if eid:
-            all_ids.add(eid)
-
-    bib_data = _load_bib_data(config.data_dir, config.bib_file)
-
-    # Validate bibliography keys upfront
-    bib_errors: list[str] = []
-    for record in records:
-        entry = _record_to_dict(record)
-        refs = entry.get("references") or []
-        for key in refs:
+        for key in entry.get("references") or []:
             if key not in bib_data:
-                bib_errors.append(
+                errors.append(
                     f"  {entry.get('id', '<unknown>')}: unresolved bib key '{key}'"
                 )
-    if bib_errors:
-        msg = "Unresolved bibliography references:\n" + "\n".join(bib_errors)
-        raise ValueError(msg)
+    if errors:
+        raise ValueError(
+            "Unresolved bibliography references:\n" + "\n".join(errors)
+        )
 
+
+def _render_encyclopedia_entries(
+    records: list, all_ids: set[str], bib_data: dict,
+) -> tuple[list[dict], list[dict]]:
+    """Render validated records into full entries and lightweight index entries."""
     md = build_markdown_renderer()
-    normalized_records = []
-    index_records = []
+    normalized: list[dict] = []
+    index: list[dict] = []
 
     for record in records:
         entry = _record_to_dict(record)
@@ -488,8 +389,7 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
         content_md = entry.get("content_md") or ""
         assert_no_html(content_md, entry.get("id", "<unknown>"))
 
-        # Extract wikilink targets before converting to HTML
-        wikilink_targets = []
+        wikilink_targets: list[str] = []
         if "[[" in content_md:
             wikilink_targets = extract_wikilink_targets(content_md, all_ids)
             content_md = process_wikilinks(content_md, all_ids)
@@ -506,9 +406,9 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
             entry["resolved_references"] = []
 
         entry["_wikilink_targets"] = wikilink_targets
-        normalized_records.append(entry)
+        normalized.append(entry)
 
-        index_records.append({
+        index.append({
             "id": entry.get("id", ""),
             "title": entry.get("title", ""),
             "abstract": entry.get("abstract", ""),
@@ -520,146 +420,159 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
             "wikilink_targets": wikilink_targets,
         })
 
-    output_file = _write_dataset(
-        config,
-        "encyclopedia.json",
-        "encyclopedia",
-        f"{config.culture_name} Encyclopedia Entries",
-        normalized_records,
-        version="2.0",
-    )
+    return normalized, index
 
-    category_tree = build_category_tree(normalized_records)
 
-    index_data: dict[str, Any] = {
-        "meta": _dataset_meta(
-            config,
-            "encyclopedia",
-            f"{config.culture_name} Encyclopedia Entries",
-            len(index_records),
-            "2.0",
-        ),
-        "data": index_records,
-        "category_tree": category_tree,
+def _make_featured_summary(entry: dict) -> dict:
+    """Build a featured-article summary dict from a full encyclopedia entry."""
+    images = entry.get("images") or []
+    text = (entry.get("content_text") or "")[:400]
+    if text and " " in text:
+        text = text.rsplit(" ", 1)[0]
+    return {
+        "id": entry["id"],
+        "title": entry.get("title", ""),
+        "abstract": entry.get("abstract", ""),
+        "image": images[0] if images else None,
+        "content_excerpt": (text + "...") if text else "",
     }
 
-    # Select featured article
-    featured = None
-    featured_id = config.featured_article_id
+
+def _select_featured(records: list[dict], featured_id: str) -> dict | None:
+    """Pick the featured article: explicit config id, then first entry with images."""
     if featured_id:
-        for entry in normalized_records:
+        for entry in records:
             if entry.get("id") == featured_id:
-                images = entry.get("images") or []
-                text = (entry.get("content_text") or "")[:400]
-                if text and " " in text:
-                    text = text.rsplit(" ", 1)[0]
-                featured = {
-                    "id": entry["id"],
-                    "title": entry.get("title", ""),
-                    "abstract": entry.get("abstract", ""),
-                    "image": images[0] if images else None,
-                    "content_excerpt": (text + "...") if text else "",
-                }
-                break
+                return _make_featured_summary(entry)
+    for entry in records:
+        if entry.get("images") and entry.get("content_html"):
+            return _make_featured_summary(entry)
+    return None
 
-    if not featured:
-        for entry in normalized_records:
-            if entry.get("images") and entry.get("content_html"):
-                images = entry.get("images") or []
-                text = (entry.get("content_text") or "")[:400]
-                if text and " " in text:
-                    text = text.rsplit(" ", 1)[0]
-                featured = {
-                    "id": entry["id"],
-                    "title": entry.get("title", ""),
-                    "abstract": entry.get("abstract", ""),
-                    "image": images[0] if images else None,
-                    "content_excerpt": (text + "...") if text else "",
-                }
-                break
 
-    highlights = []
-    for entry in normalized_records:
+def _select_highlights(
+    records: list[dict], featured: dict | None, limit: int = 8,
+) -> list[dict]:
+    """Pick up to *limit* entries with images, excluding the featured article."""
+    featured_id = featured.get("id") if featured else None
+    highlights: list[dict] = []
+    for entry in records:
         images = entry.get("images") or []
-        if images and (not featured or entry.get("id") != featured.get("id")):
+        if images and entry.get("id") != featured_id:
             highlights.append({
                 "id": entry["id"],
                 "title": entry.get("title", ""),
                 "image": images[0],
             })
-            if len(highlights) >= 8:
+            if len(highlights) >= limit:
                 break
+    return highlights
 
-    index_data["featured"] = featured
-    index_data["highlights"] = highlights
+
+def _build_encyclopedia_graph(index_records: list[dict]) -> dict:
+    """Build a knowledge-graph structure from index records."""
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    category_set: set[str] = set()
+
+    for rec in index_records:
+        eid = rec["id"]
+        nodes.append({
+            "id": eid,
+            "title": rec["title"],
+            "abstract": rec.get("abstract", ""),
+            "categories": rec["categories"],
+            "has_content": rec["has_content"],
+            "type": "entry",
+        })
+
+        for cat in rec["categories"]:
+            top_cat = cat.split("/")[0]
+            category_set.add(top_cat)
+            edges.append({
+                "source": eid,
+                "target": f"cat:{top_cat}",
+                "type": "category",
+            })
+
+        for target in rec.get("see_also") or []:
+            edges.append({
+                "source": eid, "target": target, "type": "see_also",
+            })
+
+        for target in rec.get("wikilink_targets") or []:
+            edges.append({
+                "source": eid, "target": target, "type": "wikilink",
+            })
+
+    for cat in sorted(category_set):
+        nodes.append({"id": f"cat:{cat}", "title": cat, "type": "category"})
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "categories": sorted(category_set),
+    }
+
+
+def convert_encyclopedia(config: TerradocConfig) -> int:
+    """Convert encyclopedia markdown to JSON."""
+    print("=== Converting Encyclopedia ===")
+
+    schema = _load_schema(config, "encyclopedia")
+    data = _load_encyclopedia_entries(config.data_dir)
+
+    print(f"  Validating {len(data)} entries...")
+    try:
+        records = aptoro.validate(data, schema, collect_errors=True)
+    except aptoro.ValidationError as e:
+        print(e.summary())
+        raise
+
+    all_ids = {
+        _record_to_dict(r).get("id", "") for r in records
+    } - {""}
+
+    bib_data = _load_bib_data(config.data_dir, config.bib_file)
+    _validate_bib_keys(records, bib_data)
+
+    normalized_records, index_records = _render_encyclopedia_entries(
+        records, all_ids, bib_data,
+    )
+
+    output_file = _write_dataset(
+        config, "encyclopedia.json", "encyclopedia",
+        f"{config.culture_name} Encyclopedia Entries",
+        normalized_records, version="2.0",
+    )
+
+    featured = _select_featured(normalized_records, config.featured_article_id)
+    highlights = _select_highlights(normalized_records, featured)
+
+    index_data: dict[str, Any] = {
+        "meta": _dataset_meta(
+            config, "encyclopedia",
+            f"{config.culture_name} Encyclopedia Entries",
+            len(index_records), "2.0",
+        ),
+        "data": index_records,
+        "category_tree": build_category_tree(normalized_records),
+        "featured": featured,
+        "highlights": highlights,
+    }
 
     index_file = config.data_dir / "encyclopedia_index.json"
     index_file.write_text(
         json.dumps(index_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # --- Generate graph data (opt-in) ---
     if config.is_graph_enabled("encyclopedia"):
-        graph_nodes = []
-        graph_edges = []
-        category_set = set()
-
-        for rec in index_records:
-            eid = rec["id"]
-            graph_nodes.append({
-                "id": eid,
-                "title": rec["title"],
-                "abstract": rec.get("abstract", ""),
-                "categories": rec["categories"],
-                "has_content": rec["has_content"],
-                "type": "entry",
-            })
-
-            # Edges: entry → category (star topology)
-            for cat in rec["categories"]:
-                top_cat = cat.split("/")[0]
-                category_set.add(top_cat)
-                graph_edges.append({
-                    "source": eid,
-                    "target": f"cat:{top_cat}",
-                    "type": "category",
-                })
-
-            # Edges: see_also
-            for target in rec.get("see_also") or []:
-                graph_edges.append({
-                    "source": eid,
-                    "target": target,
-                    "type": "see_also",
-                })
-
-            # Edges: wikilinks
-            for target in rec.get("wikilink_targets") or []:
-                graph_edges.append({
-                    "source": eid,
-                    "target": target,
-                    "type": "wikilink",
-                })
-
-        # Add category nodes
-        for cat in sorted(category_set):
-            graph_nodes.append({
-                "id": f"cat:{cat}",
-                "title": cat,
-                "type": "category",
-            })
-
-        graph_data = {
-            "nodes": graph_nodes,
-            "edges": graph_edges,
-            "categories": sorted(category_set),
-        }
-
+        graph_data = _build_encyclopedia_graph(index_records)
         graph_file = config.data_dir / "encyclopedia_graph.json"
         graph_file.write_text(
             json.dumps(graph_data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        print(f"  Exported graph ({len(graph_nodes)} nodes, {len(graph_edges)} edges) to {graph_file}")
+        print(f"  Exported graph ({len(graph_data['nodes'])} nodes, {len(graph_data['edges'])} edges) to {graph_file}")
 
     print(f"  Exported {len(normalized_records)} entries to {output_file}")
     print(f"  Exported index ({len(index_records)} entries) to {index_file}")
@@ -669,121 +582,9 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
     return len(normalized_records)
 
 
-def convert_recordings(config: TerradocConfig) -> int:
-    """Convert recordings YAML to JSON."""
-    print("=== Converting Recordings ===")
-
-    recordings_file = config.data_dir / "recordings.yaml"
-    if not recordings_file.exists():
-        print(f"  Recordings file not found: {recordings_file}")
-        return 0
-
-    schema = _load_schema(config, "recordings")
-
-    with open(recordings_file, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or []
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    normalized_records = _normalize_records(records)
-
-    output_file = _write_dataset(
-        config,
-        "recordings.json",
-        "recordings",
-        f"{config.culture_name} Language Audio Recordings",
-        normalized_records,
-    )
-
-    print(f"  Exported {len(normalized_records)} entries to {output_file}")
-    return len(normalized_records)
-
-
-def convert_corpus(config: TerradocConfig) -> int:
-    """Convert corpus YAML to JSON."""
-    print("=== Converting Corpus ===")
-
-    corpus_file = config.data_dir / "corpus.yaml"
-    if not corpus_file.exists():
-        print(f"  Corpus file not found: {corpus_file}")
-        return 0
-
-    schema = _load_schema(config, "corpus")
-
-    with open(corpus_file, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or []
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    normalized_records = _normalize_records(records)
-
-    output_file = _write_dataset(
-        config,
-        "corpus.json",
-        "corpus",
-        f"{config.culture_name} Corpus Text Entries",
-        normalized_records,
-    )
-
-    print(f"  Exported {len(normalized_records)} entries to {output_file}")
-    return len(normalized_records)
-
-
-def convert_videos(config: TerradocConfig) -> int:
-    """Convert videos YAML to JSON."""
-    print("=== Converting Videos ===")
-
-    videos_file = config.data_dir / "videos.yaml"
-    if not videos_file.exists():
-        print(f"  Videos file not found: {videos_file}")
-        return 0
-
-    schema = _load_schema(config, "videos")
-
-    with open(videos_file, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or []
-
-    print(f"  Validating {len(data)} entries...")
-    try:
-        records = aptoro.validate(data, schema, collect_errors=True)
-    except aptoro.ValidationError as e:
-        print(e.summary())
-        raise
-
-    normalized_records = _normalize_records(records)
-
-    output_file = _write_dataset(
-        config,
-        "videos.json",
-        "videos",
-        f"{config.culture_name} Cultural Videos",
-        normalized_records,
-    )
-
-    print(f"  Exported {len(normalized_records)} entries to {output_file}")
-    return len(normalized_records)
-
-
-# Registry of converters
-CONVERTERS = {
-    "dictionary": convert_dictionary,
-    "fauna": convert_fauna,
-    "ethnobotany": convert_ethnobotany,
+SPECIAL_CONVERTERS = {
     "encyclopedia": convert_encyclopedia,
     "bibliography": convert_bibliography,
-    "recordings": convert_recordings,
-    "corpus": convert_corpus,
-    "videos": convert_videos,
 }
 
 
@@ -796,7 +597,7 @@ def _run_enabled_module_preflight(config: TerradocConfig) -> None:
     """Fail early if enabled built-in modules are missing required resources."""
     problems: list[str] = []
 
-    for name in CONVERTERS:
+    for name in config.modules:
         if not config.is_module_enabled(name):
             continue
 
@@ -825,10 +626,14 @@ def run_all_converters(config: TerradocConfig) -> dict[str, int]:
     _run_enabled_module_preflight(config)
 
     counts = {}
-    for name, converter in CONVERTERS.items():
-        if config.is_module_enabled(name):
-            counts[name] = converter(config)
-            print()
-        else:
+    for name in config.modules:
+        if not config.is_module_enabled(name):
             print(f"=== Skipping {name} (disabled) ===\n")
+            continue
+        converter = SPECIAL_CONVERTERS.get(name)
+        if converter:
+            counts[name] = converter(config)
+        else:
+            counts[name] = convert_module(config, name)
+        print()
     return counts

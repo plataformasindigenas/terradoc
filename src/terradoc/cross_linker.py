@@ -143,191 +143,200 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
     print(f"  Total audio files linked: {sum(len(v) for v in audio_map.values())}")
 
 
-def cross_link_datasets(config: TerradocConfig):
-    """Cross-link dictionary, fauna, ethnobotany, and encyclopedia entries by shared fields."""
-    print("=== Cross-linking Datasets ===")
+# ── Pure cross-linking strategies ──
 
-    dict_file = config.data_dir / "dictionary.json"
-    fauna_file = config.data_dir / "fauna.json"
-    ethnobotany_file = config.data_dir / "ethnobotany.json"
-    enc_file = config.data_dir / "encyclopedia.json"
 
-    files_to_check = []
-    if config.is_module_enabled("dictionary"):
-        files_to_check.append(dict_file)
-    if config.is_module_enabled("fauna"):
-        files_to_check.append(fauna_file)
-    if config.is_module_enabled("ethnobotany"):
-        files_to_check.append(ethnobotany_file)
-    if config.is_module_enabled("encyclopedia"):
-        files_to_check.append(enc_file)
+def _index_by_scientific_name(entries: list[dict]) -> dict[str, list[dict]]:
+    """Build a lookup from lowercased scientific_name to matching entries."""
+    index: dict[str, list[dict]] = {}
+    for entry in entries:
+        sci = (entry.get("scientific_name") or "").strip().lower()
+        if sci:
+            index.setdefault(sci, []).append(entry)
+    return index
 
-    if not all(f.exists() for f in files_to_check):
-        print("  Missing JSON files, skipping cross-linking.")
-        return
 
-    dictionary = fauna = ethnobotany = encyclopedia = None
+def _link_dict_fauna(dict_entries: list[dict], fauna_entries: list[dict]) -> int:
+    """Bidirectional dict↔fauna cross-links by scientific_name. Returns dict→fauna count."""
+    fauna_by_sci = _index_by_scientific_name(fauna_entries)
+    dict_by_sci = _index_by_scientific_name(dict_entries)
+    count = 0
 
-    if config.is_module_enabled("dictionary") and dict_file.exists():
-        with open(dict_file, "r", encoding="utf-8") as f:
-            dictionary = json.load(f)
+    for entry in dict_entries:
+        sci = (entry.get("scientific_name") or "").strip().lower()
+        if sci and sci in fauna_by_sci:
+            entry["_linked_fauna"] = [
+                {
+                    "id": f["id"],
+                    "name_indigenous": f.get("name_indigenous", ""),
+                    "name_portuguese": f.get("name_portuguese", ""),
+                }
+                for f in fauna_by_sci[sci]
+            ]
+            count += 1
 
-    if config.is_module_enabled("fauna") and fauna_file.exists():
-        with open(fauna_file, "r", encoding="utf-8") as f:
-            fauna = json.load(f)
+    for entry in fauna_entries:
+        sci = (entry.get("scientific_name") or "").strip().lower()
+        if sci and sci in dict_by_sci:
+            entry["_linked_dictionary"] = [
+                {
+                    "id": d["id"],
+                    "entry": d.get("entry", ""),
+                    "definition": d.get("definition", ""),
+                }
+                for d in dict_by_sci[sci]
+            ]
 
-    if config.is_module_enabled("ethnobotany") and ethnobotany_file.exists():
-        with open(ethnobotany_file, "r", encoding="utf-8") as f:
-            ethnobotany = json.load(f)
+    return count
 
-    if config.is_module_enabled("encyclopedia") and enc_file.exists():
-        with open(enc_file, "r", encoding="utf-8") as f:
-            encyclopedia = json.load(f)
 
-    link_count = 0
-    enc_link_count = 0
-    ethno_link_count = 0
-    ethno_enc_link_count = 0
+def _link_dict_ethnobotany(dict_entries: list[dict], ethno_entries: list[dict]) -> int:
+    """Bidirectional dict↔ethnobotany cross-links by scientific_name. Returns dict→ethno count."""
+    ethno_by_sci = _index_by_scientific_name(ethno_entries)
+    dict_by_sci = _index_by_scientific_name(dict_entries)
+    count = 0
 
-    # Dictionary ↔ Fauna cross-links
-    if dictionary and fauna:
-        fauna_by_sci: dict[str, list[dict]] = {}
-        for entry in fauna["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci:
-                fauna_by_sci.setdefault(sci, []).append(entry)
+    for entry in dict_entries:
+        sci = (entry.get("scientific_name") or "").strip().lower()
+        if sci and sci in ethno_by_sci:
+            entry.setdefault("_linked_ethnobotany", []).extend(
+                {
+                    "id": e["id"],
+                    "name_indigenous": e.get("name_indigenous", ""),
+                    "name_portuguese": e.get("name_portuguese", ""),
+                }
+                for e in ethno_by_sci[sci]
+            )
+            count += 1
 
-        dict_by_sci: dict[str, list[dict]] = {}
-        for entry in dictionary["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci:
-                dict_by_sci.setdefault(sci, []).append(entry)
+    for entry in ethno_entries:
+        sci = (entry.get("scientific_name") or "").strip().lower()
+        if sci and sci in dict_by_sci:
+            entry["_linked_dictionary"] = [
+                {
+                    "id": d["id"],
+                    "entry": d.get("entry", ""),
+                    "definition": d.get("definition", ""),
+                }
+                for d in dict_by_sci[sci]
+            ]
 
-        for entry in dictionary["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci and sci in fauna_by_sci:
-                linked = []
-                for f_entry in fauna_by_sci[sci]:
-                    linked.append({
-                        "id": f_entry["id"],
-                        "name_indigenous": f_entry.get("name_indigenous", ""),
-                        "name_portuguese": f_entry.get("name_portuguese", ""),
-                    })
-                entry["_linked_fauna"] = linked
-                link_count += 1
+    return count
 
-        for entry in fauna["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci and sci in dict_by_sci:
-                linked = []
-                for d_entry in dict_by_sci[sci]:
-                    linked.append({
-                        "id": d_entry["id"],
-                        "entry": d_entry.get("entry", ""),
-                        "definition": d_entry.get("definition", ""),
-                    })
-                entry["_linked_dictionary"] = linked
 
-    # Dictionary ↔ Ethnobotany cross-links (by scientific_name)
-    if dictionary and ethnobotany:
-        ethno_by_sci: dict[str, list[dict]] = {}
-        for entry in ethnobotany["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci:
-                ethno_by_sci.setdefault(sci, []).append(entry)
-
-        # Build dict_by_sci if not already built above
-        if not fauna:
-            dict_by_sci = {}
-            for entry in dictionary["data"]:
-                sci = (entry.get("scientific_name") or "").strip().lower()
-                if sci:
-                    dict_by_sci.setdefault(sci, []).append(entry)
-
-        for entry in dictionary["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci and sci in ethno_by_sci:
-                linked = []
-                for e_entry in ethno_by_sci[sci]:
-                    linked.append({
-                        "id": e_entry["id"],
-                        "name_indigenous": e_entry.get("name_indigenous", ""),
-                        "name_portuguese": e_entry.get("name_portuguese", ""),
-                    })
-                entry.setdefault("_linked_ethnobotany", []).extend(linked)
-                ethno_link_count += 1
-
-        for entry in ethnobotany["data"]:
-            sci = (entry.get("scientific_name") or "").strip().lower()
-            if sci and sci in dict_by_sci:
-                linked = []
-                for d_entry in dict_by_sci[sci]:
-                    linked.append({
-                        "id": d_entry["id"],
-                        "entry": d_entry.get("entry", ""),
-                        "definition": d_entry.get("definition", ""),
-                    })
-                entry["_linked_dictionary"] = linked
-
-    # Ethnobotany ↔ Encyclopedia cross-links (by configurable category tags)
-    if ethnobotany and encyclopedia:
-        target_cats = [c.lower() for c in config.ethnobotany_encyclopedia_categories]
-        flora_entries: dict[str, dict] = {}
-        for entry in encyclopedia["data"]:
-            cats = entry.get("categories") or []
-            if any(
-                any(tc in (c or "").lower() for tc in target_cats)
-                for c in cats
-            ):
-                title = (entry.get("title") or "").strip().lower()
-                if title:
-                    flora_entries[title] = entry
-
-        for entry in ethnobotany["data"]:
-            for field_name in ("name_indigenous", "name_portuguese", "scientific_name"):
-                val = (entry.get(field_name) or "").strip().lower()
-                if val and val in flora_entries:
-                    enc_entry = flora_entries[val]
-                    entry.setdefault("_linked_encyclopedia", []).append({
-                        "id": enc_entry["id"],
-                        "title": enc_entry.get("title", ""),
-                    })
-                    ethno_enc_link_count += 1
-                    break
-
-    # Dictionary → Encyclopedia cross-links
-    if dictionary and encyclopedia:
-        enc_by_title = {}
-        for entry in encyclopedia["data"]:
-            title = (entry.get("title") or "").strip().lower().replace(" ", "-")
+def _link_ethno_encyclopedia(
+    ethno_entries: list[dict], enc_entries: list[dict], target_categories: list[str],
+) -> int:
+    """One-directional ethnobotany→encyclopedia links by name matching in target categories."""
+    target_cats = [c.lower() for c in target_categories]
+    flora_by_title: dict[str, dict] = {}
+    for entry in enc_entries:
+        cats = entry.get("categories") or []
+        if any(
+            any(tc in (c or "").lower() for tc in target_cats)
+            for c in cats
+        ):
+            title = (entry.get("title") or "").strip().lower()
             if title:
-                enc_by_title[title] = entry
+                flora_by_title[title] = entry
 
-        for entry in dictionary["data"]:
-            raw_entry = (entry.get("entry") or "").strip().lower().lstrip("-").replace(" ", "-")
-            if raw_entry and raw_entry in enc_by_title:
-                enc_entry = enc_by_title[raw_entry]
+    count = 0
+    for entry in ethno_entries:
+        for field_name in ("name_indigenous", "name_portuguese", "scientific_name"):
+            val = (entry.get(field_name) or "").strip().lower()
+            if val and val in flora_by_title:
+                enc_entry = flora_by_title[val]
                 entry.setdefault("_linked_encyclopedia", []).append({
                     "id": enc_entry["id"],
                     "title": enc_entry.get("title", ""),
                 })
-                enc_link_count += 1
+                count += 1
+                break
 
-    # Write updated files
-    if dictionary:
-        dict_file.write_text(
-            json.dumps(dictionary, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-    if fauna:
-        fauna_file.write_text(
-            json.dumps(fauna, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-    if ethnobotany:
-        ethnobotany_file.write_text(
-            json.dumps(ethnobotany, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+    return count
 
-    print(f"  Cross-linked {link_count} dictionary\u2194fauna entries by scientific name")
-    print(f"  Cross-linked {ethno_link_count} dictionary\u2194ethnobotany entries by scientific name")
-    print(f"  Cross-linked {ethno_enc_link_count} ethnobotany\u2194encyclopedia entries")
-    print(f"  Cross-linked {enc_link_count} dictionary\u2192encyclopedia entries by title")
+
+def _link_dict_encyclopedia(dict_entries: list[dict], enc_entries: list[dict]) -> int:
+    """One-directional dictionary→encyclopedia links by entry/title match."""
+    enc_by_title: dict[str, dict] = {}
+    for entry in enc_entries:
+        title = (entry.get("title") or "").strip().lower().replace(" ", "-")
+        if title:
+            enc_by_title[title] = entry
+
+    count = 0
+    for entry in dict_entries:
+        raw = (entry.get("entry") or "").strip().lower().lstrip("-").replace(" ", "-")
+        if raw and raw in enc_by_title:
+            enc_entry = enc_by_title[raw]
+            entry.setdefault("_linked_encyclopedia", []).append({
+                "id": enc_entry["id"],
+                "title": enc_entry.get("title", ""),
+            })
+            count += 1
+
+    return count
+
+
+# ── I/O helpers ──
+
+
+def _load_module_json(config: TerradocConfig, module: str) -> dict | None:
+    """Load a module's JSON dataset if the module is enabled and the file exists."""
+    if not config.is_module_enabled(module):
+        return None
+    path = config.data_dir / f"{module}.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_module_json(config: TerradocConfig, module: str, data: dict) -> None:
+    """Write a module's JSON dataset back to disk."""
+    path = config.data_dir / f"{module}.json"
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+# ── Orchestrator ──
+
+
+def cross_link_datasets(config: TerradocConfig):
+    """Cross-link dictionary, fauna, ethnobotany, and encyclopedia entries by shared fields."""
+    print("=== Cross-linking Datasets ===")
+
+    dictionary = _load_module_json(config, "dictionary")
+    fauna = _load_module_json(config, "fauna")
+    ethnobotany = _load_module_json(config, "ethnobotany")
+    encyclopedia = _load_module_json(config, "encyclopedia")
+
+    modules = {"dictionary": dictionary, "fauna": fauna,
+               "ethnobotany": ethnobotany, "encyclopedia": encyclopedia}
+    if not any(v is not None for v in modules.values()):
+        print("  No enabled modules with JSON files, skipping cross-linking.")
+        return
+
+    link_count = enc_link_count = ethno_link_count = ethno_enc_link_count = 0
+
+    if dictionary and fauna:
+        link_count = _link_dict_fauna(dictionary["data"], fauna["data"])
+    if dictionary and ethnobotany:
+        ethno_link_count = _link_dict_ethnobotany(dictionary["data"], ethnobotany["data"])
+    if ethnobotany and encyclopedia:
+        ethno_enc_link_count = _link_ethno_encyclopedia(
+            ethnobotany["data"], encyclopedia["data"],
+            config.ethnobotany_encyclopedia_categories,
+        )
+    if dictionary and encyclopedia:
+        enc_link_count = _link_dict_encyclopedia(dictionary["data"], encyclopedia["data"])
+
+    for module in ("dictionary", "fauna", "ethnobotany"):
+        if modules[module] is not None:
+            _write_module_json(config, module, modules[module])
+
+    print(f"  Cross-linked {link_count} dictionary↔fauna entries by scientific name")
+    print(f"  Cross-linked {ethno_link_count} dictionary↔ethnobotany entries by scientific name")
+    print(f"  Cross-linked {ethno_enc_link_count} ethnobotany↔encyclopedia entries")
+    print(f"  Cross-linked {enc_link_count} dictionary→encyclopedia entries by title")

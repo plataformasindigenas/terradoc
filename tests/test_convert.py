@@ -7,21 +7,24 @@ import pytest
 
 from terradoc.config import TerradocConfig
 from terradoc.convert import (
+    _build_encyclopedia_graph,
     _format_citation,
     _normalize_records,
     _print_completeness_report,
     _resolve_references,
+    _select_featured,
+    _select_highlights,
+    _validate_bib_keys,
     convert_encyclopedia,
-    convert_videos,
-    CONVERTERS,
+    convert_module,
+    SPECIAL_CONVERTERS,
     run_all_converters,
 )
 
 
-def test_converters_registry_has_all_modules():
-    """CONVERTERS registry contains all 8 module converters."""
-    expected = {"dictionary", "fauna", "ethnobotany", "encyclopedia", "bibliography", "recordings", "corpus", "videos"}
-    assert set(CONVERTERS.keys()) == expected
+def test_special_converters_only_for_nongeneric_modules():
+    """SPECIAL_CONVERTERS contains only modules that need custom conversion."""
+    assert set(SPECIAL_CONVERTERS.keys()) == {"encyclopedia", "bibliography"}
 
 
 def test_normalize_records_dicts():
@@ -266,8 +269,8 @@ def test_videos_schema_is_packaged_and_loadable():
     assert "title" in field_names
 
 
-def test_convert_videos_happy_path():
-    """convert_videos validates and exports videos.yaml."""
+def test_convert_module_videos_happy_path():
+    """convert_module validates and exports videos.yaml."""
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         data_dir = tmp_path / "data"
@@ -282,7 +285,7 @@ def test_convert_videos_happy_path():
 """, encoding="utf-8")
 
         config = TerradocConfig(base_dir=tmp_path)
-        count = convert_videos(config)
+        count = convert_module(config, "videos")
         assert count == 1
 
         exported = data_dir / "videos.json"
@@ -317,6 +320,125 @@ def test_run_all_converters_preflight_fails_on_missing_enabled_schema(monkeypatc
 
         with pytest.raises(FileNotFoundError, match="videos: missing schema file"):
             run_all_converters(config)
+
+
+# ── Completeness report ──
+
+
+# ── Validate bib keys ──
+
+
+def test_validate_bib_keys_passes_on_valid():
+    """_validate_bib_keys does not raise when all keys resolve."""
+    records = [{"id": "a", "references": ["k1"]}, {"id": "b", "references": ["k2"]}]
+    bib = {"k1": {}, "k2": {}}
+    _validate_bib_keys(records, bib)
+
+
+def test_validate_bib_keys_raises_on_missing():
+    """_validate_bib_keys raises ValueError listing unresolved keys."""
+    records = [{"id": "a", "references": ["missing"]}]
+    with pytest.raises(ValueError, match="unresolved bib key 'missing'"):
+        _validate_bib_keys(records, {})
+
+
+def test_validate_bib_keys_ignores_entries_without_refs():
+    """_validate_bib_keys skips entries with no references field."""
+    records = [{"id": "a"}, {"id": "b", "references": []}]
+    _validate_bib_keys(records, {})
+
+
+# ── Featured article selection ──
+
+
+def test_select_featured_by_config_id():
+    """_select_featured picks the entry matching featured_id."""
+    records = [
+        {"id": "x", "title": "X", "images": ["img.jpg"], "content_html": "<p>ok</p>", "content_text": "ok"},
+        {"id": "y", "title": "Y", "images": ["img2.jpg"], "content_html": "<p>ok</p>", "content_text": "ok"},
+    ]
+    result = _select_featured(records, "y")
+    assert result["id"] == "y"
+    assert result["title"] == "Y"
+
+
+def test_select_featured_falls_back_to_first_with_images():
+    """_select_featured picks first entry with images when no featured_id."""
+    records = [
+        {"id": "a", "title": "A", "content_html": "<p>hi</p>", "content_text": "hi"},
+        {"id": "b", "title": "B", "images": ["img.jpg"], "content_html": "<p>hi</p>", "content_text": "hi"},
+    ]
+    result = _select_featured(records, "")
+    assert result["id"] == "b"
+
+
+def test_select_featured_returns_none_when_nothing_qualifies():
+    """_select_featured returns None if no entry has images + content."""
+    records = [{"id": "a", "title": "A", "content_html": "", "content_text": ""}]
+    assert _select_featured(records, "") is None
+
+
+# ── Highlights selection ──
+
+
+def test_select_highlights_excludes_featured():
+    """_select_highlights skips the featured article."""
+    records = [
+        {"id": "f", "images": ["a.jpg"]},
+        {"id": "h1", "images": ["b.jpg"]},
+        {"id": "h2", "images": ["c.jpg"]},
+    ]
+    featured = {"id": "f"}
+    result = _select_highlights(records, featured)
+    assert [h["id"] for h in result] == ["h1", "h2"]
+
+
+def test_select_highlights_respects_limit():
+    """_select_highlights returns at most *limit* entries."""
+    records = [{"id": f"e{i}", "images": [f"{i}.jpg"]} for i in range(20)]
+    result = _select_highlights(records, None, limit=3)
+    assert len(result) == 3
+
+
+def test_select_highlights_skips_entries_without_images():
+    """_select_highlights only includes entries with images."""
+    records = [
+        {"id": "no-img"},
+        {"id": "has-img", "images": ["x.jpg"]},
+    ]
+    result = _select_highlights(records, None)
+    assert len(result) == 1
+    assert result[0]["id"] == "has-img"
+
+
+# ── Encyclopedia graph ──
+
+
+def test_build_encyclopedia_graph_nodes_and_edges():
+    """_build_encyclopedia_graph creates nodes, category edges, and see_also edges."""
+    index_records = [{
+        "id": "jaguar",
+        "title": "Jaguar",
+        "abstract": "Big cat",
+        "categories": ["natureza/fauna"],
+        "has_content": True,
+        "see_also": ["onca"],
+        "wikilink_targets": ["floresta"],
+    }]
+    graph = _build_encyclopedia_graph(index_records)
+    node_ids = [n["id"] for n in graph["nodes"]]
+    assert "jaguar" in node_ids
+    assert "cat:natureza" in node_ids
+    edge_types = {(e["source"], e["type"]) for e in graph["edges"]}
+    assert ("jaguar", "category") in edge_types
+    assert ("jaguar", "see_also") in edge_types
+    assert ("jaguar", "wikilink") in edge_types
+
+
+def test_build_encyclopedia_graph_empty():
+    """_build_encyclopedia_graph handles empty input."""
+    graph = _build_encyclopedia_graph([])
+    assert graph == {"nodes": [], "edges": [], "categories": []}
 
 
 # ── Completeness report ──

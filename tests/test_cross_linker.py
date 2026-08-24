@@ -7,7 +7,14 @@ from pathlib import Path
 import yaml
 
 from terradoc.config import TerradocConfig, ModuleConfig
-from terradoc.cross_linker import attach_recordings_to_dictionary, cross_link_datasets
+from terradoc.cross_linker import (
+    _link_dict_encyclopedia,
+    _link_dict_ethnobotany,
+    _link_dict_fauna,
+    _link_ethno_encyclopedia,
+    attach_recordings_to_dictionary,
+    cross_link_datasets,
+)
 
 
 def _make_config(tmp_path: Path, modules=None, ethno_enc_categories=None) -> TerradocConfig:
@@ -36,6 +43,95 @@ def _write_yaml(path: Path, data):
     """Write a YAML file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.dump(data, allow_unicode=True), encoding="utf-8")
+
+
+# ── Pure strategy: _link_dict_fauna ──
+
+
+def test_link_dict_fauna_bidirectional():
+    """_link_dict_fauna attaches links in both directions."""
+    dict_entries = [{"id": 1, "entry": "bird", "scientific_name": "Ara ararauna", "definition": "macaw"}]
+    fauna_entries = [{"id": 101, "scientific_name": "Ara ararauna", "name_indigenous": "araara", "name_portuguese": "arara"}]
+
+    count = _link_dict_fauna(dict_entries, fauna_entries)
+    assert count == 1
+    assert dict_entries[0]["_linked_fauna"][0]["id"] == 101
+    assert fauna_entries[0]["_linked_dictionary"][0]["id"] == 1
+
+
+def test_link_dict_fauna_no_match():
+    """_link_dict_fauna returns 0 and adds no links when names differ."""
+    dict_entries = [{"id": 1, "scientific_name": "Panthera leo"}]
+    fauna_entries = [{"id": 101, "scientific_name": "Ara ararauna"}]
+
+    count = _link_dict_fauna(dict_entries, fauna_entries)
+    assert count == 0
+    assert "_linked_fauna" not in dict_entries[0]
+
+
+def test_link_dict_fauna_empty_lists():
+    """_link_dict_fauna handles empty input lists."""
+    assert _link_dict_fauna([], []) == 0
+
+
+# ── Pure strategy: _link_dict_ethnobotany ──
+
+
+def test_link_dict_ethnobotany_bidirectional():
+    """_link_dict_ethnobotany attaches links in both directions."""
+    dict_entries = [{"id": 1, "entry": "tree", "scientific_name": "Bertholletia excelsa", "definition": "nut"}]
+    ethno_entries = [{"id": 201, "scientific_name": "Bertholletia excelsa", "name_indigenous": "t", "name_portuguese": "c"}]
+
+    count = _link_dict_ethnobotany(dict_entries, ethno_entries)
+    assert count == 1
+    assert dict_entries[0]["_linked_ethnobotany"][0]["id"] == 201
+    assert ethno_entries[0]["_linked_dictionary"][0]["id"] == 1
+
+
+# ── Pure strategy: _link_ethno_encyclopedia ──
+
+
+def test_link_ethno_encyclopedia_by_name():
+    """_link_ethno_encyclopedia matches ethnobotany name to encyclopedia title."""
+    ethno = [{"id": 201, "name_indigenous": "castanha", "name_portuguese": "Castanheira", "scientific_name": "X"}]
+    enc = [{"id": 301, "title": "Castanheira", "categories": ["natureza/flora"]}]
+
+    count = _link_ethno_encyclopedia(ethno, enc, ["natureza/flora"])
+    assert count == 1
+    assert ethno[0]["_linked_encyclopedia"][0]["id"] == 301
+
+
+def test_link_ethno_encyclopedia_ignores_wrong_category():
+    """_link_ethno_encyclopedia only matches entries in target categories."""
+    ethno = [{"id": 201, "name_indigenous": "x", "name_portuguese": "Test", "scientific_name": "y"}]
+    enc = [{"id": 301, "title": "Test", "categories": ["cultura"]}]
+
+    count = _link_ethno_encyclopedia(ethno, enc, ["flora"])
+    assert count == 0
+    assert "_linked_encyclopedia" not in ethno[0]
+
+
+# ── Pure strategy: _link_dict_encyclopedia ──
+
+
+def test_link_dict_encyclopedia_by_title():
+    """_link_dict_encyclopedia matches dictionary entry to encyclopedia title."""
+    dict_entries = [{"id": 1, "entry": "castanha"}, {"id": 2, "entry": "no-match"}]
+    enc_entries = [{"id": 301, "title": "castanha"}]
+
+    count = _link_dict_encyclopedia(dict_entries, enc_entries)
+    assert count == 1
+    assert dict_entries[0]["_linked_encyclopedia"][0]["id"] == 301
+    assert "_linked_encyclopedia" not in dict_entries[1]
+
+
+def test_link_dict_encyclopedia_strips_leading_hyphen():
+    """_link_dict_encyclopedia strips leading hyphens from dictionary entry."""
+    dict_entries = [{"id": 1, "entry": "-castanha"}]
+    enc_entries = [{"id": 301, "title": "castanha"}]
+
+    count = _link_dict_encyclopedia(dict_entries, enc_entries)
+    assert count == 1
 
 
 # ── attach_recordings_to_dictionary ──
