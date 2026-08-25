@@ -2,6 +2,28 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.9.0] — 2026-08-25
+
+### Changed
+
+- **Self-contained: no external aptoro/kodudo dependency.** The `aptoro`
+  (schema validation) and `kodudo` (Jinja2 rendering) libraries are now
+  inlined as `terradoc._aptoro` and `terradoc._kodudo`. All dependencies
+  are standard PyPI packages — no private repos or sibling installs needed.
+  `pip install terradoc` is all it takes.
+- **Relaxed dictionary schema.** The bundled `dictionary_schema.yaml` now
+  treats `pos` as an optional free-text field (`str?`) instead of a
+  required enum. Platform-specific schemas in `data/` can still enforce
+  stricter validation per project.
+
+### Removed
+
+- **`aptoro` and `kodudo` as external dependencies.** Both are inlined;
+  the `pyproject.toml` dependency list no longer references them. Existing
+  installs that have them as separate packages are unaffected — the
+  inlined copies use private import paths (`terradoc._aptoro`,
+  `terradoc._kodudo`).
+
 ## [0.8.0] — 2026-04-15
 
 ### Added
