@@ -223,7 +223,7 @@ Body text.
 
 def test_encyclopedia_schema_no_dead_fields():
     """Encyclopedia schema no longer has dictionary_ids or fauna_ids."""
-    import aptoro
+    from terradoc import _aptoro as aptoro
     from terradoc.config import TerradocConfig
 
     cfg = TerradocConfig()
@@ -235,7 +235,7 @@ def test_encyclopedia_schema_no_dead_fields():
 
 def test_dictionary_schema_no_dead_fields():
     """Dictionary schema no longer has fauna_ids or encyclopedia_ids."""
-    import aptoro
+    from terradoc import _aptoro as aptoro
     from terradoc.config import TerradocConfig
 
     cfg = TerradocConfig()
@@ -247,7 +247,7 @@ def test_dictionary_schema_no_dead_fields():
 
 def test_fauna_schema_no_dead_fields():
     """Fauna schema no longer has dictionary_ids."""
-    import aptoro
+    from terradoc import _aptoro as aptoro
     from terradoc.config import TerradocConfig
 
     cfg = TerradocConfig()
@@ -258,7 +258,7 @@ def test_fauna_schema_no_dead_fields():
 
 def test_videos_schema_is_packaged_and_loadable():
     """Videos schema is bundled and can be loaded via resolve_schema."""
-    import aptoro
+    from terradoc import _aptoro as aptoro
 
     cfg = TerradocConfig()
     schema_path = cfg.resolve_schema("videos")

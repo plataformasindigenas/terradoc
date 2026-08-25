@@ -7,7 +7,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
-import aptoro
+from terradoc import _aptoro as aptoro
 import bibtexparser
 from terradoc.config import TerradocConfig
 from terradoc.markdown_utils import (
