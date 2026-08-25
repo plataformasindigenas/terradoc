@@ -7,7 +7,7 @@ fields:
   id: int
   entry: str
   ipa: str?
-  pos: str[LEX|S|VC|ADV|PPASS|POSP|SUF|INTJ|VT|PRON|V|PRCL|PPAS|PPART|NUM|IP|DEM|CONJ|X|PROPN]
+  pos: str?
   definition: str?
   example_sent: str?
   scientific_name: str?
