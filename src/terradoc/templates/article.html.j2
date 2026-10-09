@@ -407,6 +407,94 @@ article header h1 {
         text-align: left;
     }
 }
+/* ── Entry gallery (entries with 4+ images) ── */
+.entry-gallery { margin: 2rem 0; }
+.entry-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.9rem;
+}
+.entry-gallery-grid figure { margin: 0; }
+.entry-gallery-btn {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 1px solid var(--td-color-border);
+    border-radius: var(--td-radius, 6px);
+    background: var(--td-color-surface, #fff);
+    cursor: zoom-in;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+.entry-gallery-btn:hover, .entry-gallery-btn:focus-visible {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transform: translateY(-2px);
+    outline: none;
+}
+.entry-gallery-btn img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: var(--td-color-bg-infobox);
+}
+.entry-gallery-btn figcaption {
+    padding: 0.4rem 0.55rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    color: var(--td-color-text-secondary);
+}
+.entry-lightbox {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+}
+.entry-lightbox::backdrop { background: rgba(10, 10, 14, 0.88); }
+.entry-lightbox-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 3.5rem;
+    box-sizing: border-box;
+}
+.entry-lightbox img {
+    max-width: 100%;
+    max-height: calc(100vh - 8rem);
+    object-fit: contain;
+    border-radius: 4px;
+}
+.entry-lightbox-caption { color: #f3f0ea; text-align: center; font-size: 0.95rem; max-width: 40rem; }
+.entry-lightbox-count { opacity: 0.65; font-size: 0.8rem; margin-top: 0.2rem; }
+.entry-lightbox button {
+    position: absolute;
+    border: none;
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+.entry-lightbox button:hover, .entry-lightbox button:focus-visible { background: rgba(255,255,255,0.3); outline: none; }
+.entry-lightbox .lb-close { top: 1rem; right: 1rem; }
+.entry-lightbox .lb-prev { left: 0.6rem; top: 50%; transform: translateY(-50%); }
+.entry-lightbox .lb-next { right: 0.6rem; top: 50%; transform: translateY(-50%); }
+@media (max-width: 600px) {
+    .entry-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.6rem; }
+    .entry-lightbox-inner { padding: 1rem 0.5rem 4rem; }
+    .entry-lightbox .lb-prev, .entry-lightbox .lb-next { top: auto; bottom: 1rem; transform: none; }
+}
 {% endblock %}
 
 {% block content %}
@@ -431,6 +519,7 @@ article header h1 {
         </header>
 
         {% set has_images = entry.images and entry.images | length > 0 %}
+        {% set has_gallery = entry.images and entry.images | length >= 4 %}
         {% set has_categories = entry.categories and entry.categories | length > 0 %}
         {% set has_infobox = entry.infobox and entry.infobox.keys() | list | length > 0 %}
         {% if has_images or has_categories or entry.entry_type or has_infobox or entry.url %}
@@ -476,7 +565,7 @@ article header h1 {
                 <a href="{{ entry.url }}" target="_blank" rel="noopener">{{ t.enc_external_link | default('Ver referência externa') }} &rarr;</a>
             </div>
             {% endif %}
-            {% if has_images and entry.images | length > 1 %}
+            {% if has_images and entry.images | length > 1 and not has_gallery %}
             <div class="infobox-row">
                 <div class="infobox-label">{{ t.enc_more_images | default('Mais imagens') }}</div>
                 <div class="infobox-value">
@@ -503,6 +592,31 @@ article header h1 {
         <div class="article-content">
             {{ entry.content_html | safe }}
         </div>
+        {% endif %}
+
+        {% if has_gallery %}
+        <section class="entry-gallery" id="gallery">
+            <h2>{{ t.enc_gallery | default('Galeria') }} <small>({{ entry.images | length }})</small></h2>
+            <div class="entry-gallery-grid">
+                {% for img in entry.images %}{% if img.url %}
+                <figure>
+                    <button type="button" class="entry-gallery-btn" data-full="../../{{ img.url }}" data-caption="{{ img.alt | default('') }}{% if img.credit %} · {{ img.credit }}{% endif %}" aria-label="{{ img.alt | default(entry.title) }}">
+                        <img src="../../{{ img.url }}" alt="{{ img.alt | default('') }}" loading="lazy" decoding="async">
+                        <figcaption>{{ img.alt | default('') }}</figcaption>
+                    </button>
+                </figure>
+                {% endif %}{% endfor %}
+            </div>
+        </section>
+        <dialog class="entry-lightbox" id="entry-lightbox" aria-label="{{ t.enc_gallery | default('Galeria') }}">
+            <div class="entry-lightbox-inner">
+                <img src="" alt="">
+                <div class="entry-lightbox-caption"><span class="lb-text"></span><div class="entry-lightbox-count"></div></div>
+            </div>
+            <button type="button" class="lb-close" aria-label="{{ t.enc_gallery_close | default('Fechar') }}">&times;</button>
+            <button type="button" class="lb-prev" aria-label="{{ t.enc_gallery_prev | default('Anterior') }}">&lsaquo;</button>
+            <button type="button" class="lb-next" aria-label="{{ t.enc_gallery_next | default('Seguinte') }}">&rsaquo;</button>
+        </dialog>
         {% endif %}
 
         {% if entry.examples and entry.examples | length > 0 %}
@@ -578,4 +692,35 @@ article header h1 {
     </article>
 
     <a href="../encyclopedia.html" class="back-link">&larr; {{ t.enc_back_to_index | default('Voltar à enciclopédia') }}</a>
+{% endblock %}
+
+{% block scripts %}
+{% if entry.images and entry.images | length >= 4 %}
+<script>
+(function () {
+    var dlg = document.getElementById('entry-lightbox');
+    if (!dlg || typeof dlg.showModal !== 'function') return;
+    var btns = Array.prototype.slice.call(document.querySelectorAll('.entry-gallery-btn'));
+    var img = dlg.querySelector('img'), text = dlg.querySelector('.lb-text'), count = dlg.querySelector('.entry-lightbox-count');
+    var cur = 0;
+    function show(i) {
+        cur = (i + btns.length) % btns.length;
+        var b = btns[cur];
+        img.src = b.getAttribute('data-full');
+        img.alt = b.getAttribute('aria-label') || '';
+        text.textContent = b.getAttribute('data-caption') || '';
+        count.textContent = (cur + 1) + ' / ' + btns.length;
+    }
+    btns.forEach(function (b, i) { b.addEventListener('click', function () { show(i); dlg.showModal(); }); });
+    dlg.querySelector('.lb-close').addEventListener('click', function () { dlg.close(); });
+    dlg.querySelector('.lb-prev').addEventListener('click', function () { show(cur - 1); });
+    dlg.querySelector('.lb-next').addEventListener('click', function () { show(cur + 1); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.classList.contains('entry-lightbox-inner')) dlg.close(); });
+    dlg.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') { show(cur - 1); e.preventDefault(); }
+        else if (e.key === 'ArrowRight') { show(cur + 1); e.preventDefault(); }
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}
