@@ -648,6 +648,30 @@
         <span class="sections-label-line"></span>
     </div>
 
+    {# ── Spotlight — optional highlighted card, enabled by index_spotlight_* locale keys ── #}
+    {% if t.index_spotlight_href %}
+    <section class="index-section td-fade-in index-spotlight">
+        {{ section_heading(t.index_spotlight_title | default(''), '') }}
+        <div class="teaser-card" data-section="spotlight">
+            {% if t.index_spotlight_image %}
+            <div class="teaser-card-image">
+                <img src="{{ base_path | default('') }}{{ t.index_spotlight_image }}" alt="{{ t.index_spotlight_image_alt | default('') }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="teaser-card-body">
+                {% if t.index_spotlight_stat %}
+                <div class="teaser-stat">
+                    <span class="teaser-count">{{ t.index_spotlight_stat }}</span>
+                    <span class="teaser-count-label">{{ t.index_spotlight_stat_label | default('') }}</span>
+                </div>
+                {% endif %}
+                <p class="teaser-desc">{{ t.index_spotlight_desc | default('') }}</p>
+                <a href="{{ t.index_spotlight_href }}" class="td-pill td-pill-outline">{{ t.index_spotlight_cta | default(t.card_cta | default('Explore')) }} &rarr;</a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <div>
 
     {# ── Section teasers — unified card layout ── #}
