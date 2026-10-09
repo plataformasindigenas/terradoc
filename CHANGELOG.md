@@ -2,6 +2,21 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.10.0] — 2026-10-09
+
+### Added
+
+- **Entry gallery.** Encyclopedia entries with four or more images now get a
+  captioned thumbnail grid with a keyboard-navigable lightbox (`<dialog>`;
+  arrows, Esc, click-outside). The sidebar's tiny "more images" thumbnails are
+  replaced by the gallery on those entries. Entries with fewer than four images
+  are unchanged. New locale keys: `enc_gallery`, `enc_gallery_close`,
+  `enc_gallery_prev`, `enc_gallery_next` (all have defaults).
+- **Landing-page spotlight card.** A highlighted card shown first under the
+  "Explore" heading when the locale file defines `index_spotlight_href`
+  (plus optional `index_spotlight_title`, `_desc`, `_image`, `_image_alt`,
+  `_stat`, `_stat_label`, `_cta`). Nothing renders if the keys are absent.
+
 ## [0.9.0] — 2026-08-25
 
 ### Changed
