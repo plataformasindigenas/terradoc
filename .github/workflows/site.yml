@@ -296,6 +296,12 @@ jobs:
               | cut -c1-40 | sed -E 's/-+$//'
           }
           name="$(sanitize "$DELETED")"
+          # The branch is gone, so its failure issue is moot, whatever happens below.
+          title="Publicação falhou: $DELETED"
+          gh issue list -R "$REPO" --label publicacao-falhou --state open --json number,title \
+            --jq ".[] | select(.title == \"$title\") | .number" | while read -r n; do
+              gh issue close "$n" -R "$REPO" --comment "Ramo apagado / branch deleted."
+            done
           if [ "$DELETED" = "$DEFAULT_BRANCH" ] || [ -z "$name" ] || [ "$name" = "$DEFAULT_BRANCH" ]; then
             echo "::warning::refusing to delete refs/sites/'$name' for deleted branch '$DELETED'"
             exit 0
@@ -311,8 +317,3 @@ jobs:
           else
             echo "No refs/sites/$name to delete"
           fi
-          title="Publicação falhou: $DELETED"
-          gh issue list -R "$REPO" --label publicacao-falhou --state open --json number,title \
-            --jq ".[] | select(.title == \"$title\") | .number" | while read -r n; do
-              gh issue close "$n" -R "$REPO" --comment "Ramo apagado / branch deleted."
-            done
