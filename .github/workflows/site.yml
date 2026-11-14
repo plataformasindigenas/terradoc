@@ -250,8 +250,8 @@ jobs:
           set -euo pipefail
           if [ ! -s "$RUNNER_TEMP/report.md" ]; then
             printf '%s\n' "### ❌ Publicação bloqueada / Publication blocked" "" \
-              "A execução falhou antes da validação terminar; veja os detalhes. O site no ar não mudou." \
-              "The run failed before validation finished; see the details. The live site did not change." \
+              "A execução falhou; veja os detalhes no link abaixo. O site no ar não mudou." \
+              "The run failed; see the details at the link below. The live site did not change." \
               "" "Detalhes / Details: $RUN_URL" > "$RUNNER_TEMP/report.md"
           fi
           case "$ACTOR" in *"[bot]") ;; *) printf '\ncc @%s\n' "$ACTOR" >> "$RUNNER_TEMP/report.md" ;; esac

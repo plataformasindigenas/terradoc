@@ -67,6 +67,14 @@ def compare_releases(current: Path, previous: Path | None, baseline: Path | None
     issues: list[Issue] = []
     new = _release(current).get("modules", {})
 
+    if previous is not None and not (previous / ".release.json").is_file():
+        issues.append(Issue("warning", "guard", "previous release was not built by terradoc "
+                            ">= 0.11 (no .release.json); comparison with it skipped"))
+        previous = None
+    if baseline is not None and not (baseline / ".release.json").is_file():
+        issues.append(Issue("warning", "guard", "baseline has no .release.json; ignored"))
+        baseline = None
+
     if previous is not None:
         old_release = _release(previous)
         if not old_release.get("modules"):

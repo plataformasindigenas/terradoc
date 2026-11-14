@@ -94,10 +94,17 @@ def test_small_sites_get_a_floor_of_ten_files(tmp_path):
     assert not errors(compare_releases(cur, prev))
 
 
-def test_missing_release_json_is_reported(tmp_path):
+def test_previous_not_built_by_terradoc_is_a_warning(tmp_path):
     (tmp_path / "plain").mkdir()
     cur = site(tmp_path, "cur", {"d": 1})
     result = CliRunner().invoke(main, ["guard", "--current", str(cur), "--previous", str(tmp_path / "plain")])
+    assert result.exit_code == 0, result.output
+    assert "comparison with it skipped" in result.output
+
+
+def test_current_without_release_json_is_an_error(tmp_path):
+    (tmp_path / "plain").mkdir()
+    result = CliRunner().invoke(main, ["guard", "--current", str(tmp_path / "plain")])
     assert result.exit_code == 1
     assert "no .release.json" in result.output
 
