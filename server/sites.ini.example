@@ -13,3 +13,7 @@ default_branch = master
 [makurap]
 url = https://github.com/plataformasindigenas/makurap.git
 default_branch = master
+
+[boeenomoto]
+url = https://github.com/plataformasindigenas/boeenomoto.git
+default_branch = master
