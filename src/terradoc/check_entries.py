@@ -52,105 +52,97 @@ def _parse_front_matter(path: Path) -> tuple[dict, str]:
     return front_matter, body
 
 
-def check_entries(data_dir: Path) -> int:
-    """Check all encyclopedia entries in data_dir/encyclopedia/.
-
-    Returns 0 on success, 1 on failure.
-    """
+def collect_entry_errors(data_dir: Path) -> list[tuple[Path | None, str]]:
+    """Validate encyclopedia entries; return (file, message) pairs, empty if OK."""
     entries_dir = data_dir / "encyclopedia"
     if not entries_dir.exists():
-        print(f"Missing encyclopedia directory: {entries_dir}", file=sys.stderr)
-        return 1
+        return [(entries_dir, "missing encyclopedia directory")]
 
     md_files = sorted(entries_dir.rglob("*.md"))
-    if not md_files:
-        print(f"Checked 0 entries in {entries_dir}: OK")
-        return 0
-
-    errors: list[str] = []
+    errors: list[tuple[Path | None, str]] = []
     seen_ids: set[str] = set()
-    see_also_map: dict[str, list[str]] = {}  # entry_id -> see_also targets
+    see_also_map: dict[str, tuple[Path, list[str]]] = {}
     valid_categories = load_categories_vocabulary(data_dir)
 
     for path in md_files:
         if path.name == "README.md":
             continue
 
+        def err(msg: str, path: Path = path) -> None:
+            errors.append((path, msg))
+
         try:
             front_matter, body = _parse_front_matter(path)
         except Exception as exc:
-            errors.append(f"{path}: {exc}")
+            err(str(exc))
             continue
 
         entry_id = front_matter.get("id")
         title = front_matter.get("title") or front_matter.get("headword")
         if not entry_id:
-            errors.append(f"{path}: missing 'id'")
+            err("missing 'id'")
         elif not ID_RE.match(str(entry_id)):
-            errors.append(
-                f"{path.name}: id '{entry_id}' must match [a-z0-9][a-z0-9-]* "
-                "(lowercase, no spaces/underscores/accents)"
-            )
+            err(f"id '{entry_id}' must match [a-z0-9][a-z0-9-]* "
+                "(lowercase, no spaces/underscores/accents)")
         if not title:
-            errors.append(f"{path}: missing 'title'")
+            err("missing 'title'")
 
         if entry_id and entry_id != path.stem:
-            errors.append(
-                f"{path.name}: filename stem '{path.stem}' doesn't match id '{entry_id}'"
-            )
+            err(f"filename stem '{path.stem}' doesn't match id '{entry_id}'")
 
         if entry_id in seen_ids:
-            errors.append(f"{path}: duplicate id '{entry_id}'")
+            err(f"duplicate id '{entry_id}'")
         if entry_id:
             seen_ids.add(entry_id)
 
         date = front_matter.get("date") or front_matter.get("updated_at")
         if date and not DATE_RE.match(str(date)):
-            errors.append(f"{path}: date must be YYYY-MM-DD")
+            err("date must be YYYY-MM-DD")
 
         for key in ("variants", "categories", "keywords", "images", "examples",
                      "references", "see_also"):
             val = front_matter.get(key)
             if val is not None and not isinstance(val, list):
-                errors.append(f"{path}: '{key}' must be a list")
+                err(f"'{key}' must be a list")
 
         infobox = front_matter.get("infobox")
         if infobox is not None and not isinstance(infobox, (dict, str)):
-            errors.append(f"{path}: 'infobox' must be a dict or string")
+            err("'infobox' must be a dict or string")
 
         if HTML_TAG_RE.search(body):
-            errors.append(f"{path}: HTML tags found in body (not allowed)")
+            err("HTML tags found in body (not allowed)")
 
-        # Validate categories against vocabulary
         if valid_categories:
             cats = front_matter.get("categories") or front_matter.get("keywords") or []
             if isinstance(cats, list):
                 for cat in cats:
                     if cat not in valid_categories:
-                        errors.append(
-                            f"{path.name}: category '{cat}' not in categories.yaml"
-                        )
+                        err(f"category '{cat}' not in categories.yaml")
 
-        # Collect see_also for cross-entry validation
         see_also = front_matter.get("see_also")
         if entry_id and see_also and isinstance(see_also, list):
-            see_also_map[entry_id] = see_also
+            see_also_map[entry_id] = (path, see_also)
 
-    # Cross-entry validation: see_also referential integrity
-    for source_id, targets in see_also_map.items():
+    for source_id, (path, targets) in see_also_map.items():
         for target in targets:
             if target not in seen_ids:
-                errors.append(
-                    f"{source_id}: see_also target '{target}' does not exist"
-                )
+                errors.append((path, f"{source_id}: see_also target '{target}' does not exist"))
 
+    return errors
+
+
+def check_entries(data_dir: Path) -> int:
+    """Check all encyclopedia entries in data_dir/encyclopedia/.
+
+    Returns 0 on success, 1 on failure. Kept for the CLI's historic output;
+    `terradoc check` uses collect_entry_errors() directly.
+    """
+    errors = collect_entry_errors(data_dir)
     if errors:
         print("Encyclopedia entry check failed:", file=sys.stderr)
-        for err in errors:
-            print(f"- {err}", file=sys.stderr)
+        for path, msg in errors:
+            print(f"- {path}: {msg}" if path else f"- {msg}", file=sys.stderr)
         return 1
-
-    # Subtract 1 for skipped README.md if present
-    count = len([f for f in md_files if f.name != "README.md"])
+    count = len([f for f in (data_dir / "encyclopedia").rglob("*.md") if f.name != "README.md"])
     print(f"Checked {count} entries: OK")
     return 0

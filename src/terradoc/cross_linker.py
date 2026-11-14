@@ -32,7 +32,7 @@ def attach_audio_to_dictionary(config: TerradocConfig):
     print("=== Attaching Audio to Dictionary ===")
 
     audio_dir = config.data_dir / "audio"
-    dictionary_file = config.data_dir / "dictionary.json"
+    dictionary_file = config.bundle_dir / "dictionary.json"
 
     if not audio_dir.exists():
         print("  No data/audio/ directory found, skipping.")
@@ -102,7 +102,7 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
     print("=== Attaching Recordings to Dictionary ===")
 
     recordings_file = config.data_dir / "recordings.yaml"
-    dictionary_file = config.data_dir / "dictionary.json"
+    dictionary_file = config.bundle_dir / "dictionary.json"
 
     if not recordings_file.exists():
         print("  No recordings.yaml found, skipping.")
@@ -285,7 +285,7 @@ def _load_module_json(config: TerradocConfig, module: str) -> dict | None:
     """Load a module's JSON dataset if the module is enabled and the file exists."""
     if not config.is_module_enabled(module):
         return None
-    path = config.data_dir / f"{module}.json"
+    path = config.bundle_dir / f"{module}.json"
     if not path.exists():
         return None
     with open(path, "r", encoding="utf-8") as f:
@@ -294,7 +294,7 @@ def _load_module_json(config: TerradocConfig, module: str) -> dict | None:
 
 def _write_module_json(config: TerradocConfig, module: str, data: dict) -> None:
     """Write a module's JSON dataset back to disk."""
-    path = config.data_dir / f"{module}.json"
+    path = config.bundle_dir / f"{module}.json"
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )

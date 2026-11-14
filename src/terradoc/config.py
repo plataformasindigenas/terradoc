@@ -217,14 +217,34 @@ class TerradocConfig:
 
     # Paths (set after loading)
     base_dir: Path = field(default_factory=Path.cwd)
+    # Optional overrides (CLI --out / --bundle-dir). None keeps the historic
+    # layout: site in docs/, generated JSON next to the sources in data/.
+    output_dir: Path | None = None
+    bundle_dir_override: Path | None = None
 
     @property
     def data_dir(self) -> Path:
+        """Source data (TSV/YAML/Markdown/BibTeX). Read-only during a build."""
         return self.base_dir / "data"
 
     @property
     def docs_dir(self) -> Path:
+        """Where the rendered site is written."""
+        if self.output_dir is not None:
+            return self.output_dir
         return self.base_dir / "docs"
+
+    @property
+    def bundle_dir(self) -> Path:
+        """Where generated, normalised JSON (the export bundle) is written."""
+        if self.bundle_dir_override is not None:
+            return self.bundle_dir_override
+        return self.data_dir
+
+    @property
+    def static_dir(self) -> Path:
+        """Files copied verbatim into the site root (images, audio, ...)."""
+        return self.base_dir / "static"
 
     @property
     def config_dir(self) -> Path:

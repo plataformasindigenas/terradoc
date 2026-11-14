@@ -197,6 +197,13 @@
                 </div>
             </div>
         </section>
+        {% if t.about_credits %}
+
+        <section class="td-fade-in">
+            {{ section_heading(t.about_credits_heading | default('Image credits')) }}
+            <div class="about-card-body">{{ t.about_credits | safe }}</div>
+        </section>
+        {% endif %}
 
     </div>
 {% endblock %}

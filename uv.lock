@@ -12,19 +12,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aptoro"
-version = "0.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/4b/63ff253a3a5bc11a2dd21672f9f5b0b6c9c17820f5814483b5066ef4c966/aptoro-0.5.0.tar.gz", hash = "sha256:3ab62934ce15601c853b8a58d0d723460fc1bb15d4d717c8963a714a63ea3629", size = 7426104, upload-time = "2026-03-09T10:18:13.647Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/bd/d71f1cb19411f11a2accdcbe26246235d18706c7934e2447346ebbcf07a6/aptoro-0.5.0-py3-none-any.whl", hash = "sha256:f5db818684b9ecc25161c42303817bc80c84cc8a54413240160b3e9e48a56a18", size = 40677, upload-time = "2026-03-09T10:18:00.108Z" },
-]
-
-[[package]]
 name = "backports-tarfile"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -35,12 +22,15 @@ wheels = [
 
 [[package]]
 name = "bibtexparser"
-version = "1.4.4"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyparsing" },
+    { name = "pylatexenc" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/44/1c/577d3ce406e88f370e80a6ebf76ae52a2866521e0b585e8ec612759894f1/bibtexparser-1.4.4.tar.gz", hash = "sha256:093b6c824f7a71d3a748867c4057b71f77c55b8dbc07efc993b781771520d8fb", size = 55594, upload-time = "2026-01-29T18:58:01.366Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/bb/38f8b2ee3e3da9161fb4a845fb04b4ccb0b8d5a5f5e25aaea39154073532/bibtexparser-2.1.0.tar.gz", hash = "sha256:9f48851eef4693cb7ef6897f7628966c5d0ef49b6403b13a862679a4c313d176", size = 88630, upload-time = "2026-10-02T16:11:35.234Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/df/b0898588ad7c1a1c1cb50dcf1afbac1b656ad1ce5373c895b49138b00894/bibtexparser-2.1.0-py3-none-any.whl", hash = "sha256:3b4b1de50ce45ee9091ccca72e1efc8732ab3ef615b70bcecc537c17cd84753e", size = 50128, upload-time = "2026-10-02T16:11:34.111Z" },
+]
 
 [[package]]
 name = "build"
@@ -379,19 +369,6 @@ wheels = [
 ]
 
 [[package]]
-name = "kodudo"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jinja2" },
-    { name = "pyyaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/df/12/5d7bda8e6d6c659f12f003a9cbb25b813f6856787ac9ed2ea87c10f38311/kodudo-0.2.0.tar.gz", hash = "sha256:4b9e11652d68de6e5b88d2f02281fc5eb457a38879019985f112087286c38949", size = 30051, upload-time = "2026-02-19T20:13:35.525Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/83/ca3a3008cbdb14e875e5e670dc5c14ebe6a3986a64f7015574f082b0c8ec/kodudo-0.2.0-py3-none-any.whl", hash = "sha256:7b5c9c6af1686a2f769e4a8ebe94b04c8dff2d515d03ade21ecbe4ec9994fad3", size = 26581, upload-time = "2026-02-19T20:13:34.241Z" },
-]
-
-[[package]]
 name = "markdown-it-py"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -690,12 +667,12 @@ wheels = [
 ]
 
 [[package]]
-name = "pyparsing"
-version = "3.3.2"
+name = "pylatexenc"
+version = "2.11"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53cf703ba0957b23ab84c264080fb5a450416f/pyparsing-3.3.2.tar.gz", hash = "sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc", size = 6851574, upload-time = "2026-01-21T03:57:59.36Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/45/ddb0fb04acf95fe9cf9c369814dbdd08651bd2c9ee455f142651e06f4488/pylatexenc-2.11.tar.gz", hash = "sha256:305a072a99ce736246049c9da05841b9d718c0f7ea8888f5f596cf15cb621053", size = 165743, upload-time = "2026-07-25T17:26:31.534Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl", hash = "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d", size = 122781, upload-time = "2026-01-21T03:57:55.912Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/06/3d67bd912ef337aa4856b466121d03f304aa1bb4d804f9298b6227cd227e/pylatexenc-2.11-py2.py3-none-any.whl", hash = "sha256:e78e7391d6c104f1ed150e21cfaa58016cdb50aa54406a2eecb793649ffdfdd0", size = 137533, upload-time = "2026-07-25T17:26:30.141Z" },
 ]
 
 [[package]]
@@ -867,13 +844,12 @@ wheels = [
 name = "terradoc"
 source = { editable = "." }
 dependencies = [
-    { name = "aptoro" },
     { name = "bibtexparser" },
     { name = "click" },
     { name = "jinja2" },
-    { name = "kodudo" },
     { name = "markdown-it-py" },
     { name = "mdit-py-plugins" },
+    { name = "pydantic" },
     { name = "pyyaml" },
 ]
 
@@ -886,14 +862,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aptoro" },
-    { name = "bibtexparser", specifier = ">=1.4.0" },
+    { name = "bibtexparser", specifier = ">=2.0.0b7" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.2.2" },
     { name = "click", specifier = ">=8.0" },
     { name = "jinja2", specifier = ">=3.1" },
-    { name = "kodudo" },
     { name = "markdown-it-py", specifier = ">=3.0" },
     { name = "mdit-py-plugins", specifier = ">=0.4" },
+    { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6.1.0" },

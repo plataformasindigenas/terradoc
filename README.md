@@ -109,7 +109,6 @@ Terradoc uses a project directory with a predictable structure:
 my-project/
   terradoc.yaml
   config/
-    templates/
     index.yaml
     dictionary.yaml
     fauna.yaml
@@ -128,16 +127,21 @@ my-project/
     recordings.yaml
     videos.yaml
   locales/
-  docs/
+  static/               # copied verbatim into the site root (images/, audio/, ...)
+  docs/                 # generated site (default output; git-ignore it)
 ```
+
+Templates are bundled with terradoc. A project may shadow them with its own
+`config/templates/` (`terradoc init --eject-templates`), but a local copy stops
+receiving terradoc's template fixes, so prefer configuration and locale keys.
 
 The standard workflow is:
 
 1. Scaffold a new project.
 2. Add or adapt your configuration.
 3. Place source data in the project directories.
-4. Run the build.
-5. Publish the generated `docs/` output.
+4. Run `terradoc check` (fast, writes nothing) and then `terradoc build`.
+5. Publish the generated `docs/` output (or `--out DIR`).
 
 ## Installation
 
@@ -180,8 +184,11 @@ The generated site will be written to `docs/`.
 
 ## Command-Line Interface
 
-- `terradoc init <name> [--theme PRESET]`: scaffold a new project with starter configuration, templates, locales, and asset placeholders
-- `terradoc build [-c CONFIG]`: validate inputs, run conversions, generate derived data, and build the final static site
+- `terradoc init <name> [--theme PRESET] [--eject-templates]`: scaffold a new project with starter configuration, locales, and asset placeholders in `static/`
+- `terradoc check [-c CONFIG] [--format text|github|json]`: validate everything (see *Data Validation*) without writing anything; exit 1 on errors. `--format github` prints GitHub Actions annotations
+- `terradoc export [-c CONFIG] [--bundle-dir DIR]`: write the normalised, cross-linked JSON bundle (format still experimental, see `docs/bundle.md`)
+- `terradoc render [-c CONFIG] [--bundle-dir DIR] [--out DIR] [--clean]`: render the site from an existing bundle
+- `terradoc build [-c CONFIG] [--bundle-dir DIR] [--out DIR] [--clean]`: `check`, then `export`, then `render`. Defaults keep the historic layout (bundle in `data/`, site in `docs/`); CI should pass `--bundle-dir` and `--out` so the checkout is never modified. `--clean` empties the output directory first and is refused without `--out`
 - `terradoc categories [-o FILE]`: dump all unique category paths from encyclopedia entries (use `-o data/categories.yaml` to bootstrap a controlled vocabulary)
 - `terradoc themes`: list available theme presets with their color palettes
 
@@ -237,7 +244,15 @@ Local templates in `config/templates/` take precedence over the bundled defaults
 
 ### Data Validation
 
-Terradoc validates encyclopedia entries during the build:
+`terradoc check` (also the first step of `terradoc build`) reports every problem
+with its file and line. **Errors block the build; warnings do not.**
+
+- **Schemas**: every row of every enabled tabular module is validated against its schema (all errors, not just the first)
+- **Consent**: every `videos` and `recordings` row must state `consent: approved` (community consent to publish it) or `consent: external` (someone else's public media that the site only embeds). Anything else, including a missing field, blocks the build
+- **Media**: every `images/...` / `audio/...` path referenced by the data, the encyclopedia front matter or the theme must exist in `static/` (or, for older projects, `docs/`)
+- **Dry export**: the real export runs into a throwaway directory, so anything the build would trip on is caught here
+
+Encyclopedia entries are also checked:
 
 - **ID format**: must match `[a-z0-9][a-z0-9-]*` (no uppercase, spaces, underscores, or accents)
 - **Filename consistency**: each file's stem must match its `id` front-matter field

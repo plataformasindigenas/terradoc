@@ -70,60 +70,102 @@ def main():
     pass
 
 
-@main.command()
-@click.option("--config", "-c", "config_path", default="terradoc.yaml",
-              help="Path to terradoc.yaml config file")
-def build(config_path: str):
-    """Build the complete site."""
+def _load(config_path: str, out: str | None = None, bundle_dir: str | None = None):
     cfg_path = Path(config_path)
     if not cfg_path.exists():
         click.echo(f"Config file not found: {cfg_path}", err=True)
         raise SystemExit(1)
-
     cfg = load_config(cfg_path)
+    if out:
+        cfg.output_dir = Path(out).resolve()
+    if bundle_dir:
+        cfg.bundle_dir_override = Path(bundle_dir).resolve()
+    return cfg
 
-    # Step 1: Check encyclopedia entries (if enabled)
-    if cfg.is_module_enabled("encyclopedia"):
-        from terradoc.check_entries import check_entries
-        result = check_entries(cfg.data_dir)
-        if result != 0:
-            raise SystemExit(result)
-        click.echo()
 
-    # Step 2: Run converters
-    from terradoc.convert import run_all_converters
-    counts = run_all_converters(cfg)
+def _config_option(f):
+    return click.option("--config", "-c", "config_path", default="terradoc.yaml",
+                        help="Path to terradoc.yaml config file")(f)
 
-    # Step 3: Post-processing
-    from terradoc.cross_linker import (
-        attach_audio_to_dictionary,
-        attach_recordings_to_dictionary,
-        cross_link_datasets,
-    )
 
-    if cfg.is_module_enabled("recordings") and cfg.is_module_enabled("dictionary"):
-        attach_recordings_to_dictionary(cfg)
-        click.echo()
+def _bundle_option(f):
+    return click.option("--bundle-dir", default=None, type=click.Path(file_okay=False),
+                        help="Where the export bundle is written/read (default: data/)")(f)
 
-    if cfg.is_module_enabled("dictionary"):
-        attach_audio_to_dictionary(cfg)
-        click.echo()
 
-    cross_link_datasets(cfg)
+def _out_options(f):
+    f = click.option("--clean", is_flag=True,
+                     help="Empty the output directory first (only with --out)")(f)
+    return click.option("--out", default=None, type=click.Path(file_okay=False),
+                        help="Output directory for the site (default: docs/)")(f)
+
+
+def _report(cfg, fmt: str) -> bool:
+    """Run all checks, print the report; return True if there are no errors."""
+    from terradoc.checks import format_issues, run_checks
+
+    issues = run_checks(cfg)
+    click.echo(format_issues(issues, fmt))
+    return not any(i.level == "error" for i in issues)
+
+
+@main.command()
+@_config_option
+@click.option("--format", "fmt", default="text", type=click.Choice(["text", "github", "json"]),
+              help="Report format (github = Actions annotations)")
+def check(config_path: str, fmt: str):
+    """Validate sources (schemas, consent, media, encyclopedia); write nothing.
+
+    Exit status 1 if there is any error; warnings never fail.
+    """
+    cfg = _load(config_path)
+    if not _report(cfg, fmt):
+        raise SystemExit(1)
+
+
+@main.command()
+@_config_option
+@_bundle_option
+def export(config_path: str, bundle_dir: str | None):
+    """Write the normalised JSON bundle (experimental format)."""
+    from terradoc.export import export_bundle
+
+    cfg = _load(config_path, bundle_dir=bundle_dir)
+    export_bundle(cfg)
+    click.echo(f"=== Export Complete: {cfg.bundle_dir} ===")
+
+
+@main.command()
+@_config_option
+@_bundle_option
+@_out_options
+def render(config_path: str, bundle_dir: str | None, out: str | None, clean: bool):
+    """Render the site from an existing export bundle."""
+    from terradoc.build_site import render_site
+
+    cfg = _load(config_path, out=out, bundle_dir=bundle_dir)
+    render_site(cfg, clean=clean)
+    click.echo("\n=== Render Complete ===")
+
+
+@main.command()
+@_config_option
+@_bundle_option
+@_out_options
+@click.option("--format", "fmt", default="text", type=click.Choice(["text", "github", "json"]),
+              help="Format of the check report printed first")
+def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool, fmt: str):
+    """Build the complete site: check, export, render."""
+    from terradoc.build_site import render_site
+    from terradoc.export import export_bundle
+
+    cfg = _load(config_path, out=out, bundle_dir=bundle_dir)
+    if not _report(cfg, fmt):
+        click.echo("Build stopped: fix the errors above.", err=True)
+        raise SystemExit(1)
     click.echo()
-
-    # Step 4: Copy data files
-    from terradoc.index_builder import copy_data_to_docs, generate_index
-    copy_data_to_docs(cfg)
-    click.echo()
-
-    generate_index(counts, cfg)
-    click.echo()
-
-    # Step 5: Build site
-    from terradoc.build_site import build_site
-    build_site(cfg)
-
+    export_bundle(cfg)
+    render_site(cfg, clean=clean)
     click.echo("\n=== Build Complete ===")
 
 
@@ -132,7 +174,11 @@ def build(config_path: str):
 @click.option("--theme", "theme_preset", default="terra",
               type=click.Choice(list(THEME_PRESETS.keys())),
               help="Theme preset to use (default: terra)")
-def init(name: str, theme_preset: str):
+@click.option("--eject-templates", is_flag=True,
+              help="Copy the bundled templates into config/templates/ for local "
+                   "customisation. A local copy shadows every terradoc template "
+                   "update, so prefer config options and locale keys.")
+def init(name: str, theme_preset: str, eject_templates: bool):
     """Scaffold a new terradoc project."""
     project_dir = Path(name)
     if project_dir.exists():
@@ -141,44 +187,30 @@ def init(name: str, theme_preset: str):
 
     project_dir.mkdir()
     (project_dir / "config").mkdir()
-    (project_dir / "config" / "templates").mkdir(parents=True)
     (project_dir / "data").mkdir()
     (project_dir / "data" / "encyclopedia").mkdir()
     (project_dir / "locales").mkdir()
-    (project_dir / "docs").mkdir()
-    (project_dir / "docs" / "images").mkdir(parents=True)
-    (project_dir / "docs" / "js").mkdir(parents=True)
-    (project_dir / "docs" / "css").mkdir(parents=True)
+    # static/ is copied verbatim into the site root by `terradoc build`
+    (project_dir / "static" / "images").mkdir(parents=True)
 
-    # Copy bundled templates
-    templates_src = importlib.resources.files("terradoc.templates")
-    for template_src in templates_src.iterdir():
-        if template_src.name.endswith(".j2"):
-            shutil.copy2(
-                str(template_src),
-                str(project_dir / "config" / "templates" / template_src.name),
-            )
+    if eject_templates:
+        (project_dir / "config" / "templates").mkdir(parents=True)
+        templates_src = importlib.resources.files("terradoc.templates")
+        for template_src in templates_src.iterdir():
+            if template_src.name.endswith(".j2"):
+                shutil.copy2(
+                    str(template_src),
+                    str(project_dir / "config" / "templates" / template_src.name),
+                )
 
     # Create starter page configs
     for filename, content in STARTER_PAGE_CONFIGS.items():
         (project_dir / "config" / filename).write_text(content, encoding="utf-8")
 
-    # Copy static assets (JS, CSS, fonts)
-    js_src = importlib.resources.files("terradoc.static.js") / "common.js"
-    shutil.copy2(str(js_src), str(project_dir / "docs" / "js" / "common.js"))
-    css_src = importlib.resources.files("terradoc.static.css") / "terradoc.css"
-    shutil.copy2(str(css_src), str(project_dir / "docs" / "css" / "terradoc.css"))
-    fonts_css_src = importlib.resources.files("terradoc.static.css") / "fonts.css"
-    shutil.copy2(str(fonts_css_src), str(project_dir / "docs" / "css" / "fonts.css"))
-    (project_dir / "docs" / "fonts").mkdir(parents=True, exist_ok=True)
-    fonts_dir = importlib.resources.files("terradoc.static.fonts")
-    for font_file in fonts_dir.iterdir():
-        if font_file.is_file() and font_file.name.endswith(".woff2"):
-            shutil.copy2(str(font_file), str(project_dir / "docs" / "fonts" / font_file.name))
-    (project_dir / "docs" / "images" / "logo.svg").write_text(
+    (project_dir / "static" / "images" / "logo.svg").write_text(
         DEFAULT_LOGO_SVG, encoding="utf-8"
     )
-    (project_dir / "docs" / "images" / "favicon.svg").write_text(
+    (project_dir / "static" / "images" / "favicon.svg").write_text(
         DEFAULT_FAVICON_SVG, encoding="utf-8"
     )
 

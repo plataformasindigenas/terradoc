@@ -29,6 +29,10 @@ def _build(spotlight):
     enc.mkdir(parents=True, exist_ok=True)
     (enc / "many.md").write_text(_entry("many", 4))
     (enc / "few.md").write_text(_entry("few", 3))
+    images = Path("demo/static/images")
+    images.mkdir(parents=True, exist_ok=True)
+    for name in [f"many_{i}.jpg" for i in range(4)] + [f"few_{i}.jpg" for i in range(3)]:
+        (images / name).write_bytes(b"\xff\xd8fake")
     if spotlight:
         with open("demo/locales/pt.yaml", "a", encoding="utf-8") as f:
             f.write(

@@ -46,7 +46,8 @@ def test_cli_init():
             assert (project_dir / "data").exists()
             assert (project_dir / "data" / "encyclopedia").exists()
             assert (project_dir / "config").exists()
-            assert (project_dir / "config" / "templates").exists()
+            # templates are bundled; no local copy unless --eject-templates
+            assert not (project_dir / "config" / "templates").exists()
             assert (project_dir / "config" / "index.yaml").exists()
             assert (project_dir / "config" / "dictionary.yaml").exists()
             assert (project_dir / "config" / "fauna.yaml").exists()
@@ -54,15 +55,22 @@ def test_cli_init():
             assert (project_dir / "config" / "bibliography.yaml").exists()
             assert (project_dir / "config" / "recordings.yaml").exists()
             assert (project_dir / "config" / "videos.yaml").exists()
-            assert (project_dir / "config" / "templates" / "base.html.j2").exists()
             assert (project_dir / "locales").exists()
-            assert (project_dir / "docs").exists()
-            assert (project_dir / "docs" / "images" / "logo.svg").exists()
-            assert (project_dir / "docs" / "images" / "favicon.svg").exists()
-            assert (project_dir / "docs" / "css" / "terradoc.css").exists()
+            assert (project_dir / "static" / "images" / "logo.svg").exists()
+            assert (project_dir / "static" / "images" / "favicon.svg").exists()
             assert (project_dir / "terradoc.yaml").exists()
             assert (project_dir / "locales" / "pt.yaml").exists()
             assert (project_dir / "locales" / "en.yaml").exists()
+
+
+def test_cli_init_eject_templates():
+    """--eject-templates copies the bundled templates for local editing."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            result = runner.invoke(main, ["init", "p", "--eject-templates"])
+            assert result.exit_code == 0
+            assert (Path("p") / "config" / "templates" / "base.html.j2").exists()
 
 
 def test_cli_init_existing_dir():

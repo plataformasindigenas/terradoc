@@ -1,0 +1,128 @@
+{# Oral-corpus layout for self-hosted audio/video (from the Makurap platform).
+   Select it with `template: templates/videos_oral.html.j2` in config/videos.yaml. #}
+{% extends "base.html.j2" %}
+{% from "decor.html.j2" import motif_divider, page_badge %}
+
+{% block title %}{{ t.vid_title | default('Oral Corpus') }}{% endblock %}
+
+{% block extra_styles %}
+        .oc-header {
+            padding: 1.5rem 0 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .oc-header h1 { margin: 0 0 0.5rem 0; }
+        .oc-header .subtitle { color: var(--td-color-text-muted); margin: 0; }
+        .oc-note {
+            background: var(--td-color-bg-infobox);
+            border: 1px solid var(--td-color-border);
+            border-left: 4px solid var(--td-color-primary);
+            border-radius: var(--td-radius);
+            padding: 0.85rem 1.1rem;
+            margin: 0 0 1.75rem;
+            color: var(--td-color-text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .oc-filter-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.75rem; }
+        .oc-filter-btn {
+            border: 1px solid var(--td-color-border);
+            background: var(--td-color-surface);
+            color: var(--td-color-text);
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font: inherit; font-size: 0.85rem; cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .oc-filter-btn:hover { border-color: var(--td-color-primary); }
+        .oc-filter-btn.active { background: var(--td-color-primary); color: #fff; border-color: var(--td-color-primary); }
+        .oc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .oc-card {
+            background: var(--td-color-surface);
+            border: 1px solid var(--td-color-border);
+            border-radius: var(--td-radius);
+            padding: 1.25rem 1.25rem 1.4rem;
+            display: flex; flex-direction: column; gap: 0.6rem;
+        }
+        .oc-card-top { display: flex; align-items: center; gap: 0.6rem; }
+        .oc-icon {
+            flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
+            background: var(--td-color-accent-light); color: var(--td-color-primary);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .oc-icon svg { width: 20px; height: 20px; fill: currentColor; }
+        .oc-category-tag {
+            display: inline-block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--td-color-primary); background: var(--td-color-accent-light);
+            border-radius: 4px; padding: 0.1rem 0.45rem;
+        }
+        .oc-card-title { margin: 0; font-size: 1.08rem; }
+        .oc-lang { font-size: 0.78rem; color: var(--td-color-text-muted); }
+        .oc-card-desc { color: var(--td-color-text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0; }
+        .oc-card audio { width: 100%; margin-top: 0.35rem; }
+        @media (max-width: 640px) { .oc-grid { grid-template-columns: 1fr; } }
+{% endblock %}
+
+{% block content %}
+    <div class="oc-header">
+        <h1>{{ t.vid_title | default('Oral Corpus') }} {{ page_badge(badge_type=theme.page_badge|default("weave")) }}</h1>
+        <p class="subtitle">{{ t.vid_subtitle | default('') }} &mdash; {{ data | length }} {{ t.vid_count_label | default('recordings') }}</p>
+    </div>
+
+    {% if t.oc_note %}
+    <p class="oc-note">{{ t.oc_note }}</p>
+    {% endif %}
+
+    <div class="oc-filter-bar" id="oc-filters">
+        <button class="oc-filter-btn active" data-cat="all">{{ t.vid_filter_all | default('All') }}</button>
+    </div>
+
+    <div class="oc-grid" id="oc-grid">
+        {% for item in data %}
+        <article class="oc-card" data-category="{{ item.category | default('') }}">
+            <div class="oc-card-top">
+                <span class="oc-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zm5 9a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2z"/></svg>
+                </span>
+                <div>
+                    {% if item.category %}<span class="oc-category-tag">{{ item.category }}</span>{% endif %}
+                    {% if item.language %}<span class="oc-lang"> · {{ item.language }}</span>{% endif %}
+                </div>
+            </div>
+            <h3 class="oc-card-title">{{ item.title }}</h3>
+            {% if item.description %}<p class="oc-card-desc">{{ item.description }}</p>{% endif %}
+            {% if item.source_url %}
+            <audio controls preload="none" src="{{ base_path | default('') }}{{ item.source_url }}"></audio>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    (function() {
+        var cards = document.querySelectorAll('.oc-card');
+        var bar = document.getElementById('oc-filters');
+        var cats = {};
+        cards.forEach(function(c) { var cat = c.getAttribute('data-category'); if (cat) cats[cat] = true; });
+        Object.keys(cats).sort().forEach(function(cat) {
+            var btn = document.createElement('button');
+            btn.className = 'oc-filter-btn';
+            btn.setAttribute('data-cat', cat);
+            btn.textContent = cat;
+            bar.appendChild(btn);
+        });
+        bar.addEventListener('click', function(e) {
+            var btn = e.target.closest('.oc-filter-btn');
+            if (!btn) return;
+            bar.querySelectorAll('.oc-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var cat = btn.getAttribute('data-cat');
+            cards.forEach(function(c) {
+                c.style.display = (cat === 'all' || c.getAttribute('data-category') === cat) ? '' : 'none';
+            });
+        });
+    })();
+    </script>
+{% endblock %}

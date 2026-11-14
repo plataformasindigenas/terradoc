@@ -56,7 +56,7 @@ def _write_dataset(config: TerradocConfig, output_name: str, module_slug: str, d
         "meta": _dataset_meta(config, module_slug, description, len(records), version),
         "data": records,
     }
-    output_file = config.data_dir / output_name
+    output_file = config.bundle_dir / output_name
     output_file.write_text(
         json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -561,14 +561,14 @@ def convert_encyclopedia(config: TerradocConfig) -> int:
         "highlights": highlights,
     }
 
-    index_file = config.data_dir / "encyclopedia_index.json"
+    index_file = config.bundle_dir / "encyclopedia_index.json"
     index_file.write_text(
         json.dumps(index_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
     if config.is_graph_enabled("encyclopedia"):
         graph_data = _build_encyclopedia_graph(index_records)
-        graph_file = config.data_dir / "encyclopedia_graph.json"
+        graph_file = config.bundle_dir / "encyclopedia_graph.json"
         graph_file.write_text(
             json.dumps(graph_data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
@@ -624,6 +624,7 @@ def _run_enabled_module_preflight(config: TerradocConfig) -> None:
 def run_all_converters(config: TerradocConfig) -> dict[str, int]:
     """Run all enabled converters and return counts."""
     _run_enabled_module_preflight(config)
+    config.bundle_dir.mkdir(parents=True, exist_ok=True)
 
     counts = {}
     for name in config.modules:

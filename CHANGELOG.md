@@ -2,6 +2,48 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.11.0] — 2026-11-14
+
+### Added
+
+- **`terradoc check`**: validates a project without writing anything and
+  reports every problem with file and line (`--format text|github|json`;
+  `github` emits Actions annotations). New blocking rules: **consent**
+  (`videos`/`recordings` rows need `consent: approved` or `consent: external`)
+  and **media** (every referenced `images/...`/`audio/...` file must exist).
+  Schema validation now reports all rows of all modules, not just the first
+  failure.
+- **`terradoc export`** and **`terradoc render`**: the build split in two. The
+  export bundle (`manifest.json` + one JSON per module) is the intended
+  contract for other renderers; its format is **experimental**
+  (`bundle_schema: "0-experimental"`).
+- **`--out DIR`, `--bundle-dir DIR`, `--clean`** on `build`/`render`/`export`:
+  build without touching the checkout. Page configs that say `../docs/` and
+  `../data/*.json` are remapped in memory; existing projects need no changes.
+- **`static/`**: copied verbatim into the site root. The build fails if a
+  generated file would overwrite one, or if `static/` contains a symlink.
+- **`.release.json`** in the site root: project, terradoc version, source
+  commit and ref (`GITHUB_SHA`/`GITHUB_REF_NAME` or git), file count, bytes.
+  No timestamps, so identical inputs give identical output.
+- **`videos_oral.html.j2`**: oral-corpus layout for self-hosted media (from the
+  Makurap platform); select it in `config/videos.yaml`.
+- **About page image credits**, shown when the locale defines `about_credits`
+  (and optionally `about_credits_heading`).
+
+### Changed
+
+- `terradoc build` runs the full `check` first; projects with unconsented
+  videos/recordings rows or missing media files now fail to build.
+- `terradoc init` no longer copies the templates into `config/templates/`
+  (use `--eject-templates`), and puts the logo and favicon in `static/images/`.
+- `uv.lock` regenerated: it still listed the external `aptoro` and
+  bibtexparser 1.x from before 0.9.0.
+
+### Compatibility
+
+Rendered HTML is byte-identical to 0.10.0 for the three Plataformas sites
+(Bororo, Enawenê-Nawê, Makurap), checked from clean checkouts.
+
 ## [0.10.0] — 2026-10-09
 
 ### Added

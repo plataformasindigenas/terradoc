@@ -47,7 +47,7 @@ def get_locale_switches(locale: str, base_path: str, current_page_path: str,
 
 def render_article_pages(locale: str, translations: dict, config: TerradocConfig):
     """Render individual encyclopedia article pages."""
-    enc_file = config.data_dir / "encyclopedia.json"
+    enc_file = config.bundle_dir / "encyclopedia.json"
     if not enc_file.exists():
         print(f"  [{locale}] No encyclopedia.json found, skipping article pages")
         return
@@ -144,6 +144,19 @@ def render_about_page(locale: str, translations: dict, config: TerradocConfig):
     print(f"  [{locale}] Rendered about")
 
 
+def remap_bundle_input(page_config, config: TerradocConfig) -> Path:
+    """Point a page config's generated-JSON input at the export bundle.
+
+    Inputs that live in data/ and end in .json are build products (the
+    sources are TSV/YAML/Markdown), so they are read from config.bundle_dir.
+    Anything else is left untouched.
+    """
+    resolved = page_config.resolved_input
+    if resolved.suffix == ".json" and resolved.parent.resolve() == config.data_dir.resolve():
+        return config.bundle_dir.resolve() / resolved.name
+    return page_config.input
+
+
 def build_locale(locale: str, translations: dict, config: TerradocConfig):
     """Build all pages for a given locale."""
     locale_dir = config.docs_dir / locale
@@ -161,9 +174,9 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
         client_index = {}
         graph_data = {}
         if name == "encyclopedia":
-            client_index = load_json_if_exists(config.data_dir / "encyclopedia_index.json")
+            client_index = load_json_if_exists(config.bundle_dir / "encyclopedia_index.json")
             if config.is_graph_enabled("encyclopedia"):
-                graph_data = load_json_if_exists(config.data_dir / "encyclopedia_graph.json")
+                graph_data = load_json_if_exists(config.bundle_dir / "encyclopedia_graph.json")
 
         batch = kodudo.load_config(config_path)
 
@@ -185,7 +198,12 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 
         original_output = str(batch.config.output)
         output_filename = Path(original_output).name
-        locale_output = f"../docs/{locale}/{output_filename}"
+        # Page configs say ../docs/<page>.html and ../data/<x>.json; remap both
+        # in memory so --out / --bundle-dir work without editing site repos.
+        locale_output = config.docs_dir.resolve() / locale / output_filename
+        batch = dc_replace(batch, config=dc_replace(
+            batch.config, input=remap_bundle_input(batch.config, config),
+        ))
 
         kodudo.cook_from_config(
             batch.config,
@@ -361,3 +379,104 @@ def build_site(config: TerradocConfig):
     write_robots_txt(config.docs_dir)
     write_sitemap(config.docs_dir, config, config.locales)
     print("\n=== i18n Build Complete ===")
+
+
+# ── 0.11: render step (bundle → site), static/ and release info ──────────
+
+def _sha256(path: Path) -> str:
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def copy_project_static(config: TerradocConfig) -> dict[str, str]:
+    """Copy <project>/static/ verbatim into the site root.
+
+    Returns {relative path: sha256} so the caller can prove afterwards that
+    no generated file overwrote a static one. Symlinks are refused: the site
+    must be plain files.
+    """
+    src_root = config.static_dir
+    copied: dict[str, str] = {}
+    if not src_root.is_dir():
+        return copied
+    for src in sorted(src_root.rglob("*")):
+        rel = src.relative_to(src_root).as_posix()
+        if src.is_symlink():
+            raise ValueError(f"static/{rel} is a symlink; only regular files are allowed")
+        if src.is_dir():
+            continue
+        dest = config.docs_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        copied[rel] = _sha256(src)
+    print(f"  Copied {len(copied)} files from static/")
+    return copied
+
+
+def verify_static_untouched(config: TerradocConfig, copied: dict[str, str]) -> None:
+    clobbered = [rel for rel, digest in copied.items()
+                 if _sha256(config.docs_dir / rel) != digest]
+    if clobbered:
+        raise ValueError(
+            "generated files overwrote files from static/ (rename them): "
+            + ", ".join(sorted(clobbered)[:10])
+        )
+
+
+def _git(config: TerradocConfig, *args: str) -> str:
+    import subprocess
+
+    try:
+        out = subprocess.run(["git", "-C", str(config.base_dir), *args],
+                             capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def write_release_info(config: TerradocConfig) -> Path:
+    """Write .release.json: what this site was built from (no timestamps, so
+    identical inputs give an identical file)."""
+    import os
+
+    from terradoc.export import terradoc_version
+
+    files = [p for p in config.docs_dir.rglob("*") if p.is_file() and p.name != ".release.json"]
+    info = {
+        "project": config.meta_prefix,
+        "terradoc_version": terradoc_version(),
+        "source_commit": os.environ.get("GITHUB_SHA") or _git(config, "rev-parse", "HEAD"),
+        "source_ref": os.environ.get("GITHUB_REF_NAME") or _git(config, "rev-parse", "--abbrev-ref", "HEAD"),
+        "files": len(files),
+        "bytes": sum(p.stat().st_size for p in files),
+    }
+    path = config.docs_dir / ".release.json"
+    path.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def render_site(config: TerradocConfig, *, clean: bool = False) -> None:
+    """Render the site from the export bundle into config.docs_dir."""
+    from terradoc.export import read_manifest
+    from terradoc.index_builder import copy_data_to_docs
+
+    read_manifest(config)  # fail early, clearly, if export has not run
+
+    if clean:
+        if config.output_dir is None:
+            raise ValueError("--clean needs --out (refusing to delete the project's docs/)")
+        if config.docs_dir.exists():
+            shutil.rmtree(config.docs_dir)
+    config.docs_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = copy_project_static(config)
+    copy_data_to_docs(config)
+    print()
+    build_site(config)
+    verify_static_untouched(config, copied)
+    write_release_info(config)

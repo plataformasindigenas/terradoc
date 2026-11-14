@@ -17,7 +17,7 @@ def generate_index(counts: dict[str, int], config: TerradocConfig):
         ],
     }
 
-    output_file = config.data_dir / "index.json"
+    output_file = config.bundle_dir / "index.json"
     output_file.write_text(json.dumps(index_data, indent=2), encoding="utf-8")
 
     print(f"  Exported to {output_file}")
@@ -26,28 +26,28 @@ def generate_index(counts: dict[str, int], config: TerradocConfig):
 def copy_data_to_docs(config: TerradocConfig):
     """Copy generated data files to docs/ for fetch-based loading."""
     if config.is_module_enabled("dictionary"):
-        src = config.data_dir / "dictionary.json"
+        src = config.bundle_dir / "dictionary.json"
         dst = config.docs_dir / "dictionary-data.json"
         if src.exists():
             shutil.copy2(src, dst)
             print(f"  Copied {src.name} → {dst}")
 
     if config.is_module_enabled("corpus"):
-        src = config.data_dir / "corpus.json"
+        src = config.bundle_dir / "corpus.json"
         dst = config.docs_dir / "corpus-data.json"
         if src.exists():
             shutil.copy2(src, dst)
             print(f"  Copied {src.name} → {dst}")
 
     if config.is_module_enabled("encyclopedia"):
-        src = config.data_dir / "encyclopedia_index.json"
+        src = config.bundle_dir / "encyclopedia_index.json"
         dst = config.docs_dir / "encyclopedia-data.json"
         if src.exists():
             shutil.copy2(src, dst)
             print(f"  Copied {src.name} → {dst}")
 
         if config.is_graph_enabled("encyclopedia"):
-            src = config.data_dir / "encyclopedia_graph.json"
+            src = config.bundle_dir / "encyclopedia_graph.json"
             dst = config.docs_dir / "encyclopedia-graph.json"
             if src.exists():
                 shutil.copy2(src, dst)
