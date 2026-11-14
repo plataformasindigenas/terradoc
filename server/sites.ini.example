@@ -1,0 +1,11 @@
+# /etc/sitepull/sites.ini — which repositories the server publishes.
+# Each section is a site: <slug>.terradoc.org, previews at previews.terradoc.org/<slug>/.
+# The slug must also be listed in the Caddyfile (previews route and, after cutover, its vhost).
+[DEFAULT]
+root = /srv/sites
+# Smoke tests go through Caddy's localhost-only listener (same routes as previews.terradoc.org).
+smoke_base = http://127.0.0.1:8088
+
+[enawenenawe]
+url = https://github.com/plataformasindigenas/enawenenawe.git
+default_branch = master

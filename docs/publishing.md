@@ -15,7 +15,8 @@ from then on **every push to every branch is validated, built and published**, w
    `confirma-reducao` in a commit message of that push, or run the workflow by hand with
    "confirm shrink" ticked.
 4. The built site is published as the git ref `refs/sites/<name>`. This is not a branch, so normal
-   clones never download it. The server polls these refs every couple of minutes:
+   clones never download it. The server polls these refs every couple of minutes
+   ([`server/`](../server/README.md)):
    - the default branch (`master`) → `https://<repo>.terradoc.org/`
    - any other branch → `https://previews.terradoc.org/<repo>/<name>/`, where `<name>` is the
      branch name lowercased, with anything other than letters, digits and `-` turned into `-`
@@ -25,7 +26,7 @@ from then on **every push to every branch is validated, built and published**, w
    one is already open. It explains each problem in Portuguese and English, links the run, and
    @-mentions the people listed in `.github/CODEOWNERS` for the failing files, plus whoever pushed.
    The next successful run closes it. **The live site keeps its last good version.**
-6. Deleting a branch deletes its preview and closes its issue.
+6. Deleting a branch deletes its preview (about 10 minutes later) and closes its issue.
 
 The normalised data bundle is kept as a run artifact (30 days). It is not published.
 
@@ -67,7 +68,8 @@ data/dictionary.tsv  @lexicographer
 Anyone who can push to the repository can publish to production. GitHub cannot restrict who
 pushes `refs/sites/*`, and a writer could also edit the workflow. Write access therefore means
 publishing rights. The server serves a ref only if its `.release.json` names the current tip of
-the matching branch, so stale or orphaned refs are ignored.
+the matching branch, so stale or orphaned refs are ignored, and only if the tree holds nothing but
+regular files.
 
 Anything pushed to any branch of a public repository is public. That includes previews, and
 deleting a branch does not erase the commits: only GitHub Support can purge them. **Material

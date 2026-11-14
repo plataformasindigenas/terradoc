@@ -1,0 +1,11 @@
+#!/bin/sh
+# Owner front-end for sitepull: runs it as the `sites` user.
+#   sitectl status | list SLUG [TARGET] | rollback SLUG [TARGET] [RELEASE]
+#   sitectl release SLUG [TARGET] | retry SLUG [TARGET] | purge SLUG PATH | import SLUG [TARGET] < site.tar.gz
+#   sitectl pull     (one polling round now, instead of waiting for the timer)
+#   sitectl log      (the poller's recent log)
+if [ "${1:-}" = log ]; then
+    exec journalctl -u sitepull.service --no-pager -n "${2:-60}"
+fi
+cd /srv/sites || exit 1
+exec sudo -u sites HOME=/srv/sites /usr/bin/python3 -I /usr/local/lib/sitepull/sitepull.py "$@"

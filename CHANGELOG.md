@@ -2,6 +2,16 @@
 
 All notable changes to terradoc are documented here.
 
+## [Unreleased]
+
+### Added
+
+- **`server/`: sitepull**, the web server's side of publishing (not part of the PyPI package).
+  A systemd timer polls `refs/sites/*` anonymously, verifies each release (branch tip, regular
+  files only, size limits), switches it in atomically, smoke-tests it through Caddy and switches
+  back on failure. `sitectl` gives status, rollback with hold, retry, purge and a break-glass
+  import. See `server/README.md`.
+
 ## [0.12.0] — 2026-11-14
 
 ### Added

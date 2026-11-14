@@ -1,0 +1,38 @@
+[Unit]
+Description=Serve terradoc sites from GitHub refs/sites/* (one polling round)
+Documentation=https://github.com/plataformasindigenas/terradoc/tree/master/server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=sites
+Group=sites
+UMask=0022
+Environment=HOME=/srv/sites
+ExecStart=/usr/bin/python3 -I /usr/local/lib/sitepull/sitepull.py pull
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=512M
+# Sandbox: it may write /srv/sites and nothing else.
+ProtectSystem=strict
+ReadWritePaths=/srv/sites
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+CapabilityBoundingSet=

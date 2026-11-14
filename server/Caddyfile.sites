@@ -1,0 +1,28 @@
+# terradoc sites served from /srv/sites (sitepull). Paste into /etc/caddy/Caddyfile,
+# after the security_headers snippet. Add a slug to the regexp when its site moves over.
+
+(sites_routes) {
+	header X-Robots-Tag "noindex, nofollow"
+	# /<slug>/, /<slug>/<preview>/…, /<slug>/_prod/… ; anything else is a 404.
+	@served path_regexp ^/(enawenenawe)(/|/([a-z0-9][a-z0-9-]{0,39}|_prod)(/.*)?)?$
+	handle @served {
+		root * /srv/sites/www
+		file_server
+	}
+	handle {
+		respond 404
+	}
+}
+
+# Smoke tests from sitepull: same routes, loopback only, no TLS.
+http://127.0.0.1:8088 {
+	bind 127.0.0.1
+	import sites_routes
+}
+
+# Needs the DNS record first (Cloudflare, grey cloud: previews A 62.238.116.162).
+previews.terradoc.org {
+	import security_headers
+	encode gzip
+	import sites_routes
+}
