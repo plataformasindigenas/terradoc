@@ -100,12 +100,26 @@ def _out_options(f):
                         help="Output directory for the site (default: docs/)")(f)
 
 
+class _friendly_errors:
+    """Turn expected failures into a one-line message and exit status 1."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        from terradoc.export import CheckFailed
+
+        if exc_type is not None and issubclass(exc_type, (ValueError, FileNotFoundError, CheckFailed)):
+            raise click.ClickException(str(exc)) from exc
+        return False
+
+
 def _report(cfg, fmt: str) -> bool:
     """Run all checks, print the report; return True if there are no errors."""
-    from terradoc.checks import format_issues, run_checks
+    from terradoc.checks import annotation_prefix, format_issues, run_checks
 
     issues = run_checks(cfg)
-    click.echo(format_issues(issues, fmt))
+    click.echo(format_issues(issues, fmt, annotation_prefix(cfg) if fmt == "github" else ""))
     return not any(i.level == "error" for i in issues)
 
 
@@ -131,7 +145,8 @@ def export(config_path: str, bundle_dir: str | None):
     from terradoc.export import export_bundle
 
     cfg = _load(config_path, bundle_dir=bundle_dir)
-    export_bundle(cfg)
+    with _friendly_errors():
+        export_bundle(cfg)
     click.echo(f"=== Export Complete: {cfg.bundle_dir} ===")
 
 
@@ -144,7 +159,8 @@ def render(config_path: str, bundle_dir: str | None, out: str | None, clean: boo
     from terradoc.build_site import render_site
 
     cfg = _load(config_path, out=out, bundle_dir=bundle_dir)
-    render_site(cfg, clean=clean)
+    with _friendly_errors():
+        render_site(cfg, clean=clean)
     click.echo("\n=== Render Complete ===")
 
 
@@ -164,8 +180,12 @@ def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool
         click.echo("Build stopped: fix the errors above.", err=True)
         raise SystemExit(1)
     click.echo()
-    export_bundle(cfg)
-    render_site(cfg, clean=clean)
+    with _friendly_errors():
+        if clean:  # refuse before doing any work
+            from terradoc.build_site import assert_safe_to_clean
+            assert_safe_to_clean(cfg)
+        export_bundle(cfg, run_checks=False)  # just checked above
+        render_site(cfg, clean=clean)
     click.echo("\n=== Build Complete ===")
 
 

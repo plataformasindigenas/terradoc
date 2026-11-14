@@ -323,6 +323,7 @@ def validate(
     dataclass_type = generate_dataclass(schema)
     validation_error = ValidationError(source=source, schema_name=schema.name)
     results: list[Any] = []
+    result_rows: list[int] = []  # 1-based source row of each result
 
     for i, record in enumerate(data):
         try:
@@ -330,6 +331,7 @@ def validate(
             validated = pydantic_model.model_validate(record)
             instance = create_instance(dataclass_type, validated.model_dump())
             results.append(instance)
+            result_rows.append(i + 1)
         except PydanticValidationError as e:
             for error in e.errors():
                 error_dict: dict[str, Any] = dict(error)
@@ -343,7 +345,7 @@ def validate(
     pk_field = schema.get_field(schema.primary_key)
     if pk_field is not None and isinstance(pk_field, Field):
         seen: dict[Any, int] = {}
-        for i, instance in enumerate(results):
+        for row, instance in zip(result_rows, results):
             pk_value = getattr(instance, schema.primary_key, None)
             if pk_value is None:
                 continue
@@ -351,9 +353,9 @@ def validate(
                 validation_error.add_error(
                     field=schema.primary_key, expected="unique value (primary key)",
                     got=f"{pk_value!r} (duplicate of row {seen[pk_value]})",
-                    row=i + 1, column=schema.primary_key)
+                    row=row, column=schema.primary_key)
             else:
-                seen[pk_value] = i + 1
+                seen[pk_value] = row
 
     validation_error.raise_if_errors()
     return results

@@ -19,6 +19,10 @@ from terradoc.config import TerradocConfig
 BUNDLE_SCHEMA = "0-experimental"
 
 
+class CheckFailed(Exception):
+    """`terradoc check` found errors; nothing was exported."""
+
+
 def terradoc_version() -> str:
     try:
         return version("terradoc")
@@ -29,16 +33,16 @@ def terradoc_version() -> str:
 def export_bundle(config: TerradocConfig, *, run_checks: bool = True) -> dict[str, int]:
     """Write the bundle and return per-module record counts.
 
-    With ``run_checks`` the historic encyclopedia entry check runs first (the
-    behaviour of `terradoc build` before 0.11); `terradoc check` performs the
-    full rule set separately.
+    With ``run_checks`` (the default) the full `terradoc check` rule set runs
+    first (consent, media, schemas, ...) and nothing is written on errors, so
+    an export, and therefore a render, can never contain unconsented media.
     """
-    if run_checks and config.is_module_enabled("encyclopedia"):
-        from terradoc.check_entries import check_entries
+    if run_checks:
+        from terradoc.checks import format_issues, run_checks as run_all_checks
 
-        if check_entries(config.data_dir) != 0:
-            raise SystemExit(1)
-        print()
+        issues = run_all_checks(config)
+        if any(i.level == "error" for i in issues):
+            raise CheckFailed(format_issues(issues))
 
     from terradoc.convert import run_all_converters
     from terradoc.cross_linker import (
@@ -67,11 +71,12 @@ def export_bundle(config: TerradocConfig, *, run_checks: bool = True) -> dict[st
 
 
 def write_manifest(config: TerradocConfig, counts: dict[str, int]) -> Path:
-    files = sorted(
-        p.name for p in config.bundle_dir.glob("*.json") if p.name != "manifest.json"
-    ) if config.bundle_dir != config.data_dir else sorted(
-        f"{name}.json" for name in counts
-    )
+    candidates = {f"{name}.json" for name in counts} | {"index.json"}
+    if "encyclopedia" in counts:
+        candidates.add("encyclopedia_index.json")
+        if config.is_graph_enabled("encyclopedia"):
+            candidates.add("encyclopedia_graph.json")
+    files = sorted(n for n in candidates if (config.bundle_dir / n).is_file())
     manifest = {
         "bundle_schema": BUNDLE_SCHEMA,
         "terradoc_version": terradoc_version(),

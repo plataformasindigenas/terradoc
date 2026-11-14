@@ -20,8 +20,15 @@ All notable changes to terradoc are documented here.
 - **`--out DIR`, `--bundle-dir DIR`, `--clean`** on `build`/`render`/`export`:
   build without touching the checkout. Page configs that say `../docs/` and
   `../data/*.json` are remapped in memory; existing projects need no changes.
+  `--clean` refuses any directory that is, contains or overlaps the project,
+  its sources, templates or bundle, and any directory that terradoc did not
+  build from empty (`owned_by_terradoc` in `.release.json`).
+- `export` always runs the full check, and `render` re-checks consent and
+  `static/` against the sources, so neither can publish unconsented media
+  (not even from a bundle exported before consent was withdrawn).
 - **`static/`**: copied verbatim into the site root. The build fails if a
-  generated file would overwrite one, or if `static/` contains a symlink.
+  generated file would overwrite one, or if `static/` is or contains a
+  symlink (both are also `check` errors).
 - **`.release.json`** in the site root: project, terradoc version, source
   commit and ref (`GITHUB_SHA`/`GITHUB_REF_NAME` or git), file count, bytes.
   No timestamps, so identical inputs give identical output.

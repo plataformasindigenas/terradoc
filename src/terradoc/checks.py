@@ -20,7 +20,9 @@ Rules (see the platforms' pipeline plan, section 5):
 from __future__ import annotations
 
 import contextlib
+import csv
 import io
+import os
 import json
 import re
 import tempfile
@@ -84,15 +86,43 @@ def _yaml_item_lines(path: Path) -> list[int]:
     return []
 
 
-def _row_line(path: Path, row: int | None, yaml_lines: list[int]) -> int | None:
-    """Map aptoro's 1-based row number to a line in the source file."""
-    if row is None:
-        return None
+def _tsv_row_lines(path: Path) -> list[int]:
+    """1-based starting line of each data row, parsed exactly like aptoro's
+    reader (csv.DictReader, tab, '"'): blank lines are skipped and quoted
+    fields may span lines, so 'row + 1' is not enough."""
+    lines: list[int] = []
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = csv.reader(f, delimiter="\t", quotechar='"')
+        header_seen = False
+        while True:
+            start = reader.line_num + 1
+            try:
+                row = next(reader)
+            except StopIteration:
+                break
+            except csv.Error:
+                break
+            if not row:
+                continue  # DictReader skips blank lines
+            if not header_seen:
+                header_seen = True
+                continue
+            lines.append(start)
+    return lines
+
+
+def _source_lines(path: Path) -> list[int]:
+    """Starting line of each record (1-based) in a TSV or YAML-list source."""
     if path.suffix == ".tsv":
-        return row + 1  # header is line 1
-    if 0 < row <= len(yaml_lines):
-        return yaml_lines[row - 1]
-    return None
+        return _tsv_row_lines(path)
+    return _yaml_item_lines(path)
+
+
+def _row_line(path: Path, row: int | None, lines: list[int]) -> int | None:
+    """Map aptoro's 1-based row number to a line in the source file."""
+    if row is None or not (0 < row <= len(lines)):
+        return None
+    return lines[row - 1]
 
 
 def _iter_strings(value: Any) -> Iterable[str]:
@@ -172,7 +202,7 @@ def _check_tabular(config: TerradocConfig) -> tuple[list[Issue], dict[str, tuple
         try:
             aptoro.validate(rows, schema, collect_errors=True)
         except aptoro.ValidationError as exc:
-            yaml_lines = _yaml_item_lines(path) if path.suffix != ".tsv" else []
+            yaml_lines = _source_lines(path)
             for err in exc.errors:
                 column = f" column '{err.column}'" if err.column else ""
                 msg = f"{err.field}:{column} expected {err.expected}, got {err.got!r}"
@@ -196,7 +226,7 @@ def _check_consent(config: TerradocConfig, loaded: dict[str, tuple[Path, list[di
         if name not in loaded:
             continue
         path, rows = loaded[name]
-        yaml_lines = _yaml_item_lines(path) if path.suffix != ".tsv" else []
+        yaml_lines = _source_lines(path)
         for i, row in enumerate(rows, start=1):
             value = row.get("consent")
             if value not in CONSENT_VALUES:
@@ -219,7 +249,7 @@ def _check_media(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict
             issues.append(Issue("error", "media", f"theme references missing file '{value}'", "terradoc.yaml"))
 
     for name, (path, rows) in loaded.items():
-        yaml_lines = _yaml_item_lines(path) if path.suffix != ".tsv" else []
+        yaml_lines = _source_lines(path)
         for i, row in enumerate(rows, start=1):
             for value in _iter_strings(row):
                 if MEDIA_RE.match(value.strip()) and not _media_exists(config, value.strip()):
@@ -240,6 +270,45 @@ def _check_media(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict
     return issues
 
 
+def _generated_names(config: TerradocConfig) -> tuple[set[str], tuple[str, ...]]:
+    """Paths the render step writes: exact files, and directory prefixes."""
+    import importlib.resources
+
+    files = {"index.html", "404.html", "robots.txt", "sitemap.xml", ".release.json"}
+    for sub in ("js", "css", "fonts"):
+        try:
+            for f in importlib.resources.files(f"terradoc.static.{sub}").iterdir():
+                if f.is_file() and f.name != "__init__.py":
+                    files.add(f"{sub}/{f.name}")
+        except ModuleNotFoundError:
+            pass
+    prefixes = tuple(f"{loc}/" for loc in config.locales)
+    return files, prefixes
+
+
+def _check_static(config: TerradocConfig) -> list[Issue]:
+    """static/ must be plain files, and none may collide with generated output."""
+    root = config.static_dir
+    if root.is_symlink():
+        return [Issue("error", "static", "static/ is a symlink; it must be a real directory", "static")]
+    if not root.is_dir():
+        return []
+    issues = []
+    files, prefixes = _generated_names(config)
+    for p in sorted(root.rglob("*")):
+        rel = p.relative_to(root).as_posix()
+        if p.is_symlink():
+            issues.append(Issue("error", "static", "symlinks are not allowed in static/", f"static/{rel}"))
+            continue
+        if p.is_dir():
+            continue
+        if rel in files or rel.startswith(prefixes) or (
+                "/" not in rel and rel.endswith("-data.json")):
+            issues.append(Issue("error", "static",
+                                "this path is generated by terradoc; rename the file", f"static/{rel}"))
+    return issues
+
+
 def _check_dry_export(config: TerradocConfig) -> list[Issue]:
     """Run the real export into a throwaway bundle; report anything it raises."""
     from terradoc.export import export_bundle
@@ -254,6 +323,19 @@ def _check_dry_export(config: TerradocConfig) -> list[Issue]:
     return []
 
 
+def render_preflight(config: TerradocConfig) -> list[Issue]:
+    """The checks `render` repeats against the sources (cheap; no export)."""
+    loaded = {}
+    for name in CONSENT_MODULES:
+        if config.is_module_enabled(name):
+            path, rows, read_issues = _load_rows(config, name)
+            if read_issues:
+                return read_issues
+            if path is not None:
+                loaded[name] = (path, rows)
+    return [i for i in _check_consent(config, loaded) + _check_static(config) if i.level == "error"]
+
+
 def run_checks(config: TerradocConfig) -> list[Issue]:
     issues = _check_preflight(config)
     tab_issues, loaded = _check_tabular(config)
@@ -261,6 +343,7 @@ def run_checks(config: TerradocConfig) -> list[Issue]:
     issues += _check_encyclopedia(config)
     issues += _check_consent(config, loaded)
     issues += _check_media(config, loaded)
+    issues += _check_static(config)
     if not any(i.level == "error" for i in issues):
         issues += _check_dry_export(config)
     return issues
@@ -272,7 +355,24 @@ def _gh_escape(text: str) -> str:
     return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
-def format_issues(issues: list[Issue], fmt: str = "text") -> str:
+def _gh_escape_property(text: str) -> str:
+    return _gh_escape(text).replace(":", "%3A").replace(",", "%2C")
+
+
+def annotation_prefix(config: TerradocConfig) -> str:
+    """Path of the project relative to the Actions workspace ('' at the root),
+    so annotations attach to the right file when a project is in a subdir."""
+    workspace = os.environ.get("GITHUB_WORKSPACE")
+    if not workspace:
+        return ""
+    try:
+        rel = config.base_dir.resolve().relative_to(Path(workspace).resolve()).as_posix()
+    except ValueError:
+        return ""
+    return "" if rel == "." else rel + "/"
+
+
+def format_issues(issues: list[Issue], fmt: str = "text", path_prefix: str = "") -> str:
     errors = [i for i in issues if i.level == "error"]
     warnings = [i for i in issues if i.level == "warning"]
     if fmt == "json":
@@ -287,10 +387,10 @@ def format_issues(issues: list[Issue], fmt: str = "text") -> str:
         for i in issues:
             props = []
             if i.file:
-                props.append(f"file={i.file}")
+                props.append(f"file={_gh_escape_property(path_prefix + i.file)}")
             if i.line:
                 props.append(f"line={i.line}")
-            props.append(f"title=terradoc {i.rule}")
+            props.append(f"title={_gh_escape_property('terradoc ' + i.rule)}")
             lines.append(f"::{i.level} {','.join(props)}::{_gh_escape(i.message)}")
     else:
         for i in issues:

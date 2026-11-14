@@ -402,6 +402,8 @@ def copy_project_static(config: TerradocConfig) -> dict[str, str]:
     """
     src_root = config.static_dir
     copied: dict[str, str] = {}
+    if src_root.is_symlink():
+        raise ValueError("static/ is a symlink; it must be a real directory")
     if not src_root.is_dir():
         return copied
     for src in sorted(src_root.rglob("*")):
@@ -439,7 +441,7 @@ def _git(config: TerradocConfig, *args: str) -> str:
     return out.stdout.strip() if out.returncode == 0 else ""
 
 
-def write_release_info(config: TerradocConfig) -> Path:
+def write_release_info(config: TerradocConfig, *, owned: bool = False) -> Path:
     """Write .release.json: what this site was built from (no timestamps, so
     identical inputs give an identical file)."""
     import os
@@ -454,10 +456,59 @@ def write_release_info(config: TerradocConfig) -> Path:
         "source_ref": os.environ.get("GITHUB_REF_NAME") or _git(config, "rev-parse", "--abbrev-ref", "HEAD"),
         "files": len(files),
         "bytes": sum(p.stat().st_size for p in files),
+        # True only if every render into this directory started from an empty
+        # one, i.e. everything in it came from terradoc. --clean requires it.
+        "owned_by_terradoc": owned,
     }
     path = config.docs_dir / ".release.json"
     path.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     return path
+
+
+def _overlaps(a: Path, b: Path) -> bool:
+    """True if a and b are the same directory or one contains the other."""
+    return a == b or a in b.parents or b in a.parents
+
+
+def assert_safe_to_clean(config: TerradocConfig) -> None:
+    """Refuse to empty an output directory unless it is plainly ours.
+
+    `--clean` deletes the output directory, so it must not be (or contain, or
+    sit inside) the project, its sources, its templates or the bundle, and a
+    non-empty directory is only deleted if a previous render marked it with
+    .release.json.
+    """
+    if config.output_dir is None:
+        raise ValueError("--clean needs --out (refusing to delete the project's docs/)")
+    out = config.docs_dir.resolve()
+    base = config.base_dir.resolve()
+    if out == base or out in base.parents:
+        raise ValueError(f"--clean refused: --out {out} is the project directory or contains it")
+    protected = {
+        "data/": config.data_dir, "config/": config.config_dir, "static/": config.static_dir,
+        "locales/": config.locales_dir, "the bundle": config.bundle_dir,
+        "the templates": config.template_dir,
+    }
+    for label, path in protected.items():
+        if _overlaps(out, path.resolve()):
+            raise ValueError(f"--clean refused: --out {out} overlaps {label} ({path})")
+    if out.exists() and any(out.iterdir()) and not _dir_owned(out):
+        raise ValueError(
+            f"--clean refused: {out} holds files terradoc did not create (it was not built "
+            "into an empty directory by terradoc >= 0.11). Check it, delete it yourself once, "
+            "and --clean will work from then on."
+        )
+
+
+def _dir_owned(out: Path) -> bool:
+    """Did every render into `out` start from an empty directory?"""
+    marker = out / ".release.json"
+    if not marker.is_file():
+        return False
+    try:
+        return json.loads(marker.read_text(encoding="utf-8")).get("owned_by_terradoc") is True
+    except (OSError, ValueError):
+        return False
 
 
 def render_site(config: TerradocConfig, *, clean: bool = False) -> None:
@@ -467,16 +518,26 @@ def render_site(config: TerradocConfig, *, clean: bool = False) -> None:
 
     read_manifest(config)  # fail early, clearly, if export has not run
 
+    # The bundle may be older than the sources: re-check what must never be
+    # published from a stale bundle (consent revoked since the export), and
+    # static/ (symlinks, collisions with generated files).
+    from terradoc.checks import format_issues, render_preflight
+
+    issues = render_preflight(config)
+    if issues:
+        raise ValueError("render refused:\n" + format_issues(issues))
+
     if clean:
-        if config.output_dir is None:
-            raise ValueError("--clean needs --out (refusing to delete the project's docs/)")
+        assert_safe_to_clean(config)
         if config.docs_dir.exists():
             shutil.rmtree(config.docs_dir)
     config.docs_dir.mkdir(parents=True, exist_ok=True)
+    started_empty = not any(config.docs_dir.iterdir())
+    owned = started_empty or _dir_owned(config.docs_dir)
 
     copied = copy_project_static(config)
     copy_data_to_docs(config)
     print()
     build_site(config)
+    write_release_info(config, owned=owned)
     verify_static_untouched(config, copied)
-    write_release_info(config)

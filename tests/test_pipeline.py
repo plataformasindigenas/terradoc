@@ -84,40 +84,126 @@ def test_static_copied_verbatim(project):
     assert (Path("site") / "images" / "logo.svg").exists()
 
 
-def test_static_clobbered_by_generated_file_fails(project):
+@pytest.mark.parametrize("name", ["robots.txt", ".release.json", "css/terradoc.css",
+                                  "pt/index.html", "dictionary-data.json"])
+def test_static_clobbering_generated_path_is_a_check_error(project, name):
+    target = project / "static" / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("mine\n")
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert result.exit_code == 1
+    assert f"static/{name}" in result.output
+
+
+def test_static_clobber_still_caught_at_render(project, monkeypatch):
+    """Second line of defence if check is bypassed."""
     (project / "static" / "robots.txt").write_text("mine\n")
-    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
-    assert result.exit_code != 0
-    assert "robots.txt" in str(result.exception)
+    cfg = str(project / "terradoc.yaml")
+    import terradoc.export as export
+    assert run("export", "-c", cfg, "--bundle-dir", "b").exit_code == 1  # check blocks it
+    from terradoc.config import load_config
+    c = load_config(project / "terradoc.yaml")
+    c.bundle_dir_override = Path("b").resolve()
+    export.export_bundle(c, run_checks=False)
+    result = run("render", "-c", cfg, "--bundle-dir", "b", "--out", "site")
+    assert result.exit_code == 1
+    assert "robots.txt" in result.output
 
 
 @pytest.mark.skipif(os.name == "nt", reason="symlinks")
 def test_static_symlink_refused(project):
     (project / "static" / "link.txt").symlink_to("/etc/hostname")
     result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
-    assert result.exit_code != 0
-    assert "symlink" in str(result.exception)
+    assert result.exit_code == 1
+    assert "symlinks are not allowed" in result.output
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks")
+def test_static_root_symlink_refused(project, tmp_path):
+    real = project / "static"
+    moved = tmp_path / "elsewhere"
+    real.rename(moved)
+    real.symlink_to(moved)
+    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
+    assert result.exit_code == 1
+    assert "static/ is a symlink" in result.output
 
 
 def test_clean_requires_out(project):
     result = run("build", "-c", str(project / "terradoc.yaml"), "--clean")
-    assert result.exit_code != 0
-    assert "--clean needs --out" in str(result.exception)
+    assert result.exit_code == 1
+    assert "--clean needs --out" in result.output
 
 
-def test_clean_removes_stale_files(project):
-    stale = Path("site") / "stale.html"
-    stale.parent.mkdir()
-    stale.write_text("old")
+@pytest.mark.parametrize("out", [".", "..", "data", "data/sub", "static", "config", "locales"])
+def test_clean_refuses_project_and_sources(project, monkeypatch, out):
+    monkeypatch.chdir(project)
+    before = sorted(str(p) for p in project.rglob("*"))
+    result = run("build", "--out", out, "--clean")
+    assert result.exit_code == 1, result.output
+    assert "--clean refused" in result.output
+    assert sorted(str(p) for p in project.rglob("*")) == before
+
+
+def test_clean_refuses_bundle_inside_out(project, monkeypatch):
+    monkeypatch.chdir(project)
+    result = run("build", "--out", "out", "--bundle-dir", "out/bundle", "--clean")
+    assert result.exit_code == 1
+    assert "overlaps the bundle" in result.output
+
+
+def test_clean_refuses_unmarked_directory(project):
+    keep = Path("site") / "precious.jpg"
+    keep.parent.mkdir()
+    keep.write_bytes(b"only copy")
     result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site", "--clean")
+    assert result.exit_code == 1
+    assert "files terradoc did not create" in result.output
+    assert keep.read_bytes() == b"only copy"
+
+
+def test_clean_refuses_old_layout_docs_after_plain_build(project, monkeypatch):
+    """Reviewer repro: images only in docs/, a plain build, then --out docs --clean."""
+    monkeypatch.chdir(project)
+    (project / "docs").mkdir()
+    (project / "static" / "images").rename(project / "docs" / "images")
+    (project / "static").rmdir()
+    (project / "docs" / "images" / "photo.jpg").write_bytes(b"only copy")
+    assert run("build").exit_code == 0
+    result = run("build", "--out", "docs", "--clean")
+    assert result.exit_code == 1
+    assert "--clean refused" in result.output
+    assert (project / "docs" / "images" / "photo.jpg").read_bytes() == b"only copy"
+    assert (project / "docs" / "images" / "logo.svg").exists()
+
+
+def test_render_rechecks_consent_against_sources(project):
+    """A bundle exported while consent was given must not render after it is revoked."""
+    enable(project, "videos")
+    write_videos(project, VIDEO.format(extra="  consent: approved\n"))
+    cfg = str(project / "terradoc.yaml")
+    assert run("export", "-c", cfg, "--bundle-dir", "b").exit_code == 0
+    write_videos(project, VIDEO.format(extra="  consent: pending\n"))
+    result = run("render", "-c", cfg, "--bundle-dir", "b", "--out", "site")
+    assert result.exit_code == 1
+    assert "render refused" in result.output and "[consent]" in result.output
+    assert not (Path("site") / "pt" / "videos.html").exists()
+
+
+def test_clean_removes_stale_files_from_previous_render(project):
+    cfg = str(project / "terradoc.yaml")
+    assert run("build", "-c", cfg, "--out", "site").exit_code == 0
+    stale = Path("site") / "stale.html"
+    stale.write_text("old")
+    result = run("build", "-c", cfg, "--out", "site", "--clean")
     assert result.exit_code == 0, result.output
     assert not stale.exists()
 
 
 def test_render_without_export_explains(project):
     result = run("render", "-c", str(project / "terradoc.yaml"), "--bundle-dir", "nowhere", "--out", "site")
-    assert result.exit_code != 0
-    assert "terradoc export" in str(result.exception)
+    assert result.exit_code == 1
+    assert "terradoc export" in result.output
 
 
 def test_export_then_render_equals_build(project):
@@ -152,6 +238,20 @@ def test_consent_rule(project, extra, ok):
     if not ok:
         assert "[consent] data/videos.yaml:1" in result.output
         assert "abc123 (A story)" in result.output
+
+
+def test_consent_blocks_export_and_render(project):
+    """export runs the full check, so export+render cannot publish unconsented media."""
+    enable(project, "videos")
+    write_videos(project, VIDEO.format(extra=""))
+    cfg = str(project / "terradoc.yaml")
+    result = run("export", "-c", cfg, "--bundle-dir", "b")
+    assert result.exit_code == 1
+    assert "[consent]" in result.output
+    assert not (Path("b") / "videos.json").exists()
+    result = run("render", "-c", cfg, "--bundle-dir", "b", "--out", "site")
+    assert result.exit_code == 1
+    assert not (Path("site") / "pt" / "videos.html").exists()
 
 
 def test_consent_blocks_build(project):
@@ -200,6 +300,38 @@ def test_schema_error_has_tsv_line(project):
     result = run("check", "-c", str(project / "terradoc.yaml"), "--format", "github")
     assert result.exit_code == 1
     assert "::error file=data/dictionary.tsv,line=3,title=terradoc schema::" in result.output
+
+
+def test_tsv_lines_survive_blank_and_multiline_rows(project):
+    (project / "data" / "dictionary.tsv").write_text(
+        'id\tentry\tdefinition\n'
+        '1\tka\tsun\n'
+        '\n'                              # blank line: skipped by the reader
+        '2\tko\t"moon\nand night"\n'      # quoted field spanning two lines
+        '2\tku\tstar\n')                # duplicate id, on line 6
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert "data/dictionary.tsv:6" in result.output, result.output
+
+
+def test_duplicate_reported_on_its_own_row_after_invalid_row(project):
+    (project / "data" / "dictionary.tsv").write_text(
+        "id\tentry\tdefinition\n"
+        "x\tbad\tnot an int id\n"   # invalid row 1 (line 2)
+        "1\tka\tsun\n"
+        "1\tko\tmoon\n")            # duplicate on line 4
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert "data/dictionary.tsv:2" in result.output
+    assert "data/dictionary.tsv:4" in result.output
+    assert "duplicate of row 2" in result.output
+
+
+def test_github_annotation_properties_escaped(project, monkeypatch):
+    enable(project, "videos")
+    write_videos(project, VIDEO.format(extra=""))
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(project.parent))
+    result = run("check", "-c", str(project / "terradoc.yaml"), "--format", "github")
+    line = next(l for l in result.output.splitlines() if l.startswith("::error"))
+    assert line.startswith("::error file=demo/data/videos.yaml,line=1,title=terradoc consent::")
 
 
 def test_json_report(project):
