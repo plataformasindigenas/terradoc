@@ -372,9 +372,114 @@ def annotation_prefix(config: TerradocConfig) -> str:
     return "" if rel == "." else rel + "/"
 
 
+def _codeowners_rules(path: Path) -> list[tuple[str, list[str]]]:
+    rules = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        owners = [o for o in parts[1:] if o.startswith("@")]
+        if owners:
+            rules.append((parts[0], owners))
+    return rules
+
+
+def _glob_re(pat: str) -> "re.Pattern[str]":
+    """gitignore-style glob: '*' and '?' stay within a path segment, '**' crosses them."""
+    out, i = [], 0
+    while i < len(pat):
+        if pat.startswith("**/", i):
+            out.append("(?:.*/)?"); i += 3
+        elif pat.startswith("**", i):
+            out.append(".*"); i += 2
+        elif pat[i] == "*":
+            out.append("[^/]*"); i += 1
+        elif pat[i] == "?":
+            out.append("[^/]"); i += 1
+        else:
+            out.append(re.escape(pat[i])); i += 1
+    return re.compile("".join(out))
+
+
+def _codeowners_match(pattern: str, file: str) -> bool:
+    """CODEOWNERS (gitignore-style) matching, as GitHub documents it:
+    a pattern with a slash (other than a trailing one) is relative to the repo
+    root; without one it matches at any depth; a trailing slash means a
+    directory and everything below it."""
+    if pattern == "*":
+        return True
+    directory = pattern.endswith("/")
+    pat = pattern.rstrip("/")
+    rooted = "/" in pat
+    pat = pat.lstrip("/")
+    body = _glob_re(pat).pattern
+    prefix = "" if rooted else "(?:.*/)?"
+    # 'docs/*' covers only direct children (GitHub's documented example);
+    # a literal last segment ('apps', 'docs/') also covers everything below it.
+    last = pat.rsplit("/", 1)[-1]
+    suffix = "/.*" if directory else ("" if "*" in last or "?" in last else "(?:/.*)?")
+    return re.fullmatch(prefix + body + suffix, file) is not None
+
+
+def codeowners_for(files: Iterable[str], codeowners: Path | None) -> list[str]:
+    """Owners of the given files: the LAST matching CODEOWNERS rule wins, as on GitHub.
+    Issues without a file are attributed to the '*' rule, if any."""
+    if codeowners is None or not codeowners.is_file():
+        return []
+    rules = _codeowners_rules(codeowners)
+    owners: list[str] = []
+    for file in files:
+        matched: list[str] = []
+        for pattern, rule_owners in rules:
+            if (pattern == "*" if file is None else _codeowners_match(pattern, file)):
+                matched = rule_owners
+        for o in matched:
+            if o not in owners:
+                owners.append(o)
+    return owners
+
+
+def _md_cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def format_markdown(issues: list[Issue], *, mentions: list[str] = (), run_url: str = "") -> str:
+    """Issue/step-summary body: Portuguese first, English second, one table."""
+    errors = [i for i in issues if i.level == "error"]
+    warnings = [i for i in issues if i.level == "warning"]
+    lines = []
+    if errors:
+        lines.append("### ❌ Publicação bloqueada / Publication blocked")
+        lines.append("")
+        lines.append(f"O site **não** foi atualizado: {len(errors)} erro(s). O site no ar continua "
+                     "na última versão boa. Corrija os pontos abaixo e envie de novo.  ")
+        lines.append(f"The site was **not** updated: {len(errors)} error(s). The live site stays on "
+                     "the last good version. Fix the points below and push again.")
+    else:
+        lines.append("### ✅ Tudo certo / All good")
+    lines.append("")
+    if issues:
+        lines.append("| | Arquivo / File | Linha / Line | Problema / Problem |")
+        lines.append("|---|---|---|---|")
+        for i in errors + warnings:
+            mark = "❌" if i.level == "error" else "⚠️"
+            lines.append(f"| {mark} | `{_md_cell(i.file or '-')}` | {i.line or ''} | "
+                         f"[{i.rule}] {_md_cell(i.message)} |")
+        lines.append("")
+    if run_url:
+        lines.append(f"Detalhes / Details: {run_url}")
+        lines.append("")
+    if mentions:
+        lines.append("cc " + " ".join(mentions))
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def format_issues(issues: list[Issue], fmt: str = "text", path_prefix: str = "") -> str:
     errors = [i for i in issues if i.level == "error"]
     warnings = [i for i in issues if i.level == "warning"]
+    if fmt == "markdown":
+        return format_markdown(issues)
     if fmt == "json":
         return json.dumps({
             "ok": not errors,

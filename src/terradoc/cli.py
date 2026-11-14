@@ -114,26 +114,76 @@ class _friendly_errors:
         return False
 
 
-def _report(cfg, fmt: str) -> bool:
+FORMATS = ["text", "github", "json", "markdown"]
+
+
+def _emit(issues, fmt: str, *, prefix: str = "", codeowners: str | None = None,
+          run_url: str = "") -> None:
+    from terradoc.checks import codeowners_for, format_issues, format_markdown
+
+    if fmt == "markdown":
+        files = [(prefix + i.file) if i.file else None for i in issues if i.level == "error"]
+        mentions = codeowners_for(files, Path(codeowners)) if codeowners else []
+        click.echo(format_markdown(issues, mentions=mentions, run_url=run_url), nl=False)
+    else:
+        click.echo(format_issues(issues, fmt, prefix if fmt == "github" else ""))
+
+
+def _report(cfg, fmt: str, codeowners: str | None = None, run_url: str = "") -> bool:
     """Run all checks, print the report; return True if there are no errors."""
-    from terradoc.checks import annotation_prefix, format_issues, run_checks
+    from terradoc.checks import annotation_prefix, run_checks
 
     issues = run_checks(cfg)
-    click.echo(format_issues(issues, fmt, annotation_prefix(cfg) if fmt == "github" else ""))
+    _emit(issues, fmt, prefix=annotation_prefix(cfg), codeowners=codeowners, run_url=run_url)
     return not any(i.level == "error" for i in issues)
+
+
+def _codeowners_option(f):
+    f = click.option("--run-url", default="", help="Link to the CI run (markdown format)")(f)
+    return click.option("--codeowners", default=None, type=click.Path(dir_okay=False),
+                        help="CODEOWNERS file; markdown output then @-mentions the owners "
+                             "of the files with errors")(f)
 
 
 @main.command()
 @_config_option
-@click.option("--format", "fmt", default="text", type=click.Choice(["text", "github", "json"]),
-              help="Report format (github = Actions annotations)")
-def check(config_path: str, fmt: str):
+@click.option("--format", "fmt", default="text", type=click.Choice(FORMATS),
+              help="Report format (github = Actions annotations, markdown = issue body)")
+@_codeowners_option
+def check(config_path: str, fmt: str, codeowners: str | None, run_url: str):
     """Validate sources (schemas, consent, media, encyclopedia); write nothing.
 
     Exit status 1 if there is any error; warnings never fail.
     """
     cfg = _load(config_path)
-    if not _report(cfg, fmt):
+    if not _report(cfg, fmt, codeowners, run_url):
+        raise SystemExit(1)
+
+
+@main.command()
+@click.option("--current", required=True, type=click.Path(exists=True, file_okay=False),
+              help="The newly built site")
+@click.option("--previous", default=None, type=click.Path(exists=True, file_okay=False),
+              help="The release it replaces")
+@click.option("--baseline", default=None, type=click.Path(exists=True, file_okay=False),
+              help="A fixed reference release (guards against slow erosion)")
+@click.option("--confirm-shrink", is_flag=True, help="Shrinking is intended: report, do not block")
+@click.option("--format", "fmt", default="text", type=click.Choice(FORMATS))
+@_codeowners_option
+def guard(current: str, previous: str | None, baseline: str | None, confirm_shrink: bool,
+          fmt: str, codeowners: str | None, run_url: str):
+    """Compare a built site with the release it replaces (shrink / file loss).
+
+    Exit status 1 if the new release loses too much without --confirm-shrink.
+    """
+    from terradoc.guard import compare_releases
+
+    with _friendly_errors():
+        issues = compare_releases(Path(current), Path(previous) if previous else None,
+                                  Path(baseline) if baseline else None,
+                                  confirm_shrink=confirm_shrink)
+    _emit(issues, fmt, codeowners=codeowners, run_url=run_url)
+    if any(i.level == "error" for i in issues):
         raise SystemExit(1)
 
 
@@ -168,7 +218,7 @@ def render(config_path: str, bundle_dir: str | None, out: str | None, clean: boo
 @_config_option
 @_bundle_option
 @_out_options
-@click.option("--format", "fmt", default="text", type=click.Choice(["text", "github", "json"]),
+@click.option("--format", "fmt", default="text", type=click.Choice(FORMATS),
               help="Format of the check report printed first")
 def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool, fmt: str):
     """Build the complete site: check, export, render."""

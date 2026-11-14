@@ -446,9 +446,13 @@ def write_release_info(config: TerradocConfig, *, owned: bool = False) -> Path:
     identical inputs give an identical file)."""
     import os
 
-    from terradoc.export import terradoc_version
+    from terradoc.export import read_manifest, terradoc_version
 
     files = [p for p in config.docs_dir.rglob("*") if p.is_file() and p.name != ".release.json"]
+    try:
+        modules = read_manifest(config).get("modules", {})
+    except FileNotFoundError:
+        modules = {}
     info = {
         "project": config.meta_prefix,
         "terradoc_version": terradoc_version(),
@@ -456,6 +460,7 @@ def write_release_info(config: TerradocConfig, *, owned: bool = False) -> Path:
         "source_ref": os.environ.get("GITHUB_REF_NAME") or _git(config, "rev-parse", "--abbrev-ref", "HEAD"),
         "files": len(files),
         "bytes": sum(p.stat().st_size for p in files),
+        "modules": modules,  # record counts, compared by `terradoc guard`
         # True only if every render into this directory started from an empty
         # one, i.e. everything in it came from terradoc. --clean requires it.
         "owned_by_terradoc": owned,

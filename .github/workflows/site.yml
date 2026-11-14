@@ -1,0 +1,315 @@
+# Reusable workflow: validate, build and publish a terradoc site.
+#
+# A platform repository calls it from a ~15-line workflow (see
+# docs/publishing.md). For every push to any branch it:
+#
+#   1. installs the terradoc version pinned in the repo's requirements.txt;
+#   2. builds the site (`terradoc build`, which runs `terradoc check` first; every
+#      error becomes an annotation on the commit);
+#   3. compares the build with the release it replaces (`terradoc guard`);
+#   4. publishes the static site as the git ref `refs/sites/<name>` (not a
+#      branch, so ordinary clones never download it). The server polls these
+#      refs; the default branch is production, every other branch a preview;
+#   5. opens (or updates) one GitHub issue per failing branch, @-mentioning the
+#      CODEOWNERS of the files with errors and the person who pushed, and closes
+#      it again on the next successful run.
+#
+# When a branch is deleted its preview ref is deleted too.
+#
+# Security notes: never runs on pull_request; branch names reach the shell
+# only through environment variables; third-party actions are pinned by SHA;
+# the only token is the caller's GITHUB_TOKEN (contents: write, issues: write).
+
+name: terradoc site
+
+on:
+  workflow_call:
+    inputs:
+      confirm_shrink:
+        description: "Allow this release to shrink (records or files) without blocking"
+        type: boolean
+        default: false
+      python_version:
+        type: string
+        default: "3.12"
+
+permissions: {}
+
+jobs:
+  publish:
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      issues: write
+    concurrency:
+      group: terradoc-site-${{ github.repository }}-${{ github.ref_name }}
+      # Previews: a newer push supersedes an older one. Production: never cancel.
+      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+    env:
+      BRANCH: ${{ github.ref_name }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      REPO: ${{ github.repository }}
+      SLUG: ${{ github.event.repository.name }}
+      GH_TOKEN: ${{ github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ACTOR: ${{ github.actor }}
+    steps:
+      - name: Work out the site name for this branch
+        id: name
+        run: |
+          set -euo pipefail
+          sanitize() {  # lowercase; anything outside [a-z0-9-] becomes '-'; max 40
+            printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//' \
+              | cut -c1-40 | sed -E 's/-+$//'
+          }
+          if [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then
+            name="$DEFAULT_BRANCH"; kind=production
+          else
+            name="$(sanitize "$BRANCH")"; kind=preview
+            if [ -z "$name" ] || [ "$name" = "$DEFAULT_BRANCH" ]; then
+              echo "::error::branch name '$BRANCH' cannot be used for a preview; rename the branch"
+              printf '%s\n' "### ❌ Nome de ramo inválido / Invalid branch name" "" \
+                "O ramo \`$BRANCH\` não pode virar uma prévia. Renomeie-o (letras, números e hífens)." \
+                "Branch \`$BRANCH\` cannot become a preview. Rename it (letters, digits and hyphens)." > "$RUNNER_TEMP/report.md"
+              exit 1
+            fi
+            while read -r _ ref; do
+              other="${ref#refs/heads/}"
+              [ "$other" = "$BRANCH" ] && continue
+              if [ "$(sanitize "$other")" = "$name" ]; then
+                echo "::error::branches '$BRANCH' and '$other' would share the preview '$name'; rename one"
+                printf '%s\n' "### ❌ Prévias em conflito / Colliding previews" "" \
+                  "Os ramos \`$BRANCH\` e \`$other\` gerariam a mesma prévia \`$name\`. Renomeie um deles." \
+                  "Branches \`$BRANCH\` and \`$other\` would share the preview \`$name\`. Rename one." > "$RUNNER_TEMP/report.md"
+                exit 1
+              fi
+            done < <(git ls-remote --heads "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git")
+          fi
+          if [ "$kind" = production ]; then
+            url="https://${SLUG}.terradoc.org/"
+          else
+            url="https://previews.terradoc.org/${SLUG}/${name}/"
+          fi
+          {
+            echo "name=$name"
+            echo "kind=$kind"
+            echo "url=$url"
+          } >> "$GITHUB_OUTPUT"
+          echo "Site '$name' ($kind) → $url"
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false  # the token is passed explicitly where needed
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: pip
+
+      - name: Install the pinned terradoc
+        run: pip install -r requirements.txt
+
+      - name: Check and build (errors appear as annotations on the commit)
+        id: build
+        run: |
+          set -euo pipefail
+          if ! terradoc build --config terradoc.yaml --out "$RUNNER_TEMP/site" \
+                --bundle-dir "$RUNNER_TEMP/bundle" --format github; then
+            terradoc check --config terradoc.yaml --format markdown \
+              --codeowners .github/CODEOWNERS --run-url "$RUN_URL" > "$RUNNER_TEMP/report.md" || true
+            exit 1
+          fi
+
+      - name: Keep the data bundle as an artifact (not published)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: bundle-${{ steps.name.outputs.name }}
+          path: ${{ runner.temp }}/bundle
+          retention-days: 30
+
+      - name: Fetch the release this one replaces
+        id: previous
+        env:
+          NAME: ${{ steps.name.outputs.name }}
+        run: |
+          set -euo pipefail
+          origin="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          fetch() {  # fetch() <ref> <dir>: extract a published site; prints its commit
+            local sha
+            sha="$(git ls-remote "$origin" "$1" | cut -f1)"
+            [ -n "$sha" ] || return 1
+            git fetch -q --depth 1 "$origin" "$1"
+            mkdir -p "$2" && git archive FETCH_HEAD | tar -x -C "$2"
+            printf '%s' "$sha"
+          }
+          own="$(git ls-remote "$origin" "refs/sites/$NAME" | cut -f1)"
+          echo "lease=$own" >> "$GITHUB_OUTPUT"   # compare-and-swap target for the push
+          if fetch "refs/sites/$NAME" "$RUNNER_TEMP/previous" > /dev/null; then
+            echo "previous=$RUNNER_TEMP/previous" >> "$GITHUB_OUTPUT"
+          elif fetch "refs/sites/$DEFAULT_BRANCH" "$RUNNER_TEMP/previous" > /dev/null; then
+            echo "New preview: guarded against production."
+            echo "previous=$RUNNER_TEMP/previous" >> "$GITHUB_OUTPUT"
+          else
+            echo "No previous release (first publication)."
+          fi
+          if fetch "refs/sites/_baseline" "$RUNNER_TEMP/baseline" > /dev/null; then
+            echo "baseline=$RUNNER_TEMP/baseline" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Was shrinking confirmed?
+        id: confirm
+        env:
+          INPUT_CONFIRM: ${{ inputs.confirm_shrink }}
+          BEFORE: ${{ github.event.before }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          confirmed=false
+          if [ "$INPUT_CONFIRM" = true ]; then
+            confirmed=true
+          elif [ -n "${BEFORE:-}" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+            # every commit in this push, not just the last one
+            if gh api "repos/${REPO}/compare/${BEFORE}...${GITHUB_SHA}" \
+                 --jq '.commits[].commit.message' | grep -qi 'confirma-reducao'; then
+              confirmed=true
+            fi
+          elif printf '%s' "${HEAD_MESSAGE:-}" | grep -qi 'confirma-reducao'; then
+            confirmed=true
+          fi
+          echo "confirmed=$confirmed" >> "$GITHUB_OUTPUT"
+          echo "Shrink confirmed: $confirmed"
+
+      - name: Guard against lost records or files
+        env:
+          PREVIOUS: ${{ steps.previous.outputs.previous }}
+          BASELINE: ${{ steps.previous.outputs.baseline }}
+          CONFIRMED: ${{ steps.confirm.outputs.confirmed }}
+        run: |
+          set -euo pipefail
+          args=(--current "$RUNNER_TEMP/site")
+          [ -n "${PREVIOUS:-}" ] && args+=(--previous "$PREVIOUS")
+          [ -n "${BASELINE:-}" ] && args+=(--baseline "$BASELINE")
+          [ "$CONFIRMED" = true ] && args+=(--confirm-shrink)
+          if ! terradoc guard "${args[@]}" --format github; then
+            terradoc guard "${args[@]}" --format markdown --codeowners .github/CODEOWNERS \
+              --run-url "$RUN_URL" > "$RUNNER_TEMP/report.md" || true
+            exit 1
+          fi
+
+      - name: Publish refs/sites/${{ steps.name.outputs.name }}
+        id: publish
+        env:
+          NAME: ${{ steps.name.outputs.name }}
+          LEASE: ${{ steps.previous.outputs.lease }}
+        run: |
+          set -euo pipefail
+          origin="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          tip="$(git ls-remote "$origin" "refs/heads/$BRANCH" | cut -f1)"
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "::notice::$BRANCH moved on (now ${tip:-deleted}); not publishing ${GITHUB_SHA:0:7}"
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cd "$RUNNER_TEMP/site"
+          git init -q -b site
+          git add -A
+          git -c user.name="terradoc" -c user.email="terradoc@users.noreply.github.com" \
+            commit -q -m "site: $BRANCH@${GITHUB_SHA:0:12}"
+          # Compare-and-swap: refuse if someone else published since we looked.
+          git push --force-with-lease="refs/sites/$NAME:${LEASE}" "$origin" "HEAD:refs/sites/$NAME"
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Summary, and close the failure issue
+        if: success()
+        env:
+          URL: ${{ steps.name.outputs.url }}
+          PUBLISHED: ${{ steps.publish.outputs.published }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### ✅ Publicado / Published"
+            echo ""
+            if [ "$PUBLISHED" = true ]; then
+              echo "\`$BRANCH\` → $URL (o servidor atualiza em ~2 min / the server updates within ~2 min)"
+            else
+              echo "\`$BRANCH\` mudou durante a execução; a execução mais nova publica. / The branch moved on; the newer run publishes."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          title="Publicação falhou: $BRANCH"
+          gh issue list -R "$REPO" --label publicacao-falhou --state open --json number,title \
+            --jq ".[] | select(.title == \"$title\") | .number" | while read -r n; do
+              gh issue close "$n" -R "$REPO" --comment "✅ Resolvido / Fixed in ${GITHUB_SHA:0:7}: $RUN_URL"
+            done
+
+      - name: Report the failure in an issue
+        if: failure()
+        run: |
+          set -euo pipefail
+          if [ ! -s "$RUNNER_TEMP/report.md" ]; then
+            printf '%s\n' "### ❌ Publicação bloqueada / Publication blocked" "" \
+              "A execução falhou antes da validação terminar; veja os detalhes. O site no ar não mudou." \
+              "The run failed before validation finished; see the details. The live site did not change." \
+              "" "Detalhes / Details: $RUN_URL" > "$RUNNER_TEMP/report.md"
+          fi
+          case "$ACTOR" in *"[bot]") ;; *) printf '\ncc @%s\n' "$ACTOR" >> "$RUNNER_TEMP/report.md" ;; esac
+          cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+          gh label create publicacao-falhou -R "$REPO" --color B60205 \
+            --description "Publicação automática bloqueada / automatic publication blocked" 2>/dev/null || true
+          title="Publicação falhou: $BRANCH"
+          n="$(gh issue list -R "$REPO" --label publicacao-falhou --state open --json number,title \
+                --jq ".[] | select(.title == \"$title\") | .number" | head -1)"
+          if [ -n "$n" ]; then
+            gh issue comment "$n" -R "$REPO" --body-file "$RUNNER_TEMP/report.md"
+          else
+            gh issue create -R "$REPO" --title "$title" --label publicacao-falhou --body-file "$RUNNER_TEMP/report.md"
+          fi
+
+  cleanup:
+    # GitHub runs `delete` in the context of the DEFAULT branch: github.ref is
+    # the default branch, the deleted branch is only in github.event.ref.
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: write
+    concurrency:
+      group: terradoc-site-${{ github.repository }}-${{ github.event.ref }}
+      cancel-in-progress: false
+    env:
+      DELETED: ${{ github.event.ref }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete the preview of the deleted branch
+        run: |
+          set -euo pipefail
+          sanitize() {
+            printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//' \
+              | cut -c1-40 | sed -E 's/-+$//'
+          }
+          name="$(sanitize "$DELETED")"
+          if [ "$DELETED" = "$DEFAULT_BRANCH" ] || [ -z "$name" ] || [ "$name" = "$DEFAULT_BRANCH" ]; then
+            echo "::warning::refusing to delete refs/sites/'$name' for deleted branch '$DELETED'"
+            exit 0
+          fi
+          while read -r _ ref; do
+            if [ "$(sanitize "${ref#refs/heads/}")" = "$name" ]; then
+              echo "Another branch (${ref#refs/heads/}) still uses preview '$name'; keeping it."
+              exit 0
+            fi
+          done < <(git ls-remote --heads "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git")
+          if gh api -X DELETE "repos/${REPO}/git/refs/sites/${name}" 2>/dev/null; then
+            echo "Deleted refs/sites/$name"
+          else
+            echo "No refs/sites/$name to delete"
+          fi
+          title="Publicação falhou: $DELETED"
+          gh issue list -R "$REPO" --label publicacao-falhou --state open --json number,title \
+            --jq ".[] | select(.title == \"$title\") | .number" | while read -r n; do
+              gh issue close "$n" -R "$REPO" --comment "Ramo apagado / branch deleted."
+            done
