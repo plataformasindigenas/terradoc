@@ -63,7 +63,7 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
     enc_dir = config.docs_dir / locale / "encyclopedia"
     enc_dir.mkdir(parents=True, exist_ok=True)
 
-    template_path = config.template_dir / "article.html.j2"
+    template_path = config.find_template("article.html.j2")
     modules = config.enabled_modules()
     theme_dict = config.theme.to_dict()
     site_dict = config.site_context()
@@ -100,7 +100,7 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
                 "modules": modules,
                 "intensity": get_module_intensity(config, "encyclopedia"),
             },
-            template_dirs=(config.template_dir, config.bundled_template_dir),
+            template_dirs=config.template_dirs,
         )
 
         output_path = enc_dir / f"{entry_id}.html"
@@ -111,8 +111,8 @@ def render_article_pages(locale: str, translations: dict, config: TerradocConfig
 
 def render_about_page(locale: str, translations: dict, config: TerradocConfig):
     """Render the about page for a given locale."""
-    template_path = config.template_dir / "about.html.j2"
-    if not template_path.exists():
+    template_path = config.find_template("about.html.j2")
+    if template_path is None:
         return
 
     modules = config.enabled_modules()
@@ -136,7 +136,7 @@ def render_about_page(locale: str, translations: dict, config: TerradocConfig):
             "modules": modules,
             "intensity": "balanced",
         },
-        template_dirs=(config.template_dir, config.bundled_template_dir),
+        template_dirs=config.template_dirs,
     )
 
     output_path = config.docs_dir / locale / "about.html"
@@ -183,17 +183,17 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
         # If the template doesn't exist locally, resolve from bundled templates
         if not batch.config.resolved_template.exists():
             template_name = Path(batch.config.template).name
-            bundled = config.template_dir / template_name
-            if bundled.exists():
+            bundled = config.find_template(template_name)
+            if bundled is not None:
                 batch = dc_replace(batch, config=dc_replace(
                     batch.config,
                     template=bundled,
-                    template_dirs=(config.template_dir, config.bundled_template_dir),
+                    template_dirs=config.template_dirs,
                 ))
         else:
             batch = dc_replace(batch, config=dc_replace(
                 batch.config,
-                template_dirs=(config.template_dir, config.bundled_template_dir),
+                template_dirs=config.template_dirs,
             ))
 
         original_output = str(batch.config.output)
@@ -250,7 +250,7 @@ def build_language_picker(config: TerradocConfig):
         for loc in config.locales
     ]
 
-    template_path = config.template_dir / "language_picker.html.j2"
+    template_path = config.find_template("language_picker.html.j2")
     page_html = kodudo.render(
         data=[{}],
         template=template_path,
@@ -260,7 +260,7 @@ def build_language_picker(config: TerradocConfig):
             "locales": locales,
             "default_locale": config.default_locale,
         },
-        template_dirs=(config.template_dir,),
+        template_dirs=config.template_dirs,
     )
 
     (config.docs_dir / "index.html").write_text(page_html, encoding="utf-8")
@@ -337,8 +337,8 @@ def build_404_page(config: TerradocConfig):
     if config.locales:
         translations = load_locale(config.default_locale, config)
 
-    template_path = config.template_dir / "404.html.j2"
-    if not template_path.exists():
+    template_path = config.find_template("404.html.j2")
+    if template_path is None:
         print("  Skipping 404 page (no template found)")
         return
 
@@ -357,7 +357,7 @@ def build_404_page(config: TerradocConfig):
             "page": "404",
             "modules": config.enabled_modules(),
         },
-        template_dirs=(config.template_dir, config.bundled_template_dir),
+        template_dirs=config.template_dirs,
     )
 
     (config.docs_dir / "404.html").write_text(page_html, encoding="utf-8")
@@ -495,7 +495,7 @@ def assert_safe_to_clean(config: TerradocConfig) -> None:
     protected = {
         "data/": config.data_dir, "config/": config.config_dir, "static/": config.static_dir,
         "locales/": config.locales_dir, "the bundle": config.bundle_dir,
-        "the templates": config.template_dir,
+        "the templates": config.local_template_dir,
     }
     for label, path in protected.items():
         if _overlaps(out, path.resolve()):

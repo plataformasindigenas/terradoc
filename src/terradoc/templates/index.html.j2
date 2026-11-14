@@ -565,7 +565,7 @@
     <section class="index-hero">
         {# Hero background animation — loaded from preset partial #}
         {% if theme.hero_background and theme.hero_background != "none" %}
-        {% include "hero/hero_bg_" + theme.hero_background + ".html.j2" ignore missing %}
+        {% include "motifs/" ~ theme.hero_background ~ "/background.html.j2" %}
         {% endif %}
         <div class="index-hero-inner">
             <div class="index-hero-text">
@@ -595,7 +595,7 @@
             <div class="index-hero-visual">
                 {# Photo frame motif — loaded from preset partial #}
                 {% if theme.hero_motif and theme.hero_motif != "none" %}
-                {% include "hero/hero_motif_" + theme.hero_motif + ".html.j2" ignore missing %}
+                {% include "motifs/" ~ theme.hero_motif ~ "/motif.html.j2" %}
                 {% endif %}
 
                 {# Main hero photo #}
@@ -635,7 +635,7 @@
     {# ── Section divider — loaded from preset partial ── #}
     {% if theme.hero_divider and theme.hero_divider != "none" %}
     <div class="hero-adugo-spine" aria-hidden="true">
-        {% include "hero/hero_divider_" + theme.hero_divider + ".html.j2" ignore missing %}
+        {% include "motifs/" ~ theme.hero_divider ~ "/divider.html.j2" %}
     </div>
     {% endif %}
 

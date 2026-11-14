@@ -120,7 +120,7 @@
 {% block content %}
     {# ── Header ── #}
     <div class="about-header">
-        {{ page_badge(badge_type=theme.page_badge|default("moiety"), size="48") }}
+        {{ page_badge(badge_type=theme.page_badge|default("weave"), size="48") }}
         {% if theme.logo %}
         <img src="{{ base_path | default('') }}{{ theme.logo }}" alt="" class="brand-logo-large">
         {% endif %}

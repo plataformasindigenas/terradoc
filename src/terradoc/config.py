@@ -135,11 +135,11 @@ class ThemeConfig:
     module_intensity: dict[str, str] = field(default_factory=dict)
     term_color: str = ""
     term_weight: str = "600"
-    hero_background: str = "moiety"
-    hero_motif: str = "moiety"
-    hero_divider: str = "moiety"
+    hero_background: str = "weave"
+    hero_motif: str = "weave"
+    hero_divider: str = "weave"
     hero_height: str = ""
-    page_badge: str = "moiety"
+    page_badge: str = "weave"
     grain_pattern: str = "dots"
 
     def to_dict(self) -> dict:
@@ -260,16 +260,30 @@ class TerradocConfig:
         return Path(str(importlib.resources.files("terradoc.templates")))
 
     @property
-    def template_dir(self) -> Path:
-        """Return the template directory.
+    def local_template_dir(self) -> Path:
+        """The site's own templates (`config/templates/`); may not exist."""
+        return self.config_dir / "templates"
 
-        Uses local config/templates/ if it exists, otherwise falls back to
-        the package's bundled templates.
-        """
-        local = self.config_dir / "templates"
-        if local.exists():
-            return local
-        return self.bundled_template_dir
+    @property
+    def template_dirs(self) -> tuple[Path, ...]:
+        """Where templates are looked up, site first: a site overrides one file
+        (a page, a partial, a motif pack) and inherits the rest from terradoc."""
+        local = self.local_template_dir
+        if local.is_dir():
+            return (local.resolve(), self.bundled_template_dir)
+        return (self.bundled_template_dir,)
+
+    def find_template(self, name: str) -> Path | None:
+        """The first `name` along `template_dirs`, or None."""
+        for d in self.template_dirs:
+            if (d / name).is_file():
+                return d / name
+        return None
+
+    @property
+    def template_dir(self) -> Path:
+        """Deprecated: the first template directory (kept for callers outside terradoc)."""
+        return self.template_dirs[0]
 
     def is_module_enabled(self, name: str) -> bool:
         mod = self.modules.get(name)

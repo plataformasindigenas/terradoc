@@ -14,6 +14,31 @@ All notable changes to terradoc are documented here.
 - sitepull: per-site `refs = refs/<word>` (default `refs/sites`), so one repository can publish
   two sites (`www`: `refs/portal/*`, `refs/landing/*`).
 
+## [0.13.0] — 2026-11-14
+
+Each people's visual motifs now belong to that people's site, not to terradoc.
+
+### Changed (breaking for sites that used `moiety` or `lattice`)
+
+- **Motif packs live in `motifs/<name>/`** (`background.html.j2`, `motif.html.j2`,
+  `divider.html.j2`, `badge.html.j2`, `grain.css.j2`); the theme settings `hero_background`,
+  `hero_motif`, `hero_divider`, `page_badge` and `grain_pattern` each name a pack. A site
+  supplies its own in `config/templates/motifs/<name>/`. See `docs/motifs.md`.
+- **terradoc ships only the neutral `weave` pack, and it is the default.** The Bororo
+  `moiety` pack (Tugarege/Ecerae) and the Enawenê-Nawê `lattice` pack moved to those sites'
+  repositories. Before, `moiety` was the default for every site, and an unknown badge name drew
+  the moiety badge.
+- **An unknown or missing pack is a `check` error** (also at `render`), never a silent
+  fallback; `none` (and `dots` for the grain) need no pack.
+- **Templates are looked up file by file, the site first:** a site may override one page or
+  one partial in `config/templates/` and inherit the rest. Before, the presence of
+  `config/templates/` replaced all of terradoc's templates, and the build failed on the first
+  page the site had not copied.
+
+Upgrading: copy your pack from the 0.12.1 package (`templates/hero/hero_{bg,motif,divider}_<name>.html.j2`,
+the badge in `decor.html.j2`, the grain in `base.html.j2`) into `config/templates/motifs/<name>/`.
+Bororo, Enawenê-Nawê and Makurap were migrated with byte-identical output.
+
 ## [0.12.1] — 2026-11-14
 
 ### Added

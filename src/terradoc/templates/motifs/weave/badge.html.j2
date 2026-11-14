@@ -1,0 +1,7 @@
+{#- Weave badge — concentric circles with accent ring
+    Receives `size`. -#}
+<svg class="td-page-badge" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="12" cy="12" r="11" fill="none" stroke="var(--td-color-primary)" stroke-width="1.2" opacity="0.25"/>
+    <circle cx="12" cy="12" r="7" fill="none" stroke="var(--td-color-accent, var(--td-color-primary))" stroke-width="1" opacity="0.2"/>
+    <circle cx="12" cy="12" r="3" fill="var(--td-color-primary)" opacity="0.15"/>
+</svg>

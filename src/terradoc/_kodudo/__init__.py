@@ -59,7 +59,9 @@ def _cook_single(config: Config, loaded: LoadedData) -> Path:
         context.update(config.context)
 
     template_path = config.resolved_template
-    template_dirs = (template_path.parent,) + config.resolved_template_dirs
+    # Explicit search paths win (a site's overrides come before terradoc's own
+    # templates); the template's own directory is only the last resort.
+    template_dirs = _search_path(config.resolved_template_dirs, template_path.parent)
     env = create_environment(template_dirs)
 
     config_dict = {
@@ -88,7 +90,7 @@ def render(
     template_dirs: tuple[Path, ...] = (),
 ) -> str:
     template = Path(template)
-    dirs = (template.parent,) + template_dirs
+    dirs = _search_path(tuple(template_dirs), template.parent)
     env = create_environment(dirs)
     return _render(
         env, template.name, data=tuple(data),
@@ -111,3 +113,11 @@ def _load_context_file(path: Path) -> dict[str, Any]:
     if not isinstance(content, dict):
         raise ConfigError("Context file must contain a YAML mapping")
     return content
+
+
+def _search_path(dirs: tuple[Path, ...], fallback: Path) -> tuple[Path, ...]:
+    """`dirs` in order, then `fallback` if it is not already among them."""
+    resolved = tuple(Path(d).resolve() for d in dirs)
+    if not resolved:
+        return (fallback,)
+    return resolved if Path(fallback).resolve() in resolved else resolved + (fallback,)

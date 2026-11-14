@@ -13,6 +13,9 @@ Rules (see the platforms' pipeline plan, section 5):
   public media that we only embed);
 - media: every ``images/...`` or ``audio/...`` path referenced by the data or
   the theme must exist in ``static/`` (or, for older layouts, ``docs/``);
+- theme: every motif setting names a pack that exists, in the site's
+  ``config/templates/motifs/<name>/`` or in terradoc's (never a silent fallback
+  to another people's motif);
 - a dry export into a throwaway bundle, so anything the build would trip on
   (bad BibTeX, HTML in Markdown, broken cross-links) is caught here too.
 """
@@ -337,6 +340,42 @@ def _check_static(config: TerradocConfig) -> list[Issue]:
     return issues
 
 
+MOTIF_PARTS = {  # theme setting -> file in motifs/<name>/
+    "hero_background": "background.html.j2",
+    "hero_motif": "motif.html.j2",
+    "hero_divider": "divider.html.j2",
+    "page_badge": "badge.html.j2",
+    "grain_pattern": "grain.css.j2",
+}
+MOTIF_BUILTIN = {"none": set(MOTIF_PARTS), "dots": {"grain_pattern"}}
+
+
+def _motif_packs(config: TerradocConfig) -> list[str]:
+    names = set()
+    for d in config.template_dirs:
+        if (d / "motifs").is_dir():
+            names |= {p.name for p in (d / "motifs").iterdir() if p.is_dir() and not p.name.startswith(("_", "."))}
+    return sorted(names)
+
+
+def _check_theme(config: TerradocConfig) -> list[Issue]:
+    issues = []
+    yaml_file = "terradoc.yaml"
+    for key, part in MOTIF_PARTS.items():
+        name = getattr(config.theme, key)
+        if key in MOTIF_BUILTIN.get(name, ()):
+            continue
+        if not name or "/" in name or name.startswith("."):
+            issues.append(Issue("error", "theme", f"theme.{key}: '{name}' is not a motif pack name", yaml_file))
+            continue
+        if config.find_template(f"motifs/{name}/{part}") is None:
+            packs = ", ".join(_motif_packs(config)) or "none"
+            issues.append(Issue("error", "theme",
+                f"theme.{key}: motif pack '{name}' has no {part} (looked in config/templates/motifs/{name}/ "
+                f"and terradoc's own packs; available: {packs})", yaml_file))
+    return issues
+
+
 def _check_dry_export(config: TerradocConfig) -> list[Issue]:
     """Run the real export into a throwaway bundle; report anything it raises."""
     from terradoc.export import export_bundle
@@ -361,7 +400,8 @@ def render_preflight(config: TerradocConfig) -> list[Issue]:
                 return read_issues
             if path is not None:
                 loaded[name] = (path, rows)
-    return [i for i in _check_consent(config, loaded) + _check_static(config) if i.level == "error"]
+    return [i for i in _check_consent(config, loaded) + _check_static(config) + _check_theme(config)
+            if i.level == "error"]
 
 
 def run_checks(config: TerradocConfig) -> list[Issue]:
@@ -372,6 +412,7 @@ def run_checks(config: TerradocConfig) -> list[Issue]:
     issues += _check_consent(config, loaded)
     issues += _check_media(config, loaded)
     issues += _check_static(config)
+    issues += _check_theme(config)
     if not any(i.level == "error" for i in issues):
         issues += _check_dry_export(config)
     return issues
