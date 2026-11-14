@@ -2,6 +2,25 @@
 
 All notable changes to terradoc are documented here.
 
+## [0.12.0] — 2026-11-14
+
+### Added
+
+- **Reusable GitHub Actions workflow** `.github/workflows/site.yml`: validates, builds, guards
+  and publishes every branch as `refs/sites/<name>`; failure issues with CODEOWNERS mentions,
+  closed automatically on the next success; preview cleanup on branch deletion. See
+  `docs/publishing.md`.
+- **`terradoc guard`**: compares a built site with the release it replaces (module shrink
+  >20 records or >10 %, >25 % against an optional baseline, files lost > max(10, 5 %));
+  `--confirm-shrink` turns the errors into warnings.
+- **`--format markdown`** for `check` and `guard` (bilingual pt/en issue body), with
+  `--codeowners FILE` (GitHub's matching rules; last match wins) and `--run-url`.
+- `.release.json` now records per-module record counts (`modules`).
+
+### Changed
+
+- Duplicate primary keys are reported as "duplicate id X (first used on line N)".
+
 ## [0.11.0] — 2026-11-14
 
 ### Added

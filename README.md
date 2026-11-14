@@ -189,6 +189,9 @@ The generated site will be written to `docs/`.
 - `terradoc export [-c CONFIG] [--bundle-dir DIR]`: write the normalised, cross-linked JSON bundle (format still experimental, see `docs/bundle.md`)
 - `terradoc render [-c CONFIG] [--bundle-dir DIR] [--out DIR] [--clean]`: render the site from an existing bundle
 - `terradoc build [-c CONFIG] [--bundle-dir DIR] [--out DIR] [--clean]`: `check`, then `export`, then `render`. Defaults keep the historic layout (bundle in `data/`, site in `docs/`); CI should pass `--bundle-dir` and `--out` so the checkout is never modified. `--clean` empties the output directory first and is refused without `--out`
+- `terradoc guard --current DIR [--previous DIR] [--baseline DIR] [--confirm-shrink]`: compare a built site with the release it replaces; blocks unexpected loss of records or files
+- `check` and `guard` also take `--format markdown [--codeowners FILE] [--run-url URL]` for issue bodies
+- Publishing from GitHub (every branch, previews, failure issues): see `docs/publishing.md`
 - `terradoc categories [-o FILE]`: dump all unique category paths from encyclopedia entries (use `-o data/categories.yaml` to bootstrap a controlled vocabulary)
 - `terradoc themes`: list available theme presets with their color palettes
 
