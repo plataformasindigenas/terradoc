@@ -205,7 +205,14 @@ def _check_tabular(config: TerradocConfig) -> tuple[list[Issue], dict[str, tuple
             yaml_lines = _source_lines(path)
             for err in exc.errors:
                 column = f" column '{err.column}'" if err.column else ""
-                msg = f"{err.field}:{column} expected {err.expected}, got {err.got!r}"
+                got = str(err.got)
+                dup = re.search(r"\(duplicate of row (\d+)\)", got)
+                if dup:  # say where the first occurrence is, as a line number
+                    first = _row_line(path, int(dup.group(1)), yaml_lines)
+                    where = f"line {first}" if first else f"row {dup.group(1)}"
+                    msg = f"duplicate {err.field} {got.split(' (')[0]} (first used on {where})"
+                else:
+                    msg = f"{err.field}:{column} expected {err.expected}, got {err.got!r}"
                 issues.append(Issue("error", "schema", msg, _rel(config, path),
                                     _row_line(path, err.row, yaml_lines)))
     return issues, loaded

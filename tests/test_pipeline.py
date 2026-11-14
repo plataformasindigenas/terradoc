@@ -322,7 +322,7 @@ def test_duplicate_reported_on_its_own_row_after_invalid_row(project):
     result = run("check", "-c", str(project / "terradoc.yaml"))
     assert "data/dictionary.tsv:2" in result.output
     assert "data/dictionary.tsv:4" in result.output
-    assert "duplicate of row 2" in result.output
+    assert "duplicate id 1 (first used on line 3)" in result.output
 
 
 def test_github_annotation_properties_escaped(project, monkeypatch):
