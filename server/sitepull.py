@@ -52,6 +52,7 @@ CONFIG = Path(os.environ.get("SITEPULL_CONFIG", "/etc/sitepull/sites.ini"))
 PROD = "_prod"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
+REFS_RE = re.compile(r"^refs/[a-z0-9][a-z0-9-]*$")
 RESERVED = {"cache", "state", "www"}
 
 KEEP = {"prod": 10, "preview": 2}            # releases kept per target
@@ -81,6 +82,7 @@ class Site:
     slug: str
     url: str
     default_branch: str
+    refs: str = "refs/sites"  # namespace CI publishes into: <refs>/<name>
 
 
 @dataclass
@@ -183,7 +185,10 @@ def load_config(path: Path = CONFIG) -> Conf:
         if not SLUG_RE.match(slug) or slug in RESERVED:
             die(f"config: invalid site name '{slug}'")
         sec = cp[slug]
-        sites.append(Site(slug, sec["url"], sec.get("default_branch", "master")))
+        refs = sec.get("refs", "refs/sites")
+        if not REFS_RE.match(refs) or refs in ("refs/heads", "refs/tags", "refs/pull"):
+            die(f"config: [{slug}] refs must look like refs/<word>, not '{refs}'")
+        sites.append(Site(slug, sec["url"], sec.get("default_branch", "master"), refs))
     return Conf(Path(d.get("root", "/srv/sites")), d.get("smoke_base", ""), sites)
 
 
@@ -262,15 +267,16 @@ def clean_staging(conf: Conf) -> None:
 
 # ── remote and cache ─────────────────────────────────────────────────────
 
-def ls_remote(url: str) -> tuple[dict[str, str], dict[str, str]]:
+def ls_remote(url: str, ns: str = "refs/sites") -> tuple[dict[str, str], dict[str, str]]:
     out = git("ls-remote", url, timeout=60).stdout.decode("utf-8", "surrogateescape")
+    prefix = ns + "/"
     heads, sites = {}, {}
     for line in out.splitlines():
         sha, _, ref = line.partition("\t")
         if ref.startswith("refs/heads/"):
             heads[ref[len("refs/heads/"):]] = sha
-        elif ref.startswith("refs/sites/"):
-            sites[ref[len("refs/sites/"):]] = sha
+        elif ref.startswith(prefix) and "/" not in ref[len(prefix):]:
+            sites[ref[len(prefix):]] = sha
     return heads, sites
 
 
@@ -285,9 +291,9 @@ def fetch_commit(conf: Conf, site: Site, ref_name: str, sha: str) -> Path:
     cache = cache_repo(conf, site)
     if git("cat-file", "-e", f"{sha}^{{commit}}", cwd=cache, check=False).returncode != 0:
         git("fetch", "--quiet", "--no-tags", "--depth", "1", site.url,
-            f"+refs/sites/{ref_name}:refs/sites/{ref_name}", cwd=cache, timeout=900)
+            f"+{site.refs}/{ref_name}:refs/sites/{ref_name}", cwd=cache, timeout=900)
         if git("cat-file", "-e", f"{sha}^{{commit}}", cwd=cache, check=False).returncode != 0:
-            raise NotYet(f"refs/sites/{ref_name} moved while fetching")
+            raise NotYet(f"{site.refs}/{ref_name} moved while fetching")
     git("update-ref", f"refs/keep/{sha}", sha, cwd=cache)
     return cache
 
@@ -433,7 +439,7 @@ def deploy(conf: Conf, site: Site, st: dict, name: str, branch: str, tip: str,
         raise Refused(f".release.json names branch {info.get('source_ref')!r}, not {branch!r}")
     if info.get("source_commit") != tip:
         if t.get("waiting") != [ref_sha, tip]:
-            log(f"{tag}: refs/sites/{ref_name} was built from {str(info.get('source_commit'))[:7]}, "
+            log(f"{tag}: {site.refs}/{ref_name} was built from {str(info.get('source_commit'))[:7]}, "
                 f"but {branch} is at {tip[:7]}; waiting for CI")
             t["waiting"] = [ref_sha, tip]
         return False
@@ -524,7 +530,7 @@ def prune(tdir: Path, keep: int) -> None:
 # ── one polling round ────────────────────────────────────────────────────
 
 def pull_site(conf: Conf, site: Site) -> None:
-    heads, refs = ls_remote(site.url)
+    heads, refs = ls_remote(site.url, site.refs)
     st = load_state(conf, site.slug)
     now = time.time()
 
@@ -554,7 +560,7 @@ def pull_site(conf: Conf, site: Site) -> None:
             deploy(conf, site, st, name, branch, heads[branch], ref_name, refs[ref_name])
         except Refused as e:
             st["targets"][name]["failed"][refs[ref_name]] = f"{utcnow()} {e}"
-            log(f"{tag}: refusing refs/sites/{ref_name} {refs[ref_name][:7]}: {e}")
+            log(f"{tag}: refusing {site.refs}/{ref_name} {refs[ref_name][:7]}: {e}")
         except NotYet as e:
             log(f"{tag}: not now: {e}")
         finally:

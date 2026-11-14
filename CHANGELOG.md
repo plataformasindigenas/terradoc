@@ -11,6 +11,8 @@ All notable changes to terradoc are documented here.
   files only, size limits), switches it in atomically, smoke-tests it through Caddy and switches
   back on failure. `sitectl` gives status, rollback with hold, retry, purge and a break-glass
   import. See `server/README.md`.
+- sitepull: per-site `refs = refs/<word>` (default `refs/sites`), so one repository can publish
+  two sites (`www`: `refs/portal/*`, `refs/landing/*`).
 
 ## [0.12.1] — 2026-11-14
 

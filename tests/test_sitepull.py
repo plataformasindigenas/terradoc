@@ -57,8 +57,9 @@ class Remote:
         return run("git", "rev-parse", "HEAD", cwd=w)
 
     def publish(self, name: str, branch: str, commit: str, files: dict | None = None,
-                symlink: str | None = None, release: dict | None = None) -> str:
-        d = self.work.parent / f"site-{self.n}-{name}"
+                symlink: str | None = None, release: dict | None = None,
+                ns: str = "refs/sites") -> str:
+        d = self.work.parent / f"site-{self.n}-{ns.replace('/', '-')}-{name}"
         d.mkdir()
         files = files or {"index.html": f"<h1>{branch} {commit[:7]}</h1>",
                           "dicionario/a.html": "a", "dicionario/b.html": "b",
@@ -74,7 +75,7 @@ class Remote:
         run("git", "init", "-q", "-b", "site", cwd=d)
         run("git", "add", "-A", cwd=d)
         run("git", "commit", "-q", "-m", "site", cwd=d)
-        run("git", "push", "-q", "-f", self.url, f"HEAD:refs/sites/{name}", cwd=d)
+        run("git", "push", "-q", "-f", self.url, f"HEAD:{ns}/{name}", cwd=d)
         return run("git", "rev-parse", "HEAD", cwd=d)
 
     def delete(self, ref: str):
@@ -367,3 +368,24 @@ def test_import_serves_a_tarball_and_holds(env, monkeypatch, tmp_path):
     assert sp.main(["--config", str(ini), "import", "demo"]) == 0
     assert "emergency" in served(root, "_prod")
     assert state(root)["_prod"]["hold"] is True
+
+
+# ── two sites from one repository (per-site ref namespace) ──────────────
+
+def test_ref_namespace_selects_one_site_per_section(env):
+    remote, root, ini = env
+    ini.write_text(ini.read_text().replace("[demo]\n", "[demo]\nrefs = refs/portal\n"))
+    c = remote.commit("master")
+    remote.publish("master", "master", c, files={"index.html": "terradoc site"})
+    remote.publish("master", "master", c, files={"index.html": "portal"}, ns="refs/portal")
+    remote.publish("master", "master", c, files={"index.html": "landing"}, ns="refs/landing")
+    assert pull(ini) == 0
+    assert served(root, "_prod") == "portal"
+
+
+@pytest.mark.parametrize("bad", ["refs/heads", "sites", "refs/a/b", "refs/../x", "refs/"])
+def test_ref_namespace_validated(env, bad):
+    remote, root, ini = env
+    ini.write_text(ini.read_text().replace("[demo]\n", f"[demo]\nrefs = {bad}\n"))
+    with pytest.raises(SystemExit):
+        sp.load_config(ini)

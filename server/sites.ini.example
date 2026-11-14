@@ -17,3 +17,15 @@ default_branch = master
 [boeenomoto]
 url = https://github.com/plataformasindigenas/boeenomoto.git
 default_branch = master
+
+# One repository, two sites: `refs` names the namespace its workflow publishes
+# into (default refs/sites). www publishes refs/portal/* and refs/landing/*.
+[plataformas]
+url = https://github.com/plataformasindigenas/www.git
+default_branch = master
+refs = refs/portal
+
+[terradoc]
+url = https://github.com/plataformasindigenas/www.git
+default_branch = master
+refs = refs/landing

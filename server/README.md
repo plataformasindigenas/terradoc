@@ -13,6 +13,11 @@ public and it reads them anonymously.
 `https://previews.terradoc.org/<slug>/` lists what is served. Every preview response carries
 `X-Robots-Tag: noindex`.
 
+A site's section in `/etc/sitepull/sites.ini` may set `refs = refs/<word>` to read
+`refs/<word>/<name>` instead of `refs/sites/<name>`. That is how one repository serves two sites:
+`www` publishes `refs/portal/*` (the portal) and `refs/landing/*` (terradoc.org) from its own
+workflow, with the same `.release.json` fields (`source_ref`, `source_commit`).
+
 ## What it checks before serving a ref
 
 - `.release.json` must name the branch and its **current tip**. A ref built from an older commit,
