@@ -12,3 +12,5 @@ fields:
   classification_indigenous: str?
   info: str?
   pic_link: str?
+  pic_credit: str?   # e.g. "© Name, CC BY-NC, via iNaturalist"
+  pic_source: str?   # https address of the original photo

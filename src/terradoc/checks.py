@@ -178,7 +178,8 @@ def _load_rows(config: TerradocConfig, slug: str) -> tuple[Path | None, list[dic
     try:
         rows = aptoro.read(str(path))
     except Exception as exc:  # unreadable TSV/YAML
-        return path, [], [Issue("error", "read", f"cannot read file: {exc}", _rel(config, path))]
+        line = getattr(exc, "line", None)
+        return path, [], [Issue("error", "read", f"cannot read file: {exc}", _rel(config, path), line)]
     return path, [dict(r) for r in rows], []
 
 
@@ -248,6 +249,24 @@ def _check_consent(config: TerradocConfig, loaded: dict[str, tuple[Path, list[di
     return issues
 
 
+def _check_photo_fields(config: TerradocConfig, path: Path, row: dict, line: int | None) -> list[Issue]:
+    """pic_link is a file shipped with the site or an http(s) address;
+    pic_source, shown as the credit's link, must be an http(s) address."""
+    issues = []
+    link, source = row.get("pic_link"), row.get("pic_source")
+    if (isinstance(link, str) and re.match(r"(?i)^[a-z][a-z0-9+.-]*:", link.strip())
+            and not re.match(r"^https?://", link.strip())):
+        issues.append(Issue("error", "media", f"pic_link '{link.strip()}': only a file or an http(s) address",
+                            _rel(config, path), line))
+    if source is not None and not (isinstance(source, str) and re.match(r"^https?://\S+$", source.strip())):
+        issues.append(Issue("error", "schema", f"pic_source '{source}' must be an http(s) address",
+                            _rel(config, path), line))
+    if source is not None and not row.get("pic_credit"):
+        issues.append(Issue("warning", "schema", "pic_source without pic_credit: the link has no text",
+                            _rel(config, path), line))
+    return issues
+
+
 def _check_media(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:
     issues = []
     theme = config.theme.to_dict()
@@ -262,6 +281,8 @@ def _check_media(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict
                 if MEDIA_RE.match(value.strip()) and not _media_exists(config, value.strip()):
                     issues.append(Issue("error", "media", f"missing file '{value.strip()}'",
                                         _rel(config, path), _row_line(path, i, yaml_lines)))
+            if name in ("ethnobotany", "fauna"):
+                issues += _check_photo_fields(config, path, row, _row_line(path, i, yaml_lines))
 
     if config.is_module_enabled("encyclopedia"):
         for md in sorted((config.data_dir / "encyclopedia").rglob("*.md")):

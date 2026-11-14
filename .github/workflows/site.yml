@@ -110,7 +110,18 @@ jobs:
           cache: pip
 
       - name: Install the pinned terradoc
-        run: pip install -r requirements.txt
+        # A release can take ~10 min to reach every PyPI mirror: retry while the
+        # pinned version is "not found", and fail at once on any other error.
+        run: |
+          for attempt in 1 2 3 4 5 6 7; do
+            if pip install -r requirements.txt 2>&1 | tee "$RUNNER_TEMP/pip.log"; [ "${PIPESTATUS[0]}" -eq 0 ]; then
+              exit 0
+            fi
+            grep -q "No matching distribution found" "$RUNNER_TEMP/pip.log" || exit 1
+            echo "::warning::pinned version not on PyPI yet (attempt $attempt of 7); retrying in 90 s"
+            sleep 90
+          done
+          exit 1
 
       - name: Check and build (errors appear as annotations on the commit)
         id: build

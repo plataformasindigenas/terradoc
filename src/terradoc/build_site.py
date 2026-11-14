@@ -330,7 +330,7 @@ def write_sitemap(docs_dir: Path, config: TerradocConfig, locales: list[str]):
 
 
 def build_404_page(config: TerradocConfig):
-    """Render a custom 404 page to docs/404.html."""
+    """Render a custom 404 page to docs/404.html (links are root-relative)."""
     site = config.site_context()
     theme_dict = config.theme.to_dict()
     translations = {}
@@ -350,7 +350,10 @@ def build_404_page(config: TerradocConfig):
             "theme": theme_dict,
             "t": translations,
             "locale": config.default_locale,
-            "base_path": "",
+            # Served for a missing path at any depth, so links are root-relative
+            # (a site lives at its domain's root); pages are under /<locale>/.
+            "base_path": "/",
+            "nav_prefix": f"/{config.default_locale}/",
             "page": "404",
             "modules": config.enabled_modules(),
         },

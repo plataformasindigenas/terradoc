@@ -12,7 +12,9 @@ class SchemaError(AptoroError):
 
 
 class SourceError(AptoroError):
-    pass
+    def __init__(self, message: str, line: int | None = None):
+        super().__init__(message)
+        self.line = line  # 1-based line in the source, when known
 
 
 @dataclass

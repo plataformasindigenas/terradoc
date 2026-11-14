@@ -211,6 +211,11 @@
     font-size: 4rem;
     color: var(--td-color-border-dark);
 }
+.showcase-detail-info .detail-photo-credit {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
 .showcase-detail-info {
     flex: 1;
     min-width: 0;
@@ -492,7 +497,7 @@
             if (entry.pic_link) {
                 var img = document.createElement('img');
                 img.className = 'showcase-card-img';
-                img.src = '../' + entry.pic_link;
+                img.src = /^https?:\/\//.test(entry.pic_link) ? entry.pic_link : '../' + entry.pic_link;
                 img.alt = displayName;
                 img.loading = 'lazy';
                 img.onerror = function() {
@@ -556,7 +561,7 @@
             if (entry.pic_link) {
                 var img = document.createElement('img');
                 img.className = 'showcase-detail-img';
-                img.src = '../' + entry.pic_link;
+                img.src = /^https?:\/\//.test(entry.pic_link) ? entry.pic_link : '../' + entry.pic_link;
                 img.alt = entry.name_indigenous || entry.name_portuguese || '';
                 img.onerror = function() {
                     var ph = document.createElement('div');
@@ -632,6 +637,15 @@
                     html += '<tr><td>' + escapeHtml(ab.village) + '</td><td>' + escapeHtml(ab.level) + '</td></tr>';
                 }
                 html += '</table></div>';
+            }
+
+            // Photo credit (Creative Commons licences require attribution)
+            if (entry.pic_link && entry.pic_credit) {
+                var credit = escapeHtml(entry.pic_credit);
+                if (entry.pic_source && /^https?:\/\//.test(entry.pic_source)) {
+                    credit = '<a href="' + escapeHtml(entry.pic_source) + '" target="_blank" rel="noopener">' + credit + '</a>';
+                }
+                html += '<div class="detail-photo-credit"><strong>' + escapeHtml(T.photo_credit || 'Foto') + ':</strong> ' + credit + '</div>';
             }
 
             // Cross-links

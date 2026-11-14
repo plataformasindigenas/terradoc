@@ -121,6 +121,16 @@ class CSVReader:
                 StringIO(content), delimiter=self.delimiter, quotechar=self.quotechar)
             records = []
             for row in reader:
+                if None in row or None in row.values():
+                    # DictReader puts surplus cells under the key None and fills
+                    # missing ones with None; say so plainly instead of letting
+                    # a list or a gap surface later as a confusing type error.
+                    width = len(reader.fieldnames or ())
+                    cells = width + len(row.get(None) or ()) - sum(
+                        1 for k, v in row.items() if k is not None and v is None)
+                    raise SourceError(
+                        f"line {reader.line_num}: {cells} column(s), but the header has "
+                        f"{width} (check for a stray or missing tab)", line=reader.line_num)
                 if self.infer_types:
                     row = {k: _infer_type(v) for k, v in row.items()}
                 records.append(row)

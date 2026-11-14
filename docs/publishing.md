@@ -50,7 +50,7 @@ permissions:
 jobs:
   site:
     # Pin by commit SHA (a tag can be moved), matching the terradoc in requirements.txt.
-    uses: plataformasindigenas/terradoc/.github/workflows/site.yml@<commit-sha>  # v0.12.0
+    uses: plataformasindigenas/terradoc/.github/workflows/site.yml@<commit-sha>  # v0.12.1
     with:
       confirm_shrink: ${{ inputs.confirm_shrink || false }}
 ```

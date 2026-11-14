@@ -375,3 +375,58 @@ def test_about_credits_only_with_locale_key(project):
         f.write('\nabout_credits: "<p>Fotos: Fulano</p>"\n')
     assert run("build", "-c", cfg, "--out", "s2").exit_code == 0
     assert "Fotos: Fulano" in (Path("s2") / "pt" / "about.html").read_text()
+
+
+# ── 0.12.1: column counts, photo credits, 404 links ─────────────────────
+
+@pytest.mark.parametrize("row,cells", [("2\tko\tmoon\textra", 4), ("2\tko", 2)])
+def test_tsv_wrong_column_count_names_the_line(project, row, cells):
+    (project / "data" / "dictionary.tsv").write_text(f"id\tentry\tdefinition\n1\tka\tsun\n{row}\n")
+    result = run("check", "-c", str(project / "terradoc.yaml"), "--format", "github")
+    assert result.exit_code == 1
+    assert "::error file=data/dictionary.tsv,line=3," in result.output, result.output
+    assert f"{cells} column(s), but the header has 3" in result.output
+
+
+PLANT = """- id: 1
+  name_indigenous: Nanai
+  pic_link: {link}
+{extra}"""
+
+
+def write_plants(project: Path, link="images/p.jpg", extra=""):
+    enable(project, "ethnobotany")
+    (project / "static" / "images" / "p.jpg").write_bytes(b"x")
+    (project / "data" / "ethnobotany.yaml").write_text(PLANT.format(link=link, extra=extra))
+
+
+def test_photo_credit_rendered_with_safe_link(project):
+    write_plants(project, extra="  pic_credit: \"© Ana, CC BY-NC, via iNaturalist\"\n"
+                                "  pic_source: https://www.inaturalist.org/observations/1\n")
+    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
+    assert result.exit_code == 0, result.output
+    page = (Path("site") / "pt" / "ethnobotany.html").read_text()
+    assert "detail-photo-credit" in page
+    assert "https://www.inaturalist.org/observations/1" in page
+    assert "/^https?:\\/\\//.test(entry.pic_link)" in page  # web-address photos are not prefixed
+
+
+@pytest.mark.parametrize("link,extra,message", [
+    ("data:image/png;base64,AAAA", "", "only a file or an http(s) address"),
+    ("images/p.jpg", "  pic_credit: x\n  pic_source: \"javascript:alert(1)\"\n",
+     "must be an http(s) address"),
+])
+def test_photo_fields_checked(project, link, extra, message):
+    write_plants(project, link=link, extra=extra)
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert result.exit_code == 1
+    assert message in result.output, result.output
+
+
+def test_404_links_are_root_relative(project):
+    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
+    assert result.exit_code == 0, result.output
+    page = (Path("site") / "404.html").read_text()
+    assert 'href="/css/terradoc.css"' in page
+    assert 'href="/pt/about.html"' in page
+    assert 'href="about.html"' not in page

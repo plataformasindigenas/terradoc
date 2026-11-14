@@ -12,6 +12,24 @@ All notable changes to terradoc are documented here.
   back on failure. `sitectl` gives status, rollback with hold, retry, purge and a break-glass
   import. See `server/README.md`.
 
+## [0.12.1] — 2026-11-14
+
+### Added
+
+- **Photo credits** in ethnobotany and fauna: optional `pic_credit` (shown under the photo in
+  the detail panel; locale key `photo_credit`, default "Foto") and `pic_source` (its link).
+  `pic_link` may now also be an `http(s)` address on these pages (it used to be prefixed with
+  `../` and break); `check` refuses any other scheme there, and a `pic_source` that is not `http(s)`.
+
+### Changed
+
+- A TSV row with too many or too few cells is reported as "line N: K column(s), but the header
+  has M" on its own line, instead of a Python type error for the whole file.
+- `404.html` links are root-relative (`/css/…`, `/<locale>/…`), so the page works when served
+  for a missing path at any depth; its menu used to point at pages outside `/<locale>/`.
+- Reusable workflow: `pip install` is retried for up to ~10 minutes while the pinned version is
+  "not found" (a fresh release takes a while to reach every PyPI mirror).
+
 ## [0.12.0] — 2026-11-14
 
 ### Added
