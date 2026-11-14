@@ -20,7 +20,7 @@ http://127.0.0.1:8088 {
 	import sites_routes
 }
 
-# Needs the DNS record first (Cloudflare, grey cloud: previews A 62.238.116.162).
+# Needs its DNS record (Cloudflare, grey cloud: previews A 62.238.116.162; added 2026-11-14).
 previews.terradoc.org {
 	import security_headers
 	encode gzip
