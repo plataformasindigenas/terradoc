@@ -127,6 +127,8 @@ class ThemeConfig:
     )
     font_family_headings: str = "'Sora', 'Inter', sans-serif"
     font_family_mono: str = "'IBM Plex Mono', 'Consolas', monospace"
+    font_family_ipa: str = ""  # IPA fields; empty = the body font, which has IPA
+    extra_css: list[str] = field(default_factory=list)  # site stylesheets from static/, e.g. css/site.css
     border_radius: str = "28px"
     hero_image: str = ""
     hero_images: list[str] = field(default_factory=list)
@@ -151,6 +153,8 @@ class ThemeConfig:
             "font_family": self.font_family,
             "font_family_headings": self.font_family_headings,
             "font_family_mono": self.font_family_mono,
+            "font_family_ipa": self.font_family_ipa,
+            "extra_css": self.extra_css,
             "border_radius": self.border_radius,
             "hero_image": self.hero_image,
             "hero_images": self.hero_images,
@@ -178,6 +182,9 @@ class TerradocConfig:
     culture_name: str = ""
     meta_prefix: str = "terradoc"
     locales: list[str] = field(default_factory=lambda: ["pt", "en"])
+    # The language's own alphabet, in order; letters may be digraphs ("mb", "ng").
+    # Empty = first character and Portuguese collation, as before.
+    alphabet: list[str] = field(default_factory=list)
     locale_labels: dict[str, str] = field(default_factory=lambda: {
         "pt": "Português",
         "en": "English",
@@ -329,6 +336,7 @@ class TerradocConfig:
         ctx = {
             "title": title,
             "tagline": tagline,
+            "alphabet": self.alphabet,
         }
         ctx.update({
             f"{slug}_label": self.module_label(slug) for slug in self.modules
@@ -359,6 +367,10 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             if isinstance(val, list):
                 config.ethnobotany_encyclopedia_categories = [str(v) for v in val]
 
+        if "alphabet" in raw:
+            if not isinstance(raw["alphabet"], list) or not all(isinstance(x, str) and x.strip() for x in raw["alphabet"]):
+                raise ValueError("terradoc.yaml: 'alphabet' must be a list of letters, e.g. [a, ã, e, mb]")
+            config.alphabet = [str(x).strip() for x in raw["alphabet"]]
         if "locales" in raw:
             config.locales = raw["locales"]
         if "locale_labels" in raw and isinstance(raw["locale_labels"], dict):
@@ -408,7 +420,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             # YAML overrides on top of preset
             for theme_key in (
                 "logo", "favicon", "font_family", "font_family_headings",
-                "font_family_mono", "border_radius", "hero_image", "style",
+                "font_family_mono", "font_family_ipa", "border_radius", "hero_image", "style",
                 "term_color", "term_weight",
                 "hero_background", "hero_motif", "hero_divider",
                 "hero_height", "page_badge", "grain_pattern",
@@ -417,7 +429,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                     setattr(config.theme, theme_key, theme_raw[theme_key])
 
             # List overrides
-            for list_key in ("hero_images", "hero_stats"):
+            for list_key in ("hero_images", "hero_stats", "extra_css"):
                 if list_key in theme_raw and isinstance(theme_raw[list_key], list):
                     setattr(config.theme, list_key, theme_raw[list_key])
 

@@ -1,0 +1,75 @@
+# The release gate, automated: build every platform with the terradoc it pins today and with
+# this commit, and report what changed. A failed build with this commit fails the job;
+# differences only go to the summary, since many are intended (read them before releasing).
+# Sites are public and fetched anonymously; nothing is published from here.
+
+name: sites-gate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        site: [boeenomoto, enawenenawe, makurap]
+    env:
+      SITE: ${{ matrix.site }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          path: terradoc
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Fetch the site
+        run: git clone -q --depth 1 "https://github.com/plataformasindigenas/${SITE}.git" site
+
+      - name: Build with the site's pinned terradoc
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/old"
+          "$RUNNER_TEMP/old/bin/pip" install -q --no-cache-dir -r site/requirements.txt
+          cd site
+          "$RUNNER_TEMP/old/bin/terradoc" --version
+          "$RUNNER_TEMP/old/bin/terradoc" build --config terradoc.yaml --out "$RUNNER_TEMP/out-old" \
+            --bundle-dir "$RUNNER_TEMP/bundle-old" > /dev/null
+
+      - name: Build with this commit
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/new"
+          "$RUNNER_TEMP/new/bin/pip" install -q --no-cache-dir ./terradoc
+          cd site
+          "$RUNNER_TEMP/new/bin/terradoc" check --config terradoc.yaml || true  # warnings, for the log
+          "$RUNNER_TEMP/new/bin/terradoc" build --config terradoc.yaml --out "$RUNNER_TEMP/out-new" \
+            --bundle-dir "$RUNNER_TEMP/bundle-new" --format github
+
+      - name: Compare
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          diff -rq -x .release.json out-old out-new | sed 's#out-old/##; s#out-new/##' > changes.txt || true
+          n=$(wc -l < changes.txt)
+          pinned=$(grep -o 'terradoc==[^ ]*' "$GITHUB_WORKSPACE/site/requirements.txt" || echo '?')
+          {
+            if [ "$n" -eq 0 ]; then
+              echo "### ✅ ${SITE}: identical to ${pinned}"
+            else
+              echo "### ${SITE}: ${n} file(s) differ from ${pinned}"
+              echo '```'; head -n 60 changes.txt; [ "$n" -le 60 ] || echo "… and $((n - 60)) more"; echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat changes.txt

@@ -14,6 +14,43 @@ All notable changes to terradoc are documented here.
 - sitepull: per-site `refs = refs/<word>` (default `refs/sites`), so one repository can publish
   two sites (`www`: `refs/portal/*`, `refs/landing/*`).
 
+## [0.14.0] — 2026-11-15
+
+Orthography is part of each platform's twist: its own alphabet, fonts that have its letters,
+and interface languages. See `docs/orthography.md`.
+
+### Added
+
+- **`alphabet`** in `terradoc.yaml`: the language's letters in order, digraphs allowed
+  (`mb`, `ng`). The dictionary's letter bar and sort order follow it (longest match, NFC,
+  case-insensitive). Without it, nothing changes.
+- **Inter's tilde-vowel subset** (`inter-vietnamese.woff2`, same Inter 4.001): ẽ, ỹ and the
+  combining tilde now render in Inter instead of a fallback font.
+- `theme.font_family_ipa` (the font for `ipa` fields) and `theme.extra_css` (site stylesheets
+  from `static/`, for example with `@font-face` rules for a font of the site's own).
+- `check` warnings:
+  - a headword whose first letter is not in the alphabet;
+  - letters in the data that the font for that kind of text lacks (headwords and titles,
+    IPA, body), using precomputed coverage of the bundled fonts (`tools/font_coverage.py`);
+  - interface keys of the default locale missing from another locale, or a locale without
+    its file.
+  - A letter listed twice in `alphabet` is an error.
+- **`terradoc/<name>` template namespace:** a site's page can
+  `{% extends "terradoc/dictionary.html.j2" %}` and change one block. `base.html.j2` gains a
+  `footer` block. The supported blocks are listed in `docs/motifs.md`.
+- `examples/bundle_dictionary.py`: an independent, standard-library-only consumer of the export
+  bundle, run by the tests. It keeps the bundle usable by a renderer other than terradoc.
+- `.github/workflows/sites-gate.yml`: every push builds each platform with its pinned terradoc
+  and with the new commit, and lists the differences.
+
+### Changed
+
+- IPA in the dictionary uses the body font (Inter has IPA) instead of IBM Plex Mono (which has
+  none).
+- The site workflow retries a not-yet-propagated PyPI release for up to about 24 minutes
+  (before: about 10), with `--no-cache-dir`.
+- A malformed `terradoc.yaml` is reported in one line instead of a traceback.
+
 ## [0.13.0] — 2026-11-14
 
 Each people's visual motifs now belong to that people's site, not to terradoc.

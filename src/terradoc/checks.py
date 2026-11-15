@@ -16,6 +16,10 @@ Rules (see the platforms' pipeline plan, section 5):
 - theme: every motif setting names a pack that exists, in the site's
   ``config/templates/motifs/<name>/`` or in terradoc's (never a silent fallback
   to another people's motif);
+- orthography (warnings): dictionary headwords whose first letter is not in the
+  site's ``alphabet``; letters in the data that the font for that kind of text
+  lacks (they would render in a fallback font, mid-word);
+- locales (warnings): UI keys of the default locale missing from another locale;
 - a dry export into a throwaway bundle, so anything the build would trip on
   (bad BibTeX, HTML in Markdown, broken cross-links) is caught here too.
 """
@@ -24,6 +28,8 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import unicodedata
+from collections import Counter
 import io
 import os
 import json
@@ -376,6 +382,150 @@ def _check_theme(config: TerradocConfig) -> list[Issue]:
     return issues
 
 
+def _nfc_lower(text: str) -> str:
+    return unicodedata.normalize("NFC", text).lower()
+
+
+def _first_letter(word: str, letters: list[str]) -> str | None:
+    w = _nfc_lower(word).lstrip("-")
+    for letter in letters:  # longest first
+        if w.startswith(letter):
+            return letter
+    return None
+
+
+def _check_alphabet(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:
+    if not config.alphabet:
+        return []
+    issues = []
+    norm = [_nfc_lower(x) for x in config.alphabet]
+    dups = sorted({x for x in norm if norm.count(x) > 1})
+    if dups:
+        issues.append(Issue("error", "alphabet", f"alphabet: letters listed twice: {', '.join(dups)}", "terradoc.yaml"))
+    if "dictionary" not in loaded:
+        return issues
+    path, rows = loaded["dictionary"]
+    letters = sorted(set(norm), key=len, reverse=True)
+    lines = _source_lines(path)
+    for i, row in enumerate(rows, start=1):
+        word = str(row.get("entry") or "")
+        if word.strip("- ") and _first_letter(word, letters) is None:
+            issues.append(Issue("warning", "alphabet",
+                f"'{word}' starts with a letter that is not in the alphabet (terradoc.yaml); "
+                "it is listed after the alphabet's letters", _rel(config, path), _row_line(path, i, lines)))
+    return issues
+
+
+_COVERAGE: dict[str, list[list[int]]] | None = None
+
+
+def _font_coverage() -> dict[str, list[list[int]]]:
+    global _COVERAGE
+    if _COVERAGE is None:
+        import importlib.resources
+        _COVERAGE = json.loads((importlib.resources.files("terradoc") / "font_coverage.json").read_text())
+    return _COVERAGE
+
+
+def _first_family(stack: str) -> str:
+    return stack.split(",")[0].strip().strip("'\"")
+
+
+def _orthographic(ch: str) -> bool:
+    """Latin letters, IPA, modifier letters and combining marks: the characters of an
+    orthography or a transcription. Other scripts (a Malayalam title in the bibliography)
+    are expected to come from the reader's system fonts."""
+    cp = ord(ch)
+    if cp < 0x80:
+        return False
+    if 0x0250 <= cp <= 0x02FF or 0x0300 <= cp <= 0x036F or 0x1D00 <= cp <= 0x1DFF:
+        return True
+    return "LATIN" in unicodedata.name(ch, "")
+
+
+def _check_fonts(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:
+    coverage = _font_coverage()
+    roles = {  # role -> (font stack, where it is set)
+        "body": (config.theme.font_family, "theme.font_family"),
+        "headings": (config.theme.font_family_headings, "theme.font_family_headings"),
+        "ipa": (config.theme.font_family_ipa or config.theme.font_family, "theme.font_family_ipa"),
+    }
+    seen: dict[str, Counter] = {r: Counter() for r in roles}
+    where: dict[tuple[str, str], str] = {}
+
+    def add(role: str, text: str, origin: str) -> None:
+        text = unicodedata.normalize("NFC", text)
+        for ch in text:
+            if _orthographic(ch):
+                seen[role][ch] += 1
+                where.setdefault((role, ch), origin)
+
+    for name, (path, rows) in loaded.items():
+        rel = _rel(config, path)
+        for row in rows:
+            for key, value in row.items():
+                for text in _iter_strings(value):
+                    if key == "ipa":
+                        add("ipa", text, rel)
+                    elif name == "dictionary" and key == "entry":
+                        add("headings", text, rel)
+                        add("body", text, rel)
+                    else:
+                        add("body", text, rel)
+    if config.is_module_enabled("encyclopedia"):
+        for md in sorted((config.data_dir / "encyclopedia").glob("*.md")):
+            text = md.read_text(encoding="utf-8", errors="replace")
+            add("body", text, _rel(config, md))
+            title = re.search(r"(?m)^title:\s*(.+)$", text)
+            if title:
+                add("headings", title.group(1), _rel(config, md))
+
+    issues = []
+    for role, (stack, setting) in roles.items():
+        family = _first_family(stack)
+        ranges = coverage.get(family)
+        if ranges is None or not seen[role]:
+            continue  # a font the site brings itself (extra_css): not checked here
+        missing = [(ch, n) for ch, n in seen[role].most_common()
+                   if not any(lo <= ord(ch) <= hi for lo, hi in ranges)]
+        if missing:
+            listed = ", ".join(f"{ch} (U+{ord(ch):04X}, {n}×, {where[(role, ch)]})" for ch, n in missing[:8])
+            more = f" and {len(missing) - 8} more" if len(missing) > 8 else ""
+            issues.append(Issue("warning", "font",
+                f"{role} text uses letters that {family} lacks, so they render in another font "
+                f"mid-word: {listed}{more}. Set {setting} to a font that has them "
+                "(bundled: Inter covers Latin, IPA and the tilde vowels)", "terradoc.yaml"))
+    return issues
+
+
+def _check_locales(config: TerradocConfig) -> list[Issue]:
+    if not config.locales:
+        return []
+    def keys(loc: str) -> set[str] | None:
+        path = config.locales_dir / f"{loc}.yaml"
+        if not path.is_file():
+            return None
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        return set(data) if isinstance(data, dict) else set()
+    base = keys(config.default_locale)
+    issues = []
+    for loc in config.locales:
+        have = keys(loc)
+        rel = _rel(config, config.locales_dir / f"{loc}.yaml")
+        if have is None:
+            issues.append(Issue("warning", "locale", f"locale '{loc}' has no file; its pages will show empty labels", rel))
+            continue
+        if base is None or loc == config.default_locale:
+            continue
+        missing = sorted(base - have)
+        if missing:
+            listed = ", ".join(missing[:12]) + (f" and {len(missing) - 12} more" if len(missing) > 12 else "")
+            issues.append(Issue("warning", "locale",
+                f"{len(missing)} key(s) of '{config.default_locale}' missing in '{loc}' (shown empty or in a "
+                f"fallback on '{loc}' pages): {listed}", rel))
+    return issues
+
+
 def _check_dry_export(config: TerradocConfig) -> list[Issue]:
     """Run the real export into a throwaway bundle; report anything it raises."""
     from terradoc.export import export_bundle
@@ -413,6 +563,9 @@ def run_checks(config: TerradocConfig) -> list[Issue]:
     issues += _check_media(config, loaded)
     issues += _check_static(config)
     issues += _check_theme(config)
+    issues += _check_alphabet(config, loaded)
+    issues += _check_fonts(config, loaded)
+    issues += _check_locales(config)
     if not any(i.level == "error" for i in issues):
         issues += _check_dry_export(config)
     return issues

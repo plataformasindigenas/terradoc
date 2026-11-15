@@ -472,7 +472,8 @@ h1 {
 }
 .entry-ipa {
     color: var(--td-color-text-muted);
-    font-family: var(--td-font-mono);
+    /* IPA needs a font that has it: the mono font has no IPA glyphs. */
+    font-family: var(--td-font-ipa, var(--td-font-family));
 }
 .entry-tag {
     font-size: 0.75rem;

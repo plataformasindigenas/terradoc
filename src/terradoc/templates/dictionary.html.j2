@@ -226,7 +226,7 @@
         }
         .detail-ipa {
             color: var(--td-color-text-muted);
-            font-family: var(--td-font-mono);
+            font-family: var(--td-font-ipa, var(--td-font-family));
             font-size: 1.1rem;
         }
         .detail-pos {
@@ -445,10 +445,63 @@
         var detailPanel = document.getElementById('detail-panel');
         var statsDiv = document.getElementById('stats');
 
+{% if site.alphabet %}
+        // The language's own alphabet (terradoc.yaml `alphabet`): letters in order, digraphs
+        // allowed. Words are split into letters, longest match first, after NFC normalisation.
+        var ALPHA = (function(letters) {
+            function norm(s) { return (s || '').normalize('NFC').toLocaleLowerCase(); }
+            var rank = {}, byLength = [];
+            letters.forEach(function(l, i) { var k = norm(l); if (!(k in rank)) { rank[k] = i; byLength.push(k); } });
+            byLength.sort(function(a, b) { return b.length - a.length; });
+            function match(w, i) {
+                for (var j = 0; j < byLength.length; j++) {
+                    if (w.substr(i, byLength[j].length) === byLength[j]) return byLength[j];
+                }
+                return null;
+            }
+            function key(word) {
+                var w = norm(word).replace(/^-+/, ''), out = [], i = 0;
+                while (i < w.length) {
+                    var m = match(w, i);
+                    if (m) { out.push(rank[m]); i += m.length; continue; }
+                    var ch = w.charAt(i);
+                    if (!/[\s\-'’.()]/.test(ch)) out.push(letters.length + ch.charCodeAt(0));
+                    i += 1;
+                }
+                return out;
+            }
+            return {
+                letterOf: function(word) {
+                    var w = norm(word).replace(/^-+/, '');
+                    if (!w) return '?';
+                    var m = match(w, 0);
+                    return (m || w.charAt(0)).toLocaleUpperCase();
+                },
+                compareLetters: function(a, b) {
+                    var x = norm(a), y = norm(b);
+                    var rx = x in rank ? rank[x] : letters.length + x.charCodeAt(0);
+                    var ry = y in rank ? rank[y] : letters.length + y.charCodeAt(0);
+                    return rx - ry;
+                },
+                compareWords: function(a, b) {
+                    var x = key(a), y = key(b);
+                    for (var i = 0; i < Math.min(x.length, y.length); i++) {
+                        if (x[i] !== y[i]) return x[i] - y[i];
+                    }
+                    return x.length - y.length;
+                }
+            };
+        })({{ site.alphabet | tojson }});
+
+{% endif %}
         function getEntryLetter(entry) {
+{% if site.alphabet %}
+            return ALPHA.letterOf(entry.entry);
+{% else %}
             var word = (entry.entry || '').replace(/^-+/, '');
             if (!word) return '?';
             return word[0].toUpperCase();
+{% endif %}
         }
 
         function buildLookups(entries) {
@@ -461,9 +514,13 @@
                 if (!entriesByLetter[letter]) entriesByLetter[letter] = [];
                 entriesByLetter[letter].push(e);
             }
+{% if site.alphabet %}
+            availableLetters = Object.keys(entriesByLetter).sort(ALPHA.compareLetters);
+{% else %}
             availableLetters = Object.keys(entriesByLetter).sort(function(a, b) {
                 return a.localeCompare(b);
             });
+{% endif %}
         }
 
         function renderLetterBar(activeLetters) {
@@ -488,7 +545,11 @@
                 }
                 grouped[l].push(entries[i]);
             }
+{% if site.alphabet %}
+            letters.sort(ALPHA.compareLetters);
+{% else %}
             letters.sort(function(a, b) { return a.localeCompare(b); });
+{% endif %}
 
             var html = '';
             for (var li = 0; li < letters.length; li++) {
@@ -743,11 +804,15 @@
 
         // Load data
         var json = { data: {{ data | tojson }} };
+{% if site.alphabet %}
+        allEntries = json.data.sort(function(a, b) { return ALPHA.compareWords(a.entry, b.entry); });
+{% else %}
         allEntries = json.data.sort(function(a, b) {
             var ae = (a.entry || '').replace(/^-+/, '');
             var be = (b.entry || '').replace(/^-+/, '');
             return ae.localeCompare(be, 'pt');
         });
+{% endif %}
 
         buildLookups(allEntries);
 

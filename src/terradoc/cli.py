@@ -75,7 +75,10 @@ def _load(config_path: str, out: str | None = None, bundle_dir: str | None = Non
     if not cfg_path.exists():
         click.echo(f"Config file not found: {cfg_path}", err=True)
         raise SystemExit(1)
-    cfg = load_config(cfg_path)
+    try:
+        cfg = load_config(cfg_path)
+    except ValueError as exc:  # a malformed terradoc.yaml: one line, not a traceback
+        raise click.ClickException(str(exc)) from exc
     if out:
         cfg.output_dir = Path(out).resolve()
     if bundle_dir:

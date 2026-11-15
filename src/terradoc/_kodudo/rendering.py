@@ -1,9 +1,11 @@
 """Jinja2 environment and template rendering (inlined from kodudo)."""
 
+import importlib.resources
+
 from pathlib import Path
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, TemplateSyntaxError, UndefinedError, select_autoescape
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader, TemplateNotFound, TemplateSyntaxError, UndefinedError, select_autoescape
 
 from .errors import RenderError
 
@@ -13,7 +15,13 @@ def create_environment(
     autoescape_for: tuple[str, ...] = ("html", "xml"),
 ) -> Environment:
     search_paths = [str(p) for p in template_dirs] if template_dirs else ["."]
-    loader = FileSystemLoader(search_paths)
+    # "terradoc/<name>" always means terradoc's own template, so a site's override of a
+    # page can extend the original: {% extends "terradoc/dictionary.html.j2" %}.
+    bundled = str(importlib.resources.files("terradoc.templates"))
+    loader = ChoiceLoader([
+        FileSystemLoader(search_paths),
+        PrefixLoader({"terradoc": FileSystemLoader(bundled)}),
+    ])
     return Environment(
         loader=loader,
         autoescape=select_autoescape(autoescape_for),

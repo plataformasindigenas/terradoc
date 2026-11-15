@@ -50,5 +50,27 @@ site's palette.
 ## Overriding other templates
 
 Templates are looked up file by file, first in the site's `config/templates/`, then in
-terradoc's. Override as little as possible: every overridden file is one that terradoc
-upgrades no longer reach.
+terradoc's. `terradoc/<name>` always means terradoc's own copy, so a site can change one
+block of a page and keep the rest:
+
+```jinja
+{# config/templates/dictionary.html.j2 #}
+{% extends "terradoc/dictionary.html.j2" %}
+{% block extra_styles %}{{ super() }} .entry-word { letter-spacing: .02em; }{% endblock %}
+```
+
+**Supported blocks** (the contract: kept across terradoc releases, and changes are announced
+in the changelog):
+
+| Template | Block | What it holds |
+|---|---|---|
+| `base.html.j2` | `title` | the page title before " - site title" |
+| `base.html.j2` | `extra_styles` | extra CSS inside the page's `<style>` |
+| `base.html.j2` | `content` | the page body |
+| `base.html.j2` | `footer` | the whole `<footer>` |
+| `base.html.j2` | `scripts` | scripts at the end of the page |
+
+Override as little as possible: everything outside these blocks may change in any release,
+and every file a site overrides is one that terradoc upgrades no longer reach. The
+`sites-gate` workflow builds every platform with each terradoc commit, which shows what a
+release would change.
