@@ -35,6 +35,24 @@ def test_build_language_picker():
         assert "English" in index_html
 
 
+def test_language_root_redirects():
+    """The root page redirects by browser language, defaulting to default_locale."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        (tmp_path / "docs").mkdir()
+        config = TerradocConfig(
+            project_name="T", locales=["pt", "en", "bor"], default_locale="pt", base_dir=tmp_path,
+        )
+        build_language_picker(config)
+        html = (tmp_path / "docs" / "index.html").read_text()
+        assert '["pt", "en", "bor"]' in html
+        assert "navigator.languages" in html
+        assert "location.replace" in html
+        assert "localStorage.getItem('td-locale')" in html
+        assert '(pick || "pt")' in html
+        assert 'content="0; url=pt/index.html"' in html
+
+
 def test_build_language_picker_custom_theme():
     """Language picker uses custom theme colors."""
     with tempfile.TemporaryDirectory() as tmp:

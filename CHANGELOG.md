@@ -4,6 +4,14 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-11-15
+
+### Changed
+
+- **No language picker.** The site's root page now sends visitors straight to their language:
+  the one they last chose with the language switch, else the first of the browser's languages
+  the site has, else `default_locale`. Without JavaScript it goes to `default_locale`.
+
 ### Added
 
 - **`server/`: sitepull**, the web server's side of publishing (not part of the PyPI package).

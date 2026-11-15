@@ -118,7 +118,7 @@
                     {% if switch.is_current %}
                     <span class="lang-current" aria-current="true">{{ switch.code | default(switch.label) | upper }}</span>
                     {% else %}
-                    <a href="{{ switch.href }}" class="lang-link">{{ switch.code | default(switch.label) | upper }}</a>
+                    <a href="{{ switch.href }}" class="lang-link"{% if switch.code %} onclick="try{localStorage.setItem('td-locale','{{ switch.code }}')}catch(e){}"{% endif %}>{{ switch.code | default(switch.label) | upper }}</a>
                     {% endif %}
                 {% endfor %}
             </div>

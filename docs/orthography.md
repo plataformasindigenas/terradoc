@@ -66,6 +66,10 @@ Check the font's license allows redistribution (SIL OFL fonts do).
 works, including an indigenous language's own (`bor`, `mpu`), so the interface can be in the
 language itself. Give it a label in `locale_labels`.
 
+There is no language picker page. The site's root sends each visitor to the language they last
+chose with the switch in the header, else to the first of their browser's languages that the
+site has, else to `default_locale`.
+
 `terradoc check` warns when a locale lacks keys that the default locale has, because those
 labels would show empty. Content (definitions, articles) stays in the languages it was written
 in; translating the interface is a separate decision from translating the content.

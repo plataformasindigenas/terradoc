@@ -241,7 +241,12 @@ def build_locale(locale: str, translations: dict, config: TerradocConfig):
 
 
 def build_language_picker(config: TerradocConfig):
-    """Generate root docs/index.html with language selection."""
+    """Generate root docs/index.html, which sends visitors to their language.
+
+    No picker is shown: the page redirects to the locale the visitor last chose with the
+    language switch, else the first of the browser's languages the site has, else
+    default_locale. The locale links stay in the page for clients that do not redirect.
+    """
     site = config.site_context()
     theme_dict = config.theme.to_dict()
 
@@ -258,13 +263,15 @@ def build_language_picker(config: TerradocConfig):
             "site": site,
             "theme": theme_dict,
             "locales": locales,
-            "default_locale": config.default_locale,
+            # Redirect only to a locale that is built.
+            "default_locale": (config.default_locale if config.default_locale in config.locales
+                               else config.locales[0]),
         },
         template_dirs=config.template_dirs,
     )
 
     (config.docs_dir / "index.html").write_text(page_html, encoding="utf-8")
-    print("  Generated language picker at docs/index.html")
+    print("  Generated language redirect at docs/index.html")
 
 
 def copy_static_assets(config: TerradocConfig):

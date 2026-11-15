@@ -3,6 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {#- No picker: go straight to the visitor's language. A choice made with the site's language
+        switch (remembered in localStorage) wins, then the browser's languages in order, then
+        default_locale. Without JavaScript, the refresh goes to default_locale. #}
+    <script>
+    (function () {
+        var codes = {{ locales | map(attribute='code') | list | tojson }};
+        var pick = null;
+        function match(tag) {
+            tag = String(tag || '').toLowerCase();
+            for (var i = 0; i < codes.length; i++) {
+                var c = codes[i].toLowerCase();
+                if (tag === c || tag.split('-')[0] === c) return codes[i];
+            }
+            return null;
+        }
+        try { pick = match(localStorage.getItem('td-locale')); } catch (e) {}
+        var langs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
+        for (var i = 0; !pick && i < langs.length; i++) pick = match(langs[i]);
+        location.replace((pick || {{ default_locale | tojson }}) + '/index.html' + location.search + location.hash);
+    })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url={{ default_locale }}/index.html"></noscript>
     <title>{{ site.title }}</title>
     {% if theme.favicon %}
     <link rel="icon" href="{{ theme.favicon }}">
