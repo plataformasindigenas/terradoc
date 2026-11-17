@@ -140,21 +140,13 @@ class CSVReader:
 
 
 def _infer_type(value: str | None) -> Any:
+    """An empty cell is None; everything else stays text, and the schema converts it.
+
+    Guessing types here turned the Bororo word "no" into False and "0" into a number
+    in text columns; the schema knows which columns are int or bool.
+    """
     if value is None or value == "":
         return None
-    try:
-        return int(value)
-    except ValueError:
-        pass
-    try:
-        return float(value)
-    except ValueError:
-        pass
-    lower = value.lower()
-    if lower in ("true", "yes", "1"):
-        return True
-    if lower in ("false", "no", "0"):
-        return False
     return value
 
 
