@@ -204,3 +204,46 @@ def test_terradoc_css_has_td_term():
     content = css.read_text()
     assert ".td-term" in content
     assert "var(--td-term-color)" in content
+
+
+def test_sitemap_absolute_and_without_error_pages():
+    """The sitemap lists absolute URLs of content pages; no 404 or root redirect."""
+    from terradoc.build_site import write_robots_txt, write_sitemap
+
+    with tempfile.TemporaryDirectory() as tmp:
+        docs = Path(tmp)
+        for rel in ("index.html", "404.html", "pt/index.html", "pt/encyclopedia/ãa b.html"):
+            (docs / rel).parent.mkdir(parents=True, exist_ok=True)
+            (docs / rel).write_text("x")
+        config = TerradocConfig(base_url="https://x.terradoc.org/", base_dir=docs)
+        write_sitemap(docs, config, ["pt"])
+        write_robots_txt(docs, config.base_url)
+        sitemap = (docs / "sitemap.xml").read_text()
+        assert "<loc>https://x.terradoc.org/pt/index.html</loc>" in sitemap
+        assert "<loc>https://x.terradoc.org/pt/encyclopedia/%C3%A3a%20b.html</loc>" in sitemap
+        assert "404.html" not in sitemap
+        assert "<loc>https://x.terradoc.org/index.html</loc>" not in sitemap
+        assert "Sitemap: https://x.terradoc.org/sitemap.xml" in (docs / "robots.txt").read_text()
+
+
+def test_no_sitemap_without_base_url():
+    from terradoc.build_site import write_robots_txt, write_sitemap
+
+    with tempfile.TemporaryDirectory() as tmp:
+        docs = Path(tmp)
+        (docs / "sitemap.xml").write_text("stale")
+        write_sitemap(docs, TerradocConfig(base_dir=docs), ["pt"])
+        write_robots_txt(docs)
+        assert not (docs / "sitemap.xml").exists()
+        assert "Sitemap" not in (docs / "robots.txt").read_text()
+
+
+def test_number_filter():
+    from terradoc._kodudo.rendering import format_number
+
+    assert format_number(4865, "pt") == "4.865"
+    assert format_number(4865, "en") == "4,865"
+    assert format_number(7.0, "pt") == "7,0"
+    assert format_number(7.0, "en-GB") == "7.0"
+    assert format_number(461, "bor") == "461"
+    assert format_number("n/a", "pt") == "n/a"

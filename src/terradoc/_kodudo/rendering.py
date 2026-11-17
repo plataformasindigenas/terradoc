@@ -10,6 +10,20 @@ from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader, Te
 from .errors import RenderError
 
 
+def format_number(value: Any, locale: str = "pt") -> str:
+    """A number as the interface language writes it: 4.865 and 7,0 in Portuguese, 4,865 and 7.0
+    in English. Languages other than English use the Portuguese convention."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    decimals = 0 if number == int(number) and not isinstance(value, float) else 1
+    text = f"{number:,.{decimals}f}"
+    if str(locale).split("-")[0].lower() == "en":
+        return text
+    return text.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+
+
 def create_environment(
     template_dirs: tuple[Path, ...] = (),
     autoescape_for: tuple[str, ...] = ("html", "xml"),
@@ -22,12 +36,14 @@ def create_environment(
         FileSystemLoader(search_paths),
         PrefixLoader({"terradoc": FileSystemLoader(bundled)}),
     ])
-    return Environment(
+    env = Environment(
         loader=loader,
         autoescape=select_autoescape(autoescape_for),
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.filters["number"] = format_number
+    return env
 
 
 def render(

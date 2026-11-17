@@ -4,6 +4,18 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-11-17
+
+### Changed
+
+- **Sitemap with absolute URLs.** New top-level `base_url` (the site's public address).
+  `sitemap.xml` now lists absolute, escaped URLs, as the protocol requires, and leaves out
+  `404.html` and the root language redirect; `robots.txt` points at it with an absolute URL.
+  Without `base_url` no sitemap is written (the old one, with relative URLs, was invalid).
+- **Numbers in the interface language.** A `number` template filter: `4.865` and `7,0%` in
+  Portuguese (and any language but English), `4,865` and `7.0%` in English. Used for the
+  dictionary, encyclopedia and home-page counts.
+
 ## [0.15.0] — 2026-11-15
 
 ### Changed

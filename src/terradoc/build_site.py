@@ -312,27 +312,41 @@ def copy_audio_files(config: TerradocConfig):
         print(f"  Copied {n} audio files to docs/audio/")
 
 
-def write_robots_txt(docs_dir: Path):
-    """Write a robots.txt file to the docs directory."""
-    content = "User-agent: *\nAllow: /\nSitemap: sitemap.xml\n"
+def write_robots_txt(docs_dir: Path, base_url: str = ""):
+    """Write a robots.txt file to the docs directory (Sitemap only with an absolute URL)."""
+    content = "User-agent: *\nAllow: /\n"
+    if base_url:
+        content += f"Sitemap: {base_url.rstrip('/')}/sitemap.xml\n"
     (docs_dir / "robots.txt").write_text(content, encoding="utf-8")
     print("  Generated robots.txt")
 
 
 def write_sitemap(docs_dir: Path, config: TerradocConfig, locales: list[str]):
-    """Generate a sitemap.xml listing all HTML pages in the docs directory."""
-    urls: list[str] = []
-    for html_file in sorted(docs_dir.rglob("*.html")):
-        rel = html_file.relative_to(docs_dir).as_posix()
-        urls.append(rel)
+    """Generate sitemap.xml: absolute URLs of the content pages.
 
-    lines = ['<?xml version="1.0" encoding="UTF-8"?>']
-    lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for url in urls:
-        lines.append(f"  <url><loc>{url}</loc></url>")
+    The protocol needs absolute URLs, so without ``base_url`` no sitemap is written (and a
+    stale one is removed). The error page and the root language redirect are left out.
+    """
+    from urllib.parse import quote
+    from xml.sax.saxutils import escape
+
+    target = docs_dir / "sitemap.xml"
+    if not config.base_url:
+        target.unlink(missing_ok=True)
+        print("  No sitemap.xml (set base_url in terradoc.yaml)")
+        return
+    base = config.base_url.rstrip("/")
+    skip = {"404.html", "index.html"}
+    urls = [
+        f"{base}/{quote(rel)}"
+        for rel in (p.relative_to(docs_dir).as_posix() for p in sorted(docs_dir.rglob("*.html")))
+        if rel not in skip
+    ]
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    lines += [f"  <url><loc>{escape(u)}</loc></url>" for u in urls]
     lines.append("</urlset>")
-
-    (docs_dir / "sitemap.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    target.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"  Generated sitemap.xml ({len(urls)} URLs)")
 
 
@@ -386,7 +400,7 @@ def build_site(config: TerradocConfig):
 
     build_language_picker(config)
     build_404_page(config)
-    write_robots_txt(config.docs_dir)
+    write_robots_txt(config.docs_dir, config.base_url)
     write_sitemap(config.docs_dir, config, config.locales)
     print("\n=== i18n Build Complete ===")
 

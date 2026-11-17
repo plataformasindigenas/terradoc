@@ -190,6 +190,9 @@ class TerradocConfig:
         "en": "English",
     })
     default_locale: str = "pt"
+    # The site's public address, e.g. "https://makurap.terradoc.org". The sitemap needs
+    # absolute URLs; without base_url no sitemap is written.
+    base_url: str = ""
     featured_article_id: str = ""
     bib_file: str = "references.bib"
     ethnobotany_encyclopedia_categories: list[str] = field(
@@ -358,7 +361,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
         for key in ("project_name", "project_subtitle", "site_title",
                      "site_tagline", "culture_name",
                      "meta_prefix", "default_locale", "featured_article_id",
-                     "bib_file"):
+                     "bib_file", "base_url"):
             if key in raw:
                 setattr(config, key, raw[key])
 

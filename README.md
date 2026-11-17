@@ -208,6 +208,7 @@ culture_name: "Community Name"
 meta_prefix: "my_project"
 locales: ["pt", "en"]
 default_locale: "pt"
+base_url: "https://example.terradoc.org"   # for the sitemap (absolute URLs); none without it
 
 modules:
   dictionary: { enabled: true }

@@ -582,7 +582,7 @@
                 <div class="hero-stats">
                     {% for slug in theme.hero_stats %}
                     <div class="hero-stat">
-                        <span class="hero-stat-num">{{ data[0][slug + '_count'] | default('0') }}</span>
+                        <span class="hero-stat-num">{{ data[0][slug + '_count'] | default(0) | number(locale) }}</span>
                         <span class="hero-stat-label">{{ t['card_' + slug + '_label'] | default(slug) }}</span>
                     </div>
                     {% endfor %}
@@ -696,7 +696,7 @@
             {% endif %}
             <div class="teaser-card-body">
                 <div class="teaser-stat">
-                    <span class="teaser-count">{{ data[0][mod_slug + '_count'] | default('0') }}</span>
+                    <span class="teaser-count">{{ data[0][mod_slug + '_count'] | default(0) | number(locale) }}</span>
                     <span class="teaser-count-label">{{ t['card_' + mod_slug + '_label'] | default(mod_slug) }}</span>
                 </div>
                 <p class="teaser-desc">{{ t['card_' + mod_slug + '_desc'] | default('') }}</p>
