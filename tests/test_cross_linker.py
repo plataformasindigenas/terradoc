@@ -12,6 +12,7 @@ from terradoc.cross_linker import (
     _link_dict_ethnobotany,
     _link_dict_fauna,
     _link_ethno_encyclopedia,
+    attach_audio_to_dictionary,
     attach_recordings_to_dictionary,
     cross_link_datasets,
 )
@@ -167,8 +168,8 @@ def test_attach_recordings_basic():
         entry3 = result["data"][2]
 
         assert len(entry1["audio"]) == 2
-        assert entry1["audio"][0]["speaker"] == "Ana"
-        assert entry1["audio"][1]["speaker"] == "Beto"
+        assert [a["file_path"] for a in entry1["audio"]] == ["audio/w1.mp3", "audio/w1b.mp3"]
+        assert all("speaker" not in a for a in entry1["audio"])  # no names published
 
         assert "audio" not in entry2
 
@@ -832,3 +833,19 @@ def test_cross_link_missing_optional_fields():
         f_linked = fauna_result["data"][0]["_linked_dictionary"][0]
         assert f_linked["entry"] == ""
         assert f_linked["definition"] == ""
+
+
+def test_attach_audio_publishes_no_speaker_names(tmp_path):
+    """Filenames keep the speaker suffix, but no name goes into the bundle."""
+    config = _make_config(tmp_path)
+    data_dir = tmp_path / "data"
+    _write_json(data_dir / "dictionary.json", {"meta": {}, "data": [{"id": 1, "entry": "aerega"}]})
+    (data_dir / "audio").mkdir()
+    for name in ("aerega.webm", "aerega__elizete.webm"):
+        (data_dir / "audio" / name).write_bytes(b"")
+
+    attach_audio_to_dictionary(config)
+
+    audio = _read_json(data_dir / "dictionary.json")["data"][0]["audio"]
+    assert [a["file_path"] for a in audio] == ["aerega.webm", "aerega__elizete.webm"]
+    assert all("speaker" not in a for a in audio)

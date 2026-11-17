@@ -425,6 +425,7 @@
     <script>
     (function() {
         var T = {{ t | tojson }};
+        var REC_LABEL = {{ (t.dict_recording_label | default('Recording' if locale == 'en' else 'Gravação')) | tojson }};
         var BASE_PATH = '{{ base_path | default("") }}';
         var posLabels = {};
         ['LEX','S','VC','ADV','PPASS','POSP','SUF','INTJ','VT','PRON','V','PRCL','PPAS','PPART','NUM','IP','DEM','CONJ','X','PROPN'].forEach(function(k) {
@@ -612,9 +613,10 @@
                 for (var i = 0; i < entry.audio.length; i++) {
                     var a = entry.audio[i];
                     var mimeType = a.format === 'webm' ? 'audio/webm' : 'audio/wav';
-                    var speaker = a.speaker.charAt(0).toUpperCase() + a.speaker.slice(1);
                     html += '<div class="audio-item">';
-                    html += '<span class="audio-speaker">' + escapeHtml(speaker) + '</span>';
+                    if (entry.audio.length > 1) {
+                        html += '<span class="audio-speaker">' + escapeHtml(REC_LABEL + ' ' + (i + 1)) + '</span>';
+                    }
                     html += '<audio controls preload="none"><source src="' + BASE_PATH + 'audio/' + escapeHtml(a.file_path) + '" type="' + mimeType + '"></audio>';
                     html += '</div>';
                 }

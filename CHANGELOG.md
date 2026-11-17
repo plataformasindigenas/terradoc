@@ -4,6 +4,16 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.16.1] — 2026-11-17
+
+### Changed
+
+- **No speaker names on the dictionary.** Recordings are no longer labelled with the
+  speaker's name (taken from the audio filename); an entry with several recordings shows
+  "Gravação 1", "Gravação 2" ("Recording" in English; `dict_recording_label` overrides it).
+  The published `dictionary.json` no longer carries a `speaker` field. Audio filenames are
+  unchanged.
+
 ## [0.16.0] — 2026-11-17
 
 ### Changed

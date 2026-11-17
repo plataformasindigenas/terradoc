@@ -26,7 +26,7 @@ def attach_audio_to_dictionary(config: TerradocConfig):
         data/audio/<slug>.webm   (primary)
         data/audio/<slug>__*.webm (variants — usually per-speaker)
     where slug = _slugify(entry.entry). Attach each match as
-    {file_path, speaker, format} on entry.audio so the existing dictionary
+    {file_path, format} on entry.audio so the existing dictionary
     template renders <audio> players.
     """
     print("=== Attaching Audio to Dictionary ===")
@@ -48,20 +48,19 @@ def attach_audio_to_dictionary(config: TerradocConfig):
         stem = path.stem
         if "__" in stem:
             slug, _, variant = stem.partition("__")
-            speaker = re.sub(r"\d+$", "", variant) or "unknown"
             sort_key = (1, variant)
         else:
             slug = stem
-            speaker = "unknown"
             sort_key = (0, "")
+        # No speaker is published (2026-11-17: no names until agreed); the
+        # filename keeps whatever the recording team put in it.
         by_slug[slug].append({
             "file_path": name,
-            "speaker": speaker,
             "format": "webm",
             "_sort": sort_key,
         })
 
-    # Sort within each slug: primary first, then variants alphabetically by speaker
+    # Sort within each slug: primary first, then variants by filename
     for slug in by_slug:
         by_slug[slug].sort(key=lambda d: d["_sort"])
         for d in by_slug[slug]:
@@ -121,7 +120,6 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
             continue
         audio_map.setdefault(dict_id, []).append({
             "file_path": rec["file_path"],
-            "speaker": rec["speaker"],
             "format": rec["format"],
         })
 
