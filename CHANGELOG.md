@@ -4,6 +4,8 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-11-17
+
 ### Added
 
 - **Template sets.** `theme.templates` (default `v1`) and `--templates` on `build` and
