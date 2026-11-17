@@ -294,17 +294,26 @@ def copy_static_assets(config: TerradocConfig):
 
 def copy_audio_files(config: TerradocConfig):
     """Mirror data/audio/*.webm → docs/audio/. Files starting with '_' (reports
-    like _import_report.md) are skipped."""
+    like _import_report.md) are skipped. With data/audio/manifest.tsv, only the
+    files it lists with consent are published."""
+    from terradoc.checks import CONSENT_VALUES
+    from terradoc.cross_linker import read_audio_manifest
+
     src_dir = config.data_dir / "audio"
     if not src_dir.exists():
         return
+    manifest = read_audio_manifest(src_dir)
+    allowed = None if manifest is None else {
+        row["file"] for row in manifest if row["consent"] in CONSENT_VALUES}
     dest_dir = config.docs_dir / "audio"
     dest_dir.mkdir(parents=True, exist_ok=True)
     n = 0
-    for src_file in src_dir.iterdir():
+    for src_file in sorted(src_dir.iterdir()):
         if not src_file.is_file() or src_file.name.startswith("_"):
             continue
         if src_file.suffix.lower() != ".webm":
+            continue
+        if allowed is not None and src_file.name not in allowed:
             continue
         shutil.copy2(str(src_file), str(dest_dir / src_file.name))
         n += 1

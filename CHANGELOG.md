@@ -13,6 +13,12 @@ All notable changes to terradoc are documented here.
   (`gate/v1/sites.txt`) with pinned dependencies and fails on any byte difference from
   `gate/v1/<site>.sha256`. `gate/v1.sh check|freeze` runs the same locally.
 
+- **Audio manifest.** `data/audio/manifest.tsv` (`file`, `entry_id`, `speaker`, `consent`)
+  says which dictionary entry each recording belongs to, so homonyms and headword edits no
+  longer decide it. With it, only listed files with `consent: approved|external` are
+  published; `check` fails on unlisted or missing files, unknown entry ids, duplicate rows and
+  a `speaker` that is not an id such as `s01`. Without it, audio still follows the headword.
+
 ### Changed
 
 - **Unknown `theme:` keys are errors** in `check` and `build`, with a suggestion for near

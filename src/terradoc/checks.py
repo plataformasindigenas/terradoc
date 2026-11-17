@@ -258,6 +258,50 @@ def _check_consent(config: TerradocConfig, loaded: dict[str, tuple[Path, list[di
     return issues
 
 
+SPEAKER_ID_RE = re.compile(r"^[a-z]{1,4}[0-9]{1,3}$")  # e.g. s01: an id, never a name
+
+
+def _check_audio_manifest(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:
+    """data/audio/manifest.tsv: every file listed and present, entries exist, consent given."""
+    from terradoc.cross_linker import AUDIO_MANIFEST_COLUMNS, read_audio_manifest
+
+    audio_dir = config.data_dir / "audio"
+    rows = read_audio_manifest(audio_dir)
+    if rows is None:
+        return []
+    where = _rel(config, audio_dir / "manifest.tsv")
+    issues = []
+    with (audio_dir / "manifest.tsv").open(encoding="utf-8") as f:
+        header = f.readline().rstrip("\n").split("\t")
+    if tuple(header) != AUDIO_MANIFEST_COLUMNS:
+        return [Issue("error", "audio", f"columns must be {' '.join(AUDIO_MANIFEST_COLUMNS)} "
+                      f"(got {' '.join(header)})", where, 1)]
+    ids = {str(r.get("id")) for r in loaded["dictionary"][1]} if "dictionary" in loaded else None
+    seen, listed = set(), set()
+    for line, row in enumerate(rows, start=2):
+        name, entry_id = row["file"], row["entry_id"]
+        listed.add(name)
+        if (name, entry_id) in seen:
+            issues.append(Issue("error", "audio", f"{name} → {entry_id} is listed twice", where, line))
+        seen.add((name, entry_id))
+        if "/" in name or not (audio_dir / name).is_file():
+            issues.append(Issue("error", "audio", f"missing file '{name}' in data/audio/", where, line))
+        if ids is not None and entry_id not in ids:
+            issues.append(Issue("error", "audio", f"{name}: no dictionary entry with id {entry_id!r}", where, line))
+        if row["consent"] not in CONSENT_VALUES:
+            issues.append(Issue("error", "consent",
+                f"{name}: 'consent' must be one of {', '.join(CONSENT_VALUES)} (got {row['consent']!r}); "
+                "unconsented media is never published", where, line))
+        if row["speaker"] and not SPEAKER_ID_RE.match(row["speaker"]):
+            issues.append(Issue("error", "audio",
+                f"{name}: speaker {row['speaker']!r} must be an id such as s01, not a name", where, line))
+    for path in sorted(audio_dir.glob("*.webm")):
+        if path.name not in listed:
+            issues.append(Issue("error", "audio", f"{path.name} is not in the manifest (it would not be "
+                                "published); add a row with its entry id", where))
+    return issues
+
+
 def _check_photo_fields(config: TerradocConfig, path: Path, row: dict, line: int | None) -> list[Issue]:
     """pic_link is a file shipped with the site or an http(s) address;
     pic_source, shown as the credit's link, must be an http(s) address."""
@@ -572,6 +616,7 @@ def run_checks(config: TerradocConfig) -> list[Issue]:
     issues += tab_issues
     issues += _check_encyclopedia(config)
     issues += _check_consent(config, loaded)
+    issues += _check_audio_manifest(config, loaded)
     issues += _check_media(config, loaded)
     issues += _check_static(config)
     issues += _check_theme(config)

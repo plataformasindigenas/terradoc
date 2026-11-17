@@ -19,6 +19,26 @@ def _slugify(text: str) -> str:
     return text
 
 
+AUDIO_MANIFEST = "manifest.tsv"
+AUDIO_MANIFEST_COLUMNS = ("file", "entry_id", "speaker", "consent")
+
+
+def read_audio_manifest(audio_dir) -> list[dict] | None:
+    """Rows of data/audio/manifest.tsv (file, entry_id, speaker, consent), or None.
+
+    One row per file and entry (a recording of homophones may serve several
+    entries). `speaker` is an opaque id, never a name, and is not published.
+    """
+    import csv
+
+    path = audio_dir / AUDIO_MANIFEST
+    if not path.is_file():
+        return None
+    with path.open(encoding="utf-8", newline="") as f:
+        return [{k: (v or "").strip() for k, v in row.items() if k is not None}
+                for row in csv.DictReader(f, delimiter="\t")]
+
+
 def attach_audio_to_dictionary(config: TerradocConfig):
     """Attach audio files from data/audio/ to dictionary entries via slug match.
 
@@ -28,6 +48,9 @@ def attach_audio_to_dictionary(config: TerradocConfig):
     where slug = _slugify(entry.entry). Attach each match as
     {file_path, format} on entry.audio so the existing dictionary
     template renders <audio> players.
+
+    With data/audio/manifest.tsv, files go to the entries it names by id
+    instead, and the headword plays no part.
     """
     print("=== Attaching Audio to Dictionary ===")
 
@@ -69,14 +92,32 @@ def attach_audio_to_dictionary(config: TerradocConfig):
     with open(dictionary_file, "r", encoding="utf-8") as f:
         dictionary = json.load(f)
 
+    manifest = read_audio_manifest(audio_dir)
+    if manifest is not None:
+        # The manifest says which entry each file belongs to, so homonyms and
+        # headword edits no longer decide it.
+        by_id: dict[str, list[dict]] = defaultdict(list)
+        for row in manifest:
+            by_id[row["entry_id"]].append({"file_path": row["file"], "format": "webm"})
+        for files in by_id.values():
+            files.sort(key=lambda d: (1, d["file_path"][:-5].partition("__")[2])
+                       if "__" in d["file_path"] else (0, ""))
+
+        def files_for(entry: dict) -> list[dict]:
+            return by_id.get(str(entry.get("id")), [])
+    else:
+        def files_for(entry: dict) -> list[dict]:
+            slug = _slugify(entry.get("entry", ""))
+            return by_slug.get(slug, []) if slug else []
+
     attached = 0
     files_attached = 0
     for entry in dictionary["data"]:
-        slug = _slugify(entry.get("entry", ""))
-        if slug and slug in by_slug:
-            entry["audio"] = by_slug[slug]
+        files = files_for(entry)
+        if files:
+            entry["audio"] = files
             attached += 1
-            files_attached += len(by_slug[slug])
+            files_attached += len(files)
 
     # Coverage stats — written into meta so the template can render a badge
     total = len(dictionary["data"])
