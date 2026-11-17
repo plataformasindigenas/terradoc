@@ -365,8 +365,20 @@ def _motif_packs(config: TerradocConfig) -> list[str]:
 
 
 def _check_theme(config: TerradocConfig) -> list[Issue]:
+    from difflib import get_close_matches
+
+    from terradoc.config import TEMPLATE_SETS, THEME_KEYS
+
     issues = []
     yaml_file = "terradoc.yaml"
+    for key in config.unknown_theme_keys:
+        near = get_close_matches(key, sorted(THEME_KEYS), n=1)
+        hint = f" (did you mean '{near[0]}'?)" if near else " (a newer terradoc may know it)"
+        issues.append(Issue("error", "theme", f"theme.{key}: unknown setting{hint}", yaml_file))
+    if config.theme.templates not in TEMPLATE_SETS:
+        issues.append(Issue("error", "theme",
+            f"theme.templates: '{config.theme.templates}' is not available in this terradoc "
+            f"(it has: {', '.join(TEMPLATE_SETS)})", yaml_file))
     for key, part in MOTIF_PARTS.items():
         name = getattr(config.theme, key)
         if key in MOTIF_BUILTIN.get(name, ()):

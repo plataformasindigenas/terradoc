@@ -70,7 +70,8 @@ def main():
     pass
 
 
-def _load(config_path: str, out: str | None = None, bundle_dir: str | None = None):
+def _load(config_path: str, out: str | None = None, bundle_dir: str | None = None,
+          templates: str | None = None):
     cfg_path = Path(config_path)
     if not cfg_path.exists():
         click.echo(f"Config file not found: {cfg_path}", err=True)
@@ -83,6 +84,13 @@ def _load(config_path: str, out: str | None = None, bundle_dir: str | None = Non
         cfg.output_dir = Path(out).resolve()
     if bundle_dir:
         cfg.bundle_dir_override = Path(bundle_dir).resolve()
+    if templates:
+        cfg.theme.templates = templates
+    from terradoc.config import TEMPLATE_SETS
+    if cfg.theme.templates not in TEMPLATE_SETS:  # render runs no checks: refuse here too
+        raise click.ClickException(
+            f"template set '{cfg.theme.templates}' is not available in this terradoc "
+            f"(it has: {', '.join(TEMPLATE_SETS)})")
     return cfg
 
 
@@ -97,6 +105,8 @@ def _bundle_option(f):
 
 
 def _out_options(f):
+    f = click.option("--templates", default=None,
+                     help="Template set to render with (overrides theme.templates), e.g. v1")(f)
     f = click.option("--clean", is_flag=True,
                      help="Empty the output directory first (only with --out)")(f)
     return click.option("--out", default=None, type=click.Path(file_okay=False),
@@ -207,11 +217,12 @@ def export(config_path: str, bundle_dir: str | None):
 @_config_option
 @_bundle_option
 @_out_options
-def render(config_path: str, bundle_dir: str | None, out: str | None, clean: bool):
+def render(config_path: str, bundle_dir: str | None, out: str | None, clean: bool,
+           templates: str | None):
     """Render the site from an existing export bundle."""
     from terradoc.build_site import render_site
 
-    cfg = _load(config_path, out=out, bundle_dir=bundle_dir)
+    cfg = _load(config_path, out=out, bundle_dir=bundle_dir, templates=templates)
     with _friendly_errors():
         render_site(cfg, clean=clean)
     click.echo("\n=== Render Complete ===")
@@ -223,12 +234,13 @@ def render(config_path: str, bundle_dir: str | None, out: str | None, clean: boo
 @_out_options
 @click.option("--format", "fmt", default="text", type=click.Choice(FORMATS),
               help="Format of the check report printed first")
-def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool, fmt: str):
+def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool, fmt: str,
+          templates: str | None):
     """Build the complete site: check, export, render."""
     from terradoc.build_site import render_site
     from terradoc.export import export_bundle
 
-    cfg = _load(config_path, out=out, bundle_dir=bundle_dir)
+    cfg = _load(config_path, out=out, bundle_dir=bundle_dir, templates=templates)
     if not _report(cfg, fmt):
         click.echo("Build stopped: fix the errors above.", err=True)
         raise SystemExit(1)

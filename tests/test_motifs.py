@@ -127,3 +127,30 @@ def test_site_page_template_overrides_bundled_one(project):
     result = build(project)
     assert result.exit_code == 0, result.output
     assert "SITE-ABOUT" in (Path("site") / "pt" / "about.html").read_text()
+
+
+def test_unknown_theme_key_is_an_error(project):
+    set_theme(project, hero_backgroud="weave")  # misspelt
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert result.exit_code != 0
+    assert "theme.hero_backgroud: unknown setting (did you mean 'hero_background'?)" in result.output
+    assert build(project).exit_code != 0
+
+
+def test_template_set_v1_is_the_default_and_explicit_v1_is_identical(project):
+    assert build(project).exit_code == 0
+    first = (Path("site") / "pt" / "index.html").read_bytes()
+    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site2",
+                 "--bundle-dir", "bundle2", "--templates", "v1")
+    assert result.exit_code == 0, result.output
+    assert (Path("site2") / "pt" / "index.html").read_bytes() == first
+
+
+def test_unavailable_template_set_is_refused(project):
+    result = run("render", "-c", str(project / "terradoc.yaml"), "--out", "site", "--templates", "v9")
+    assert result.exit_code != 0
+    assert "template set 'v9' is not available" in result.output
+    set_theme(project, templates="v9")
+    result = run("check", "-c", str(project / "terradoc.yaml"))
+    assert result.exit_code != 0
+    assert "'v9' is not available" in result.output

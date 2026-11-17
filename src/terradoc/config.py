@@ -143,6 +143,7 @@ class ThemeConfig:
     hero_height: str = ""
     page_badge: str = "weave"
     grain_pattern: str = "dots"
+    templates: str = "v1"  # template set; see TEMPLATE_SETS
 
     def to_dict(self) -> dict:
         result = {
@@ -185,6 +186,7 @@ class TerradocConfig:
     # The language's own alphabet, in order; letters may be digraphs ("mb", "ng").
     # Empty = first character and Portuguese collation, as before.
     alphabet: list[str] = field(default_factory=list)
+    unknown_theme_keys: list[str] = field(default_factory=list)  # filled by load_config
     locale_labels: dict[str, str] = field(default_factory=lambda: {
         "pt": "Português",
         "en": "English",
@@ -347,6 +349,21 @@ class TerradocConfig:
         return ctx
 
 
+# Template sets this version ships. v2 arrives with the redesign (meta REDESIGN-PLAN.md).
+TEMPLATE_SETS = ("v1",)
+
+# Every key `theme:` may hold; anything else is reported by `terradoc check`.
+THEME_KEYS = frozenset({
+    "preset", "colors", "colors_dark", "module_intensity", "templates",
+    "logo", "favicon", "font_family", "font_family_headings",
+    "font_family_mono", "font_family_ipa", "border_radius", "hero_image", "style",
+    "term_color", "term_weight",
+    "hero_background", "hero_motif", "hero_divider",
+    "hero_height", "page_badge", "grain_pattern",
+    "hero_images", "hero_stats", "extra_css",
+})
+
+
 def load_config(config_path: Path | None = None) -> TerradocConfig:
     """Load configuration from a YAML file, or return defaults."""
     if config_path and config_path.exists():
@@ -435,6 +452,12 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             for list_key in ("hero_images", "hero_stats", "extra_css"):
                 if list_key in theme_raw and isinstance(theme_raw[list_key], list):
                     setattr(config.theme, list_key, theme_raw[list_key])
+
+            if "templates" in theme_raw:
+                config.theme.templates = str(theme_raw["templates"])
+            # A misspelt or newer key would otherwise be ignored without a word;
+            # `terradoc check` turns these into errors.
+            config.unknown_theme_keys = sorted(str(k) for k in theme_raw if k not in THEME_KEYS)
 
         if "module_order" in raw and isinstance(raw["module_order"], list):
             config.module_order = [str(m) for m in raw["module_order"]]

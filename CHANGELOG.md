@@ -4,6 +4,20 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Template sets.** `theme.templates` (default `v1`) and `--templates` on `build` and
+  `render` choose the template set; this version has only `v1` (v2 comes with the redesign).
+  An unavailable set is refused.
+- **v1 is frozen.** The `sites-gate` workflow now also builds each platform at a fixed commit
+  (`gate/v1/sites.txt`) with pinned dependencies and fails on any byte difference from
+  `gate/v1/<site>.sha256`. `gate/v1.sh check|freeze` runs the same locally.
+
+### Changed
+
+- **Unknown `theme:` keys are errors** in `check` and `build`, with a suggestion for near
+  misspellings, instead of being ignored.
+
 ## [0.16.1] — 2026-11-17
 
 ### Changed
