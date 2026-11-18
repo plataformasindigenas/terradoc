@@ -1,0 +1,11 @@
+{#- The dictionary search box. Plain GET to the dictionary page (works before its script
+    loads, and without it). -#}
+{% if search_action %}
+<form class="td-search" role="search" action="{{ search_action }}" method="get">
+  <label class="td-search__label" for="td-q">{{ t.ui_search_label }}</label>
+  <div class="td-search__row">
+    <input class="td-search__input" id="td-q" name="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="{{ t.ui_search_placeholder }}">
+    <button class="td-button" type="submit">{{ t.ui_search_submit }}</button>
+  </div>
+</form>
+{% endif %}

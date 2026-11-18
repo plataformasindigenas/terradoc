@@ -1,0 +1,10 @@
+{#- A route whose v2 page is not built yet (P1 placeholder; replaced in P2/P3). -#}
+{% extends "base.html.j2" %}
+{% block main %}
+<div class="td-prose td-pending">
+  <h1>{{ title }}</h1>
+  <p>{{ t.ui_pending_text }}</p>
+  {% if page == 'dictionary' %}{% include "components/search.html.j2" %}{% endif %}
+  <p><a href="{{ loc_root }}index.html">{{ t.ui_back_home }}</a></p>
+</div>
+{% endblock %}

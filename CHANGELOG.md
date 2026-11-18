@@ -4,6 +4,62 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.20.0] — 2026-11-18
+
+### Added
+
+- **Template set v2 (first part).** `theme.templates: v2` (or `--templates v2`) builds the
+  redesigned site: routes defined in code (`build_v2.py`), a home page (site name in the
+  language, one sentence, a credited photograph, dictionary search box, one section per
+  module), header with a phone menu that works without JavaScript, footer, the language
+  redirect, a 404 page that carries its CSS inline and links to `base_url` (so it works under
+  any mount), and `specimen.html` (alphabet, the headwords with most stacked marks, IPA, in
+  every shipped style; not in the sitemap). Pages v2 does not have yet render a short "in preparation" page, so links
+  and the sitemap stay complete. Site overrides live in `config/templates/v2/`; there
+  `terradoc/<name>` means terradoc's own v2 template. v1 output is unchanged (gate).
+- **Palette roles** (`theme.palette`: `ground`, `ink`, `primary`, `fill`, `muted`, each with
+  its `material`). `check` errors when a pairing the components use is under 4.5:1. Without a
+  palette, v2 uses the v1 colours and `check` warns.
+- **Motif packs for v2** (`theme.pack`): `config/templates/v2/motifs/<name>/` with `pack.yaml`
+  and `band`, `texture`, `emblem` SVG templates drawn with the palette. An element without
+  `approved: {by_role, date}` or `sources`, or that does not render, or is not a plain drawing
+  (shapes and local references only: no style, script, image, text or external URL), is left
+  out with a `check` warning and the site shows its palette there; a pack name that does not
+  exist is an error. `pack: none` shows the palette only. terradoc bundles a neutral `weave`.
+- **Fonts subset per site.** Charis (text, vernacular, IPA) and Source Sans 3 (interface),
+  renamed `td-text` and `td-ui` as the OFL requires, are subset at build time to the
+  characters the site uses, including the templates' own text, credits and labels (about
+  9–13 KB per style). The interface uses one weight, so a page needs two font files before
+  its content. A character in the Latin, IPA or combining ranges that a shipped text-face
+  subset lacks fails the build. `scripts/vendor_fonts.py`
+  records the pinned upstream releases and checksums.
+- **Responsive images**: the home photograph gets WebP copies at 480/960/1600 px (never
+  upscaled), with deterministic names.
+- `language_code` (ISO 639-3) for `lang` on vernacular text; `theme.hero_credit`,
+  `theme.hero_alt`, `theme.font_vernacular`, and `theme.hero_people` (recorded, not used yet).
+  `check` (v2) refuses a hero image or favicon outside `static/` and a hero that is not a
+  photograph.
+- **Same input, same bytes.** Fonts, CSS, pack and images get content-hashed names and are
+  reproducible (font timestamps are kept; image names include the Pillow version), so
+  sitepull keeps unchanged files. `assets/` is rebuilt from empty on every build, and
+  `static/assets/` is reserved. The v2 sitemap is written from the route list.
+- **v2 gate.** `gate/v2.sh` and a `v2` job in `sites-gate`: each site's branch in
+  `gate/v2/sites.txt` is built with v2, built again and compared byte for byte, and checked
+  for broken links, page weight (150 KB gzipped before photos and audio, counting every font
+  the CSS declares), sitemap and file count (`python -m terradoc.sitecheck`); the font
+  specimen is screenshotted and kept as a workflow artifact.
+
+### Deprecated
+
+- **The v1 template contract ends with v1.** Page configs in `config/*.yaml`, v1 page
+  overrides in `config/templates/*.j2` and the v1 theme keys (`colors`, `hero_background`,
+  `hero_motif`, `hero_divider`, `page_badge`, `grain_pattern`, `hero_images`, `hero_stats`, …)
+  are not read by v2. v1 is removed in the release after every site has moved to v2.
+
+### Dependencies
+
+- `fonttools[woff]` and `pillow`.
+
 ## [0.19.0] — 2026-11-18
 
 ### Changed

@@ -423,6 +423,8 @@ def _check_theme(config: TerradocConfig) -> list[Issue]:
         issues.append(Issue("error", "theme",
             f"theme.templates: '{config.theme.templates}' is not available in this terradoc "
             f"(it has: {', '.join(TEMPLATE_SETS)})", yaml_file))
+    if config.theme.templates == "v2":
+        return issues + _check_theme_v2(config)
     for key, part in MOTIF_PARTS.items():
         name = getattr(config.theme, key)
         if key in MOTIF_BUILTIN.get(name, ()):
@@ -436,6 +438,84 @@ def _check_theme(config: TerradocConfig) -> list[Issue]:
                 f"theme.{key}: motif pack '{name}' has no {part} (looked in config/templates/motifs/{name}/ "
                 f"and terradoc's own packs; available: {packs})", yaml_file))
     return issues
+
+
+def _check_theme_v2(config: TerradocConfig) -> list[Issue]:
+    """v2: palette roles and contrast, the motif pack, overrides left from v1, and what the
+    v2 pages need from terradoc.yaml (meta REDESIGN-PLAN.md)."""
+    from terradoc import packs, palette
+
+    issues = []
+    yaml_file = "terradoc.yaml"
+    if config.theme.palette:
+        try:
+            roles = palette.parse(config.theme.palette)
+        except ValueError as exc:
+            issues.append(Issue("error", "theme", str(exc), yaml_file))
+            roles = None
+        if roles is not None:
+            for problem in palette.contrast_problems(roles):
+                issues.append(Issue("error", "theme", problem, yaml_file))
+    else:
+        issues.append(Issue("warning", "theme",
+            "theme.palette is not set; v2 uses the v1 colours (bg, text, primary, accent, "
+            "text_muted). Name each role after its material: see terradoc.palette", yaml_file))
+        try:
+            roles = palette.from_v1(config.theme.colors)
+        except ValueError as exc:
+            issues.append(Issue("error", "theme", str(exc), yaml_file))
+            roles = None
+        for problem in palette.contrast_problems(roles) if roles else []:
+            issues.append(Issue("error", "theme", problem.replace("theme.palette", "v1 colours as v2 palette"), yaml_file))
+    # A pack that does not exist is an error; an element left out is a warning (the site
+    # shows its palette there).
+    pack_problems, pack_missing = packs.problems(config, palette.colors(roles) if roles else {})
+    for problem in pack_problems:
+        issues.append(Issue("error" if pack_missing else "warning", "theme", problem, yaml_file))
+    if (config.static_dir / "assets").exists():
+        issues.append(Issue("error", "theme",
+            "static/assets/ is reserved for the files v2 generates (CSS, fonts, pack, images); "
+            "move its files elsewhere in static/", yaml_file))
+    old = config.config_dir / "templates"
+    if old.is_dir():
+        stale = sorted(p.name for p in old.glob("*.j2"))
+        if stale:
+            issues.append(Issue("error", "theme",
+                f"config/templates/ has v1 page overrides ({', '.join(stale)}) that v2 does not "
+                "use; move what is still needed to config/templates/v2/, then delete them", yaml_file))
+    if not config.language_code:
+        issues.append(Issue("warning", "theme",
+            "language_code is not set: vernacular text gets no lang attribute (e.g. bor, unk, mpu)", yaml_file))
+    for key in ("hero_image", "favicon"):
+        value = getattr(config.theme, key)
+        if value and not _inside(config.static_dir, value):
+            issues.append(Issue("error", "theme",
+                f"theme.{key}: '{value}' must be a path inside static/ (no '..', not absolute)", yaml_file))
+    if config.theme.hero_image and _inside(config.static_dir, config.theme.hero_image):
+        if not (config.static_dir / config.theme.hero_image).is_file():
+            issues.append(Issue("error", "theme",
+                f"theme.hero_image: static/{config.theme.hero_image} does not exist", yaml_file))
+        elif Path(config.theme.hero_image).suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
+            issues.append(Issue("error", "theme",
+                f"theme.hero_image: a photograph (.jpg, .png, .webp) is needed for the v2 home", yaml_file))
+        if not config.theme.hero_credit:
+            issues.append(Issue("warning", "theme", "theme.hero_credit: the hero photograph has no credit", yaml_file))
+        if not config.theme.hero_alt:
+            issues.append(Issue("warning", "theme",
+                "theme.hero_alt: say what the hero photograph shows, for screen readers", yaml_file))
+    if config.theme.font_vernacular not in ("charis",):
+        issues.append(Issue("error", "theme",
+            f"theme.font_vernacular: '{config.theme.font_vernacular}' is not available (v2 has: charis)", yaml_file))
+    return issues
+
+
+def _inside(base: Path, rel: str) -> bool:
+    """True if `rel` is a relative path that stays inside `base`."""
+    if Path(rel).is_absolute():
+        return False
+    root = base.resolve()
+    target = (base / rel).resolve()
+    return target == root or root in target.parents
 
 
 def _nfc_lower(text: str) -> str:

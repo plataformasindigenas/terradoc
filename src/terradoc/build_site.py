@@ -574,8 +574,13 @@ def render_site(config: TerradocConfig, *, clean: bool = False) -> None:
     owned = started_empty or _dir_owned(config.docs_dir)
 
     copied = copy_project_static(config)
-    copy_data_to_docs(config)
-    print()
-    build_site(config)
+    if config.theme.templates == "v2":
+        from terradoc.build_v2 import build_site_v2
+
+        build_site_v2(config)
+    else:
+        copy_data_to_docs(config)
+        print()
+        build_site(config)
     write_release_info(config, owned=owned)
     verify_static_untouched(config, copied)

@@ -1,0 +1,10 @@
+{% extends "base.html.j2" %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block main %}
+<div class="td-prose td-404">
+  <h1>{{ t.ui_404_title }}</h1>
+  <p>{{ t.ui_404_text }}</p>
+  {% include "components/search.html.j2" %}
+  <p><a href="{{ loc_root }}index.html">{{ t.ui_back_home }}</a></p>
+</div>
+{% endblock %}

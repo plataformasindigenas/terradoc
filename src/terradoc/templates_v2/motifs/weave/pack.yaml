@@ -1,0 +1,16 @@
+# terradoc's neutral pack: plain geometry, no people's design (D21). Sites with their own
+# pack replace it; `pack: none` shows the palette only.
+people: ""
+elements:
+  band:
+    title: "Faixa neutra"
+    description: "Quadrados pequenos alternados em duas alturas; geometria simples, sem grafismo de nenhum povo."
+    sources: ["terradoc (desenho do projeto)"]
+    drawn_by: "terradoc, 2026-11-18"
+    approved: {by_role: project, date: 2026-11-18, note: "neutral project element"}
+  texture:
+    title: "Pontos"
+    description: "Grade de pontos muito clara."
+    sources: ["terradoc (desenho do projeto)"]
+    drawn_by: "terradoc, 2026-11-18"
+    approved: {by_role: project, date: 2026-11-18, note: "neutral project element"}

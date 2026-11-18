@@ -1,0 +1,32 @@
+{% extends "base.html.j2" %}
+{% block main %}
+<section class="td-hero{% if hero %} td-hero--photo{% endif %}">
+  <div class="td-hero__text">
+    <h1 class="td-hero__title"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ site.title }}</h1>
+    {% if site.tagline %}<p class="td-hero__tagline">{{ site.tagline }}</p>{% endif %}
+    {% if sentence %}<p class="td-hero__sentence">{{ sentence }}</p>{% endif %}
+    {% include "components/search.html.j2" %}
+  </div>
+  {% if hero %}
+  <figure class="td-hero__figure">
+    <picture>
+      <source type="image/webp" srcset="{{ hero.srcset(root) }}" sizes="(min-width: 60em) 36rem, 100vw">
+      <img src="{{ root }}{{ hero.src }}" width="{{ hero.width }}" height="{{ hero.height }}" alt="{{ hero_alt }}" fetchpriority="high" decoding="async">
+    </picture>
+    {% if hero_credit %}<figcaption>{{ t.ui_photo }}: {{ hero_credit }}</figcaption>{% endif %}
+  </figure>
+  {% endif %}
+</section>
+{% if assets.band %}<div class="td-band td-band--divider" aria-hidden="true"></div>{% endif %}
+<section class="td-modules" aria-labelledby="td-modules-title">
+  <h2 id="td-modules-title" class="td-modules__title">{{ t.ui_modules_title }}</h2>
+  <ul class="td-modules__list">
+    {% for m in modules %}
+    <li class="td-module">
+      <h3 class="td-module__name"><a href="{{ m.href }}">{{ m.label }}</a></h3>
+      {% if m.description %}<p class="td-module__text">{{ m.description }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

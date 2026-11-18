@@ -1,0 +1,7 @@
+<footer class="td-footer">
+  {% if assets.band %}<div class="td-band td-band--quiet" aria-hidden="true"></div>{% endif %}
+  <div class="td-footer__inner">
+    <p class="td-footer__site"><span{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ site.title }}</span>{% if site.tagline %} · {{ site.tagline }}{% endif %}</p>
+    <p class="td-footer__project"><a href="{{ loc_root }}about.html">{{ t.ui_about }}</a> · <a href="https://terradoc.org/">{{ t.ui_project }}</a></p>
+  </div>
+</footer>

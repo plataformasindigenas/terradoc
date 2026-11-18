@@ -29,6 +29,8 @@ dependencies = [
     "pyyaml>=6.0",
     "markdown-it-py>=3.0",
     "mdit-py-plugins>=0.4",
+    "fonttools[woff]>=4.50",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
@@ -56,7 +58,10 @@ version = {attr = "terradoc.__version__"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-terradoc = ["templates/*.j2", "templates/motifs/*/*.j2", "static/js/*.js", "static/css/*.css", "static/fonts/*.woff2", "schemas/*.yaml", "font_coverage.json"]
+terradoc = ["templates/*.j2", "templates/motifs/*/*.j2", "static/js/*.js", "static/css/*.css", "static/fonts/*.woff2", "schemas/*.yaml", "font_coverage.json",
+            "templates_v2/*.j2", "templates_v2/*/*.j2", "templates_v2/strings/*.yaml",
+            "templates_v2/motifs/*/*.j2", "templates_v2/motifs/*/pack.yaml",
+            "static_v2/*.css", "static_v2/*.js", "fonts_v2/*.woff2", "fonts_v2/LICENSES.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

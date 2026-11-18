@@ -144,6 +144,14 @@ class ThemeConfig:
     page_badge: str = "weave"
     grain_pattern: str = "dots"
     templates: str = "v1"  # template set; see TEMPLATE_SETS
+    # v2 only (ignored by v1); see terradoc.palette and meta REDESIGN-PLAN.md.
+    palette: dict = field(default_factory=dict)  # role -> {color, material}; validated by check
+    pack: str = "weave"  # motif pack: config/templates/v2/motifs/<pack>/ or bundled; "none"
+    hero_credit: str = ""  # who took the hero photograph (shown under it)
+    hero_alt: str = ""  # what the hero photograph shows, for screen readers
+    hero_people: bool = True  # False: the hero shows a landscape or object (D25); recorded
+    # now, used by later checks on withdrawn images
+    font_vernacular: str = "charis"  # the text face for vernacular text; v2 ships charis
 
     def to_dict(self) -> dict:
         result = {
@@ -192,6 +200,9 @@ class TerradocConfig:
         "en": "English",
     })
     default_locale: str = "pt"
+    # ISO 639-3 / BCP 47 code of the people's language (bor, unk, mpu): `lang` on
+    # vernacular text in v2, so browsers and screen readers do not read it as Portuguese.
+    language_code: str = ""
     # The site's public address, e.g. "https://makurap.terradoc.org". The sitemap needs
     # absolute URLs; without base_url no sitemap is written.
     base_url: str = ""
@@ -268,12 +279,16 @@ class TerradocConfig:
 
     @property
     def bundled_template_dir(self) -> Path:
-        """Return the bundled template directory from the package."""
-        return Path(str(importlib.resources.files("terradoc.templates")))
+        """terradoc's own templates for the active set (`theme.templates`)."""
+        package = "terradoc.templates_v2" if self.theme.templates == "v2" else "terradoc.templates"
+        return Path(str(importlib.resources.files(package)))
 
     @property
     def local_template_dir(self) -> Path:
-        """The site's own templates (`config/templates/`); may not exist."""
+        """The site's own templates for the active set: `config/templates/` for v1,
+        `config/templates/v2/` for v2. May not exist."""
+        if self.theme.templates == "v2":
+            return self.config_dir / "templates" / "v2"
         return self.config_dir / "templates"
 
     @property
@@ -350,7 +365,7 @@ class TerradocConfig:
 
 
 # Template sets this version ships. v2 arrives with the redesign (meta REDESIGN-PLAN.md).
-TEMPLATE_SETS = ("v1",)
+TEMPLATE_SETS = ("v1", "v2")
 
 # Every key `theme:` may hold; anything else is reported by `terradoc check`.
 THEME_KEYS = frozenset({
@@ -361,6 +376,8 @@ THEME_KEYS = frozenset({
     "hero_background", "hero_motif", "hero_divider",
     "hero_height", "page_badge", "grain_pattern",
     "hero_images", "hero_stats", "extra_css",
+    # v2
+    "palette", "pack", "hero_credit", "hero_alt", "hero_people", "font_vernacular",
 })
 
 
@@ -378,7 +395,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
         for key in ("project_name", "project_subtitle", "site_title",
                      "site_tagline", "culture_name",
                      "meta_prefix", "default_locale", "featured_article_id",
-                     "bib_file", "base_url"):
+                     "bib_file", "base_url", "language_code"):
             if key in raw:
                 setattr(config, key, raw[key])
 
@@ -455,6 +472,15 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
 
             if "templates" in theme_raw:
                 config.theme.templates = str(theme_raw["templates"])
+            if "palette" in theme_raw:  # validated by `check` and by the v2 build
+                config.theme.palette = theme_raw["palette"]
+            for key in ("pack", "hero_credit", "hero_alt", "font_vernacular"):
+                if key in theme_raw:
+                    setattr(config.theme, key, str(theme_raw[key] or ""))
+            if "hero_people" in theme_raw:
+                value = theme_raw["hero_people"]
+                config.theme.hero_people = (value if isinstance(value, bool)
+                                            else str(value).strip().lower() not in ("false", "no", "0", ""))
             # A misspelt or newer key would otherwise be ignored without a word;
             # `terradoc check` turns these into errors.
             config.unknown_theme_keys = sorted(str(k) for k in theme_raw if k not in THEME_KEYS)

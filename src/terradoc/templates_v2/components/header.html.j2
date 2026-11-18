@@ -1,0 +1,35 @@
+{#- Site header: name, navigation (a <details> sheet on phones, a row on wide screens),
+    language switch. Works without JavaScript; td.js adds Esc and focus handling. -#}
+<header class="td-header">
+  <div class="td-header__inner">
+    <a class="td-brand" href="{{ loc_root }}index.html"{% if page == 'home' %} aria-current="page"{% endif %}>
+      {% if assets.emblem %}<img class="td-brand__emblem" src="{{ root }}{{ assets.emblem }}" alt="" width="32" height="32">{% endif %}
+      <span class="td-brand__name"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ site.title }}</span>
+    </a>
+    <nav class="td-nav td-nav--wide" aria-label="{{ t.ui_nav }}">
+      <ul>
+        {% for item in nav %}
+        <li><a href="{{ item.href }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    {% if locale_switches | length > 1 %}
+    <ul class="td-lang" aria-label="{{ t.ui_lang }}">
+      {% for s in locale_switches %}
+      <li>{% if s.current %}<span aria-current="true" title="{{ s.label }}">{{ s.code | upper }}</span>{% else %}<a href="{{ s.href }}" hreflang="{{ s.hreflang }}" lang="{{ s.hreflang }}" title="{{ s.label }}" data-td-locale="{{ s.code }}">{{ s.code | upper }}</a>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <details class="td-menu">
+      <summary>{{ t.ui_menu }}</summary>
+      <nav class="td-nav td-nav--sheet" aria-label="{{ t.ui_nav }}">
+        <ul>
+          {% for item in nav %}
+          <li><a href="{{ item.href }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </details>
+  </div>
+  {% if assets.band %}<div class="td-band" aria-hidden="true"></div>{% else %}<hr class="td-rule">{% endif %}
+</header>

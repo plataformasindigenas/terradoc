@@ -1,0 +1,33 @@
+{#- v2 page skeleton. Blocks for pages: title, head, main. Context: see build_v2.page_context. -#}
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ title }}{% endblock %}{% if title != site.title %} · {{ site.title }}{% endif %}</title>
+{% if description %}<meta name="description" content="{{ description }}">{% endif %}
+{% if standalone is defined and standalone %}
+<style>{{ assets.inline_css | safe }}</style>
+{% else %}
+{% for f in assets.preload %}
+<link rel="preload" href="{{ root }}{{ f }}" as="font" type="font/woff2" crossorigin>
+{% endfor %}
+<link rel="stylesheet" href="{{ root }}{{ assets.css }}">
+{% endif %}
+{% if assets.icon %}<link rel="icon" href="{{ root }}{{ assets.icon }}">{% endif %}
+{% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
+{% for s in locale_switches if s.absolute %}
+<link rel="alternate" hreflang="{{ s.hreflang }}" href="{{ s.absolute }}">
+{% endfor %}
+{% block head %}{% endblock %}
+{% if not (standalone is defined and standalone) %}<script src="{{ root }}{{ assets.js }}" defer></script>{% endif %}
+</head>
+<body class="td-page-{{ page }}">
+<a class="td-skip" href="#main">{{ t.ui_skip }}</a>
+{% include "components/header.html.j2" %}
+<main id="main" tabindex="-1">
+{% block main %}{% endblock %}
+</main>
+{% include "components/footer.html.j2" %}
+</body>
+</html>

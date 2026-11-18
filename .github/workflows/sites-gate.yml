@@ -1,4 +1,4 @@
-# The release gate, automated. Two jobs:
+# The release gate, automated. Three jobs:
 #
 # - v1-frozen: the v1 templates are frozen while v2 is built. Each platform, at the commit
 #   fixed in gate/v1/sites.txt, is built with this commit and compared byte for byte with
@@ -7,6 +7,9 @@
 # - gate: build every platform as it is today with the terradoc it pins and with this commit,
 #   and report what changed. A failed build fails the job; differences only go to the summary,
 #   since many are intended (read them before releasing).
+# - v2: build every platform's branch in gate/v2/sites.txt with --templates v2, twice (the
+#   bytes must match), check links, page weight, the sitemap and the file count, and keep a
+#   screenshot of the font specimen (gate/v2.sh).
 #
 # Sites are public and fetched anonymously; nothing is published from here.
 
@@ -43,6 +46,37 @@ jobs:
           SITE: ${{ matrix.site }}
           PYTHON: python
         run: gate/v1.sh check "$SITE"
+
+  v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        site: [boeenomoto, enawenenawe, makurap]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Build with --templates v2 and check the site
+        env:
+          SITE: ${{ matrix.site }}
+          PYTHON: python
+          SPECIMEN_DIR: ${{ runner.temp }}/specimen
+        run: gate/v2.sh "$SITE"
+
+      - name: Keep the font specimen screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: specimen-${{ matrix.site }}
+          path: ${{ runner.temp }}/specimen
+          if-no-files-found: ignore
 
   gate:
     runs-on: ubuntu-latest

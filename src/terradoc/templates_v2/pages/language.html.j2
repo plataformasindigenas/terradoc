@@ -1,0 +1,38 @@
+{#- Site root: sends the visitor to a language. The choice made with the language switch
+    (localStorage td-locale, same key as v1) wins, then the browser's languages, then
+    default_locale; without JavaScript, the refresh goes to default_locale. -#}
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function () {
+  var codes = {{ codes | tojson }}, pick = null;
+  function match(tag) {
+    tag = String(tag || '').toLowerCase();
+    for (var i = 0; i < codes.length; i++) {
+      var c = codes[i].toLowerCase();
+      if (tag === c || tag.split('-')[0] === c) return codes[i];
+    }
+    return null;
+  }
+  try { pick = match(localStorage.getItem('td-locale')); } catch (e) {}
+  var langs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
+  for (var i = 0; !pick && i < langs.length; i++) pick = match(langs[i]);
+  location.replace((pick || {{ default_locale | tojson }}) + '/index.html' + location.search + location.hash);
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url={{ default_locale }}/index.html"></noscript>
+<title>{{ site.title }}</title>
+<link rel="stylesheet" href="{{ assets.css }}">
+</head>
+<body class="td-page-language">
+<main class="td-prose td-language">
+  <h1{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ site.title }}</h1>
+  <ul>
+    {% for s in locale_switches %}<li><a href="{{ s.code }}/index.html" hreflang="{{ s.hreflang }}" lang="{{ s.hreflang }}">{{ s.label }}</a></li>{% endfor %}
+  </ul>
+</main>
+</body>
+</html>

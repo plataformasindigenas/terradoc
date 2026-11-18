@@ -1,0 +1,20 @@
+{#- Font specimen: the site's alphabet, its hardest headwords (stacked marks) and IPA, in
+    every shipped style. Not linked and not in the sitemap; CI screenshots it (gate/v2.sh). -#}
+{% extends "base.html.j2" %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block main %}
+<div class="td-prose td-specimen">
+  <h1>{{ site.title }}: specimen</h1>
+  <p class="td-specimen__letters"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>
+    {% for l in letters %}{{ l | upper }}{{ l }} {% endfor %}</p>
+  <h2>Headwords</h2>
+  <p{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ words | join(" · ") }}</p>
+  <p{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}><em>{{ words | join(" · ") }}</em></p>
+  <p{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}><strong>{{ words | join(" · ") }}</strong></p>
+  <p class="td-specimen__ui"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ words | join(" · ") }}</p>
+  {% if ipa %}
+  <h2>IPA</h2>
+  <p>{% for w in ipa %}[{{ w }}] {% endfor %}</p>
+  {% endif %}
+</div>
+{% endblock %}
