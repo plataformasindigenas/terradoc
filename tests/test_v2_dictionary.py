@@ -49,7 +49,7 @@ def site_with_dictionary(project, **extra):
 
 # ── alphabet in Python ───────────────────────────────────────────────────
 
-def test_python_alphabet_matches_the_browser_code():
+def test_python_alphabet_order():
     a = Alphabet(["a", "ã", "b", "k", "kw", "o", "u", "w"])
     words = ["wo", "kudógó", "kwa", "ku", "ãb", "ab", "bó", "ba", "óa"]
     assert sorted(words, key=a.sort_key) == ["ab", "ãb", "ba", "bó", "ku", "kudógó", "kwa", "óa", "wo"]
@@ -96,6 +96,7 @@ def test_letter_and_word_pages(project):
     a = (d / "a.html").read_text()
     # homonyms in number order, with their number as a superscript
     assert a.index('href="2-aka.html"') < a.index('href="1-aka.html"')
+    assert '<a id="e-2" href="2-aka.html">' in a  # the link itself is the target: focus returns to it
     assert '<sup class="td-homonym">1</sup>' in a
     assert 'lang="mpu"' in a
     assert "óra" in (d / "o.html").read_text()  # ó sorts as o
@@ -126,7 +127,8 @@ def test_search_index(project):
     site = site_with_dictionary(project)
     index = next((site / "assets" / "search").glob("dictionary.*.json"))
     data = json.loads(index.read_text())
-    assert data["fields"][:4] == ["id", "entry", "homonym", "file"]
+    assert data["fields"][:4] == ["id", "entry", "homonym", "definition"]
+    assert all(len(r) == 7 for r in data["rows"])  # no slug: the script computes the same one
     assert [r[0] for r in data["rows"]][:3] == [2, 1, 4]  # dictionary order
     page = (site / "pt" / "dictionary" / "index.html").read_text()
     assert f'data-index="../../assets/search/{index.name}"' in page
@@ -155,14 +157,17 @@ def test_old_links_page_and_sitemap(project):
     assert "/pt/dictionary.html" not in sitemap
 
 
-def test_service_worker_precaches_existing_files(project):
+def test_service_worker_stores_only_the_shell(project):
     site = site_with_dictionary(project)
     sw = (site / "sw.js").read_text()
     precache = json.loads(re.search(r"var PRECACHE = (\[.*?\]);", sw).group(1))
-    assert "pt/dictionary/index.html" in precache
-    assert any(p.startswith("assets/search/") for p in precache)
+    assert "offline.html" in precache and any(p.startswith("assets/site.") for p in precache)
+    assert not any(p.startswith("assets/search/") or p.endswith("index.html") for p in precache)
     assert all((site / p).is_file() for p in precache)
     assert "__VERSION__" not in sw and "__OFFLINE__" not in sw
+    assert "self.registration.scope" in sw  # cache names are per site/preview
+    offline = (site / "offline.html").read_text()
+    assert "<style>" in offline and 'href="pt/dictionary/index.html"' in offline
 
 
 def test_audio_only_for_files_that_exist(project):
@@ -176,3 +181,52 @@ def test_audio_only_for_files_that_exist(project):
     assert '<source src="../../audio/mbore.webm" type="audio/webm">' in page
     assert "Gravação" in page
     assert "♪" in Path("site/pt/dictionary/mb.html").read_text()
+
+
+# ── the page script's search, in node ───────────────────────────────────
+
+def run_search(js_body: str):
+    script = (Path(__file__).resolve().parent.parent / "src" / "terradoc" / "static_v2" / "td-dict.js").read_text()
+    out = subprocess.run(["node", "-e", script + "\n" + js_body], capture_output=True, text=True, check=True).stdout
+    return json.loads(out)
+
+
+ROWS_JS = [  # id, entry, homonym, definition, ipa, scientific, audio
+    [1, "akirio", 0, "pequeno peixe", "", "", 0],
+    [2, "rio", 0, "rio", "", "", 0],
+    [3, "kuru", 0, "foz do rio Tadarimana", "", "", 0],
+    [4, "-ka", 0, "sufixo", "", "", 0],
+    [5, "aka", 0, "mãe, mamãe", "", "", 0],
+    [6, "maeko", 0, "pássaro", "", "", 0],
+    [7, "lio", 0, "perna", "", "", 0],
+]
+
+
+@pytest.mark.skipif(not __import__("shutil").which("node"), reason="needs node")
+@pytest.mark.parametrize("folds, query, first", [
+    ({}, "rio", [2, 3, 1]),          # the word, then a gloss with it, then inside a word
+    ({}, "mae", [6, 5]),             # headword start before gloss
+    ({}, "mãe", [6, 5]),             # accents never matter
+    ({}, "ka", [4, 5]),              # -ka is "ka" exactly
+    ({"r": "l"}, "rio", [2, 7, 3, 1]),  # r = l in words, but the gloss "rio" stays rio
+])
+def test_search_ranking(folds, query, first):
+    order = run_search("var s = TDSearch(%s); var rows = s.prepare({rows: %s});"
+                       "console.log(JSON.stringify(s.search(rows, %s).map(function (r) { return r.id; })));"
+                       % (json.dumps(folds), json.dumps(ROWS_JS), json.dumps(query)))
+    assert order[:len(first)] == first
+
+
+@pytest.mark.skipif(not __import__("shutil").which("node"), reason="needs node")
+def test_script_slugs_match_python_on_real_headwords():
+    from terradoc.dictionary_v2 import entry_slug, script_slug
+    words = ["aregodu", "Ãto bõe", "mamõap yãpet", "-ka", "kudógó (kudoge)", "ciwaBoe etoiaga",
+             "ñamã", "ɨwɨ", "o'a", "x-ray", "ᵐbore", "çaça", "ǂ", "ﬁta"]
+    got = run_search("var s = TDSearch({}); console.log(JSON.stringify(%s.map(s.slug)));" % json.dumps(words))
+    for w, js in zip(words, got):
+        assert js == script_slug(w), w
+    # where they differ from the real slug, the index carries it
+    from terradoc.dictionary_v2 import search_index, Word
+    rows = json.loads(search_index([Word({"definition": ""}, i, w, None, "", None) for i, w in enumerate(words)]))["rows"]
+    for w, r in zip(words, rows):
+        assert (r[7] if len(r) > 7 else script_slug(w)) == entry_slug(w)

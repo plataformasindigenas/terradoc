@@ -12,21 +12,27 @@ All notable changes to terradoc are documented here.
   alphabet in `dictionary/_.html`) that works without JavaScript, and a page per word,
   `dictionary/<id>-<slug>.html` (D24): headword with its homonym number, part of speech
   (hidden when it is a placeholder such as `X` or `LEX`), IPA, recordings ("Gravação 1, 2…",
-  no names, D26), definition, and example, scientific name, note, picture and links only when
-  filled; "how to cite", previous/next word, canonical and hreflang. "Back" returns to the
-  list the word was opened from (letter or search) with the word focused.
+  no names, D26), definition, and example, scientific name, note and links only when filled;
+  a picture is shown only with a credit (`pic_credit`), otherwise linked (D27); "how to
+  cite", previous/next word, canonical and hreflang. "Back" returns to the list the word was
+  opened from (letter or search) with the word focused (the link itself is the #e-<id> target).
 - **Search** on the dictionary page: a separate index (`assets/search/dictionary.<hash>.json`,
-  Bororo 104 KB gzipped) fetched when the search box is first used; ignores accents, case and
-  apostrophes; exact headword matches first, then the start of a headword, then glosses, IPA
-  and scientific names; the query is in the address (`?q=`). Loading, empty and failure (with
+  whole definitions, no file names: Bororo 106 KB gzipped, budget 120 KB, checked by
+  `sitecheck`) fetched when the search box is first used; ignores accents, case, apostrophes
+  and a leading hyphen; order: the word itself, words starting with the query, a gloss that is
+  the query, the query as a word in a gloss, inside words, then IPA and scientific names; the
+  query is in the address (`?q=`). Loading, empty and failure (with
   "try again") states. `search_folds` in terradoc.yaml makes letters equal in the language's
   words (Enawenê-Nawê: `{r: l, b: w, u: o}`).
 - **On-screen keyboard** with the alphabet's letters a phone keyboard may lack, plus
   `keyboard:` extras from terradoc.yaml; 44 px keys.
 - **Old links keep working:** `<locale>/dictionary.html?entry=<id>` and `?search=<q>`
   forward to the word or the search.
-- **Offline:** `sw.js` caches the CSS, scripts, fonts, search index and home and dictionary
-  pages, and keeps the last 300 pages visited; audio and photos are not stored.
+- **Offline:** `sw.js` stores the shell (CSS, page script, the two critical fonts,
+  `offline.html`) at install, other `assets/` files when first used, and the last 300 pages
+  visited (served from the store when the network fails or takes over 4 s); photos and audio
+  are never stored. Cache names carry the worker's scope (previews share one origin) and a
+  new release clears the old shell and stored pages. A page never opened shows `offline.html`.
 - **Text face per site** (`theme.font_vernacular: gentium | charis | andika`), Gentium by
   default. Charis (D16) draws its tilde so flat that ã õ ũ read as ā ō ū at text sizes, and all
   three sites write nasal vowels or Portuguese with tildes.

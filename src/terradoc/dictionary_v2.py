@@ -24,7 +24,7 @@ PLACEHOLDER_POS = {"X", "LEX", ""}
 OTHER = "_"
 GLOSS_CHARS = 160
 OPTIONAL = ("ipa", "pos", "definition", "example_sent", "scientific_name", "comment", "audio",
-            "pic_link", "wiki_link")  # in the search index and the letter lists
+            "pic_link", "pic_credit", "wiki_link")  # in the search index and the letter lists
 
 
 @dataclass
@@ -48,9 +48,21 @@ class Letter:
     words: list[Word] = field(default_factory=list)
 
 
+def entry_slug(word: str) -> str:
+    return _slugify(word).replace("_", "-")
+
+
 def entry_file(entry_id, word: str) -> str:
-    slug = _slugify(word).replace("_", "-")
+    slug = entry_slug(word)
     return f"{entry_id}-{slug}.html" if slug else f"{entry_id}.html"
+
+
+def script_slug(word: str) -> str:
+    """What td-dict.js computes for a headword (NFKD, U+0300–U+036F removed, lower case,
+    runs of other characters to "-"). The index carries the real slug only where they differ."""
+    text = unicodedata.normalize("NFKD", word or "")
+    text = "".join(c for c in text if not 0x300 <= ord(c) <= 0x36F).lower()
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
 
 
 def letter_file(letter: str, rank: int) -> str:
@@ -83,7 +95,8 @@ def load(config) -> tuple[list[Word], list[Letter]]:
         words.append(Word(r, r["id"], entry, int(homonym) if homonym not in (None, "") else None,
                           entry_file(r["id"], entry), alpha.first_letter(entry)))
     for w in words:
-        w.key = (alpha.sort_key(w.entry), w.homonym or 0, str(w.id))
+        w.key = (alpha.sort_key(w.entry), w.homonym or 0,
+                 (0, w.id, "") if isinstance(w.id, int) else (1, 0, str(w.id)))
     words.sort(key=lambda w: w.key)
     for a, b in zip(words, words[1:]):
         a.next, b.prev = b, a
@@ -116,12 +129,19 @@ def letter_bar(config, letters: list[Letter]) -> list[dict]:
 
 
 def search_index(words: list[Word]) -> bytes:
-    """One row per word, in dictionary order: id, headword, homonym, file, gloss, IPA,
-    scientific name, has audio."""
-    rows = [[w.id, w.entry, w.homonym or 0, w.file, gloss(w.row.get("definition")),
-             str(w.row.get("ipa") or ""), str(w.row.get("scientific_name") or ""),
-             1 if w.row.get("audio") else 0] for w in words]
-    data = {"v": 1, "fields": ["id", "entry", "homonym", "file", "gloss", "ipa", "scientific", "audio"],
+    """One row per word, in dictionary order: id, headword, homonym, the whole definition
+    (searched in full, shortened on screen), IPA, scientific name, has audio, and the slug
+    only when the page script would compute a different one (the page is <id>-<slug>.html)."""
+    rows = []
+    for w in words:
+        slug = entry_slug(w.entry)
+        row = [w.id, w.entry, w.homonym or 0, re.sub(r"\s+", " ", str(w.row.get("definition") or "")).strip(),
+               str(w.row.get("ipa") or ""), str(w.row.get("scientific_name") or ""),
+               1 if w.row.get("audio") else 0]
+        if slug != script_slug(w.entry):
+            row.append(slug)
+        rows.append(row)
+    data = {"v": 2, "fields": ["id", "entry", "homonym", "definition", "ipa", "scientific", "audio", "slug?"],
             "rows": rows}
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
@@ -173,11 +193,17 @@ def entry_context(config, w: Word, t, root: str, out: Path, module_href) -> dict
                 related.append({"kind": kind, "label": t[label_key], "name": name, "href": href,
                                 "vernacular": kind != "encyclopedia"})
     pic = str(r.get("pic_link") or "")
-    if pic and not pic.startswith(("http://", "https://")):
+    host = ""
+    if pic.startswith(("http://", "https://")):
+        from urllib.parse import urlsplit
+        host = urlsplit(pic).netloc.removeprefix("www.")
+        host = "Wikimedia Commons" if host.endswith("wikimedia.org") else host
+    elif pic:
         pic = root + pic.lstrip("/")
     return {
         "word": w, "row": r,
         "pos": t[f"pos_{pos}"] or pos if pos not in PLACEHOLDER_POS else "",
-        "audio": audio, "related": related, "picture": pic,
+        "audio": audio, "related": related, "picture": pic, "picture_host": host,
+        "picture_credit": str(r.get("pic_credit") or ""),
         "wiki": str(r.get("wiki_link") or ""),
     }

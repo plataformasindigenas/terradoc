@@ -2,7 +2,7 @@
 <nav class="td-letters" aria-label="{{ t.ui_dict_letters }}">
   <ul>
     {% for L in letter_bar %}
-    <li>{% if L.file %}<a href="{{ dict_root }}{{ L.file | urlencode }}"{% if L.letter == current_letter %} aria-current="page"{% endif %}{% if L.letter == '_' %} title="{{ t.ui_dict_other }}"{% endif %}{% if site.language_code and L.letter != '_' %} lang="{{ site.language_code }}"{% endif %}>{{ L.label }}</a>{% else %}<span aria-hidden="true">{{ L.label }}</span>{% endif %}</li>
+    {% if L.file %}<li><a href="{{ dict_root }}{{ L.file | urlencode }}"{% if L.letter == current_letter %} aria-current="page"{% endif %}{% if L.letter == '_' %} title="{{ t.ui_dict_other }}" aria-label="{{ t.ui_dict_other }}"{% endif %}{% if site.language_code and L.letter != '_' %} lang="{{ site.language_code }}"{% endif %}>{{ L.label }}</a></li>{% else %}<li aria-hidden="true"><span>{{ L.label }}</span></li>{% endif %}
     {% endfor %}
   </ul>
 </nav>

@@ -22,6 +22,7 @@ import hashlib
 import importlib.resources
 import json
 import shutil
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -142,7 +143,8 @@ def site_characters(config: TerradocConfig, strings: dict[str, Strings]) -> set[
     texts: list[str] = [config.site_title, config.project_name, config.site_tagline,
                         config.project_subtitle, *config.alphabet, *config.module_labels.values(),
                         *config.locale_labels.values(), config.theme.hero_credit,
-                        config.theme.hero_alt, static_v2("td.css").decode("utf-8")]
+                        config.theme.hero_alt, static_v2("td.css").decode("utf-8"),
+                        *config.keyboard, *config.search_folds, *config.search_folds.values()]
     for d in (config.local_template_dir, bundled_dir()):
         if d.is_dir():
             texts.extend(p.read_text(encoding="utf-8") for p in sorted(d.rglob("*.j2")))
@@ -193,6 +195,9 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
         rules.append(f"body{{background-image:url({texture.file.removeprefix('assets/')})}}")
     if emblem:
         assets.emblem = emblem.file
+    fallback = {"gentium": "Gentium, \"Gentium Plus\"", "charis": "\"Charis SIL\", Charis",
+                "andika": "Andika"}.get(text_face, "")
+    vars_.append(f"--font-text:td-text,{fallback},Georgia,serif")
     people = ":root{" + ";".join(vars_) + "}\n" + "\n".join(rules) + "\n"
     assets.inline_css = (static_v2("td.css").decode("utf-8") + ":root{"
                          + ";".join(f"--{r}:{v}" for r, v in colors.items()) + "}\n")
@@ -258,7 +263,7 @@ def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets
     for w in words:
         path = f"{loc}/dictionary/{w.file}"
         ctx = dv.entry_context(config, w, t, prefix(path), config.docs_dir, href)
-        ctx["back_href"] = f"{by_letter[w.id].file}#e-{w.id}"
+        ctx["back_href"] = f"{quote(by_letter[w.id].file)}#e-{w.id}"
         out.append(Route(path, "pages/dictionary_entry.html.j2", "dictionary",
                          w.entry + (f" {w.homonym}" if w.homonym else ""), loc, ctx))
     out.append(Route(f"{loc}/dictionary.html", "pages/dictionary_compat.html.j2", "dictionary", title, loc,
@@ -295,8 +300,8 @@ def page_context(config: TerradocConfig, route: Route, strings: dict[str, String
     switches = [{
         "code": code, "label": config.locale_label(code), "current": code == loc,
         "hreflang": strings[code]["html_lang"] or code,
-        "href": f"{root}{code}/{tail}",
-        "absolute": f"{base}/{code}/{tail}" if base and route.locale else "",
+        "href": f"{root}{code}/{quote(tail)}",
+        "absolute": f"{base}/{code}/{quote(tail)}" if base and route.locale else "",
     } for code in config.locales]
     nav = [{"label": t[f"nav_{m['slug']}"] or m["name"], "href": f"{loc_root}{module_path(m['slug'])}",
             "current": route.page == m["slug"]} for m in config.enabled_modules()]
@@ -309,7 +314,7 @@ def page_context(config: TerradocConfig, route: Route, strings: dict[str, String
         "t": t, "locale": loc, "root": root, "loc_root": loc_root, "page": route.page,
         "title": route.title, "description": t["meta_description"] or site["tagline"],
         "site": site, "nav": nav, "locale_switches": switches, "assets": assets,
-        "canonical": f"{base}/{route.path}" if base and route.sitemap else "",
+        "canonical": f"{base}/{quote(route.path)}" if base and route.sitemap else "",
         "search_action": (f"{loc_root}{module_path('dictionary')}"
                           if config.is_module_enabled("dictionary") else ""),
     }
@@ -364,21 +369,21 @@ def write_sitemap_v2(out: Path, config: TerradocConfig, pages: list[Route]) -> N
     print(f"  Generated sitemap.xml ({len(urls)} URLs)")
 
 
-def write_service_worker(out: Path, config: TerradocConfig, assets: Assets) -> None:
-    """sw.js at the site root: precaches the shell (CSS, scripts, critical fonts, the search
-    index, each locale's home and dictionary index); its version changes with them."""
-    default = config.default_locale if config.default_locale in config.locales else config.locales[0]
-    pages = [f"{loc}/index.html" for loc in config.locales]
-    if assets.search_index:
-        pages += [f"{loc}/dictionary/index.html" for loc in config.locales]
-    files = [assets.css, assets.js, *assets.preload] + ([assets.dict_js, assets.search_index]
-                                                        if assets.search_index else [])
-    precache = [f for f in files + pages if f and (out / f).is_file()]
-    version = hashlib.sha256("\n".join(files).encode()).hexdigest()[:10]
+def write_service_worker(out: Path, assets: Assets) -> None:
+    """sw.js at the site root. It stores only the shell at install (CSS, the page script, the
+    two critical fonts, offline.html); the search index and the rest are stored when used.
+    Its version is a hash of those files and of the search index and dictionary script, so
+    a release that changes any of them replaces the stored copies."""
+    shell = [assets.css, assets.js, *assets.preload, "offline.html"]
+    precache = [f for f in shell if f and (out / f).is_file()]
+    versioned = precache + [f for f in (assets.dict_js, assets.search_index) if f and (out / f).is_file()]
+    digest = hashlib.sha256()
+    for f in versioned:
+        digest.update(f.encode() + b"\0" + (out / f).read_bytes())
     sw = (static_v2("sw.js").decode("utf-8")
-          .replace("'__VERSION__'", json.dumps(version))
+          .replace("'__VERSION__'", json.dumps(digest.hexdigest()[:10]))
           .replace("__PRECACHE__", json.dumps(precache))
-          .replace("'__OFFLINE__'", json.dumps(f"{default}/index.html")))
+          .replace("'__OFFLINE__'", json.dumps("offline.html")))
     (out / "sw.js").write_text(sw, encoding="utf-8")
 
 
@@ -428,7 +433,11 @@ def build_site_v2(config: TerradocConfig) -> dict:
     ctx.update(specimen_context(config))
     (out / "specimen.html").write_text(env.get_template(specimen.template).render(**ctx), encoding="utf-8")
 
-    write_service_worker(out, config, assets)
+    offline = Route("offline.html", "pages/offline.html.j2", "offline", "", None, sitemap=False)
+    ctx = page_context(config, offline, strings, assets, root="")
+    ctx.update({"strings_by_locale": strings, "has_dictionary": bool(assets.search_index)})
+    (out / "offline.html").write_text(env.get_template(offline.template).render(**ctx), encoding="utf-8")
+    write_service_worker(out, assets)
     write_robots_txt(out, config.base_url)
     write_sitemap_v2(out, config, pages)
     report = {

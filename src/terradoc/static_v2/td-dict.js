@@ -1,11 +1,76 @@
 /* terradoc v2 dictionary: search as you type, the on-screen keyboard, and the way back from
    a word to the list it was opened from. The letter lists and word pages work without it. */
-(function () {
+(function (global) {
   'use strict';
-  var input = document.getElementById('td-q');
+
+  /* ---- Search, without the page (tests/test_v2_dictionary.py runs this part in node). ---- */
+  function makeSearch(folds) {
+    var keys = Object.keys(folds || {}).sort(function (a, b) { return b.length - a.length; });
+    var re = keys.length ? new RegExp(keys.map(function (k) {
+      return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }).join('|'), 'g') : null;
+    // Accents, case and apostrophes never matter.
+    function fold(s) {
+      return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+        .replace(/[’'ʼ`´‘]/g, '').replace(/\s+/g, ' ').trim();
+    }
+    // Words of the language: also the site's folds (r = l, ...) and no leading hyphen (-ka).
+    function vfold(s) {
+      s = fold(s).replace(/^-+/, '');
+      return re ? s.replace(re, function (m) { return folds[m]; }) : s;
+    }
+    function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function slug(s) {
+      return String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    function prepare(d) {
+      return d.rows.map(function (r, i) {
+        var sl = r.length > 7 ? r[7] : slug(r[1]);
+        var g = fold(r[3]);
+        return { id: r[0], entry: r[1], homonym: r[2], gloss: r[3], audio: r[6], order: i,
+                 file: r[0] + (sl ? '-' + sl : '') + '.html',
+                 hw: vfold(r[1]), g: g,
+                 senses: g.split(/\s*[,;.]\s*/).filter(Boolean),
+                 x: fold(r[4] + ' ' + r[5]) };
+      });
+    }
+    // Lower is better: the word itself, the start of a word, a gloss that is the query,
+    // the query as a word in a gloss, then inside words, then IPA and scientific names.
+    function score(r, q, v, gw, hs) {
+      if (v && r.hw === v) return 0;
+      if (v && r.hw.indexOf(v) === 0) return 1;
+      if (r.senses.indexOf(q) >= 0) return 2;
+      if (gw.test(r.g)) return 3;
+      if (v && hs.test(r.hw)) return 4;
+      if (v && r.hw.indexOf(v) > 0) return 5;
+      if (r.g.indexOf(q) >= 0) return 6;
+      if (r.x.indexOf(q) >= 0) return 7;
+      return -1;
+    }
+    function search(rows, raw) {
+      var q = fold(raw), v = vfold(raw);
+      if (!q) return [];
+      var gw = new RegExp('(^|[^a-z0-9])' + escapeRe(q) + '($|[^a-z0-9])');
+      var hs = new RegExp('[\\s-]' + escapeRe(v));
+      var hits = [];
+      for (var i = 0; i < rows.length; i++) {
+        var s = score(rows[i], q, v, gw, hs);
+        if (s >= 0) hits.push([s, rows[i]]);
+      }
+      hits.sort(function (a, b) { return a[0] - b[0] || a[1].order - b[1].order; });
+      return hits.map(function (h) { return h[1]; });
+    }
+    return { fold: fold, vfold: vfold, slug: slug, prepare: prepare, search: search };
+  }
+  global.TDSearch = makeSearch;
+
+  var doc = global.document;
+  if (!doc || !doc.querySelector) return;
+  var input = doc.getElementById('td-q');
 
   // On-screen keyboard: types the language's letters at the cursor.
-  var kb = document.querySelector('.td-keyboard');
+  var kb = doc.querySelector('.td-keyboard');
   if (kb && input) {
     kb.hidden = false;
     kb.addEventListener('click', function (e) {
@@ -21,54 +86,34 @@
   }
 
   // From a word opened from search results, "back" returns to those results.
-  var back = document.querySelector('[data-td-back]');
-  var article = document.querySelector('[data-entry]');
-  if (back && article && document.referrer) {
+  var back = doc.querySelector('[data-td-back]');
+  var article = doc.querySelector('[data-entry]');
+  if (back && article && doc.referrer) {
     try {
-      var ref = new URL(document.referrer);
+      var ref = new URL(doc.referrer);
       if (ref.origin === location.origin && /\/dictionary\/index\.html$/.test(ref.pathname) && ref.search) {
         back.href = ref.pathname + ref.search + '#e-' + article.getAttribute('data-entry');
       }
     } catch (err) { /* keep the letter list */ }
   }
 
-  // Back on a letter list (#e-<id>): focus the word that was open, not just scroll to it.
-  if (/^#e-\d+$/.test(location.hash) && !document.querySelector('.td-dict[data-index]')) {
-    var back_li = document.getElementById(location.hash.slice(1));
-    var back_a = back_li && back_li.querySelector('a');
-    if (back_a) back_a.focus({ preventScroll: true });
-  }
-
-  var box = document.querySelector('.td-dict[data-index]');
+  var box = doc.querySelector('.td-dict[data-index]');
   if (!box || !input) return;
   var T = JSON.parse(box.getAttribute('data-strings') || '{}');
-  var FOLDS = JSON.parse(box.getAttribute('data-folds') || '{}');
+  var engine = makeSearch(JSON.parse(box.getAttribute('data-folds') || '{}'));
   var LANG = box.getAttribute('data-lang') || '';
   var LOCALE = box.getAttribute('data-locale') || 'pt';
-  var status = document.getElementById('td-status');
-  var results = document.getElementById('td-results');
-  var MAX = 100;
+  var status = doc.getElementById('td-status');
+  var results = doc.getElementById('td-results');
+  var MAX = 100, GLOSS = 160;
   var rows = null, loading = null;
 
-  var foldKeys = Object.keys(FOLDS).sort(function (a, b) { return b.length - a.length; });
-  var foldRe = foldKeys.length ? new RegExp(foldKeys.map(function (k) {
-    return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }).join('|'), 'g') : null;
-  // Accents, case and apostrophes never matter. The site's folds (r = l, ...) apply to words
-  // of the language only, not to the Portuguese glosses.
-  function fold(s) {
-    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-      .replace(/[’'ʼ`´‘]/g, '').replace(/\s+/g, ' ').trim();
-  }
-  function vfold(s) {
-    s = fold(s);
-    return foldRe ? s.replace(foldRe, function (m) { return FOLDS[m]; }) : s;
-  }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
   }
   function fmt(s, vars) { return String(s || '').replace(/\{(\w+)\}/g, function (_, k) { return vars[k]; }); }
   function say(text) { if (status) status.textContent = text; }
+  function clip(s) { return s.length <= GLOSS ? s : s.slice(0, GLOSS - 1).replace(/\s+\S*$/, '') + '…'; }
 
   function load() {
     if (rows) return Promise.resolve(rows);
@@ -78,32 +123,19 @@
       if (!r.ok) throw new Error(r.status);
       return r.json();
     }).then(function (d) {
-      rows = d.rows.map(function (r, i) {
-        return { id: r[0], entry: r[1], homonym: r[2], file: r[3], gloss: r[4], audio: r[7], order: i,
-                 hw: vfold(r[1]), g: fold(r[4]), x: fold(r[5] + ' ' + r[6]) };
-      });
+      rows = engine.prepare(d);
       say('');
       return rows;
     }).catch(function (err) {
       loading = null;
       say(T.ui_dict_failed);
-      var b = document.createElement('button');
+      var b = doc.createElement('button');
       b.type = 'button'; b.className = 'td-button td-button--quiet'; b.textContent = T.ui_retry;
-      b.addEventListener('click', function () { b.remove(); run(); });
-      if (status) status.appendChild(document.createTextNode(' ')), status.appendChild(b);
+      b.addEventListener('click', function () { b.remove(); load().then(function () { run(); }, function () {}); });
+      if (status) { status.appendChild(doc.createTextNode(' ')); status.appendChild(b); }
       throw err;
     });
     return loading;
-  }
-
-  function score(r, q, v, word) {
-    if (r.hw === v) return 0;
-    if (r.hw.indexOf(v) === 0) return 1;
-    if (r.hw.indexOf(v) > 0) return 2;
-    if (word.test(r.g)) return 3;
-    if (r.g.indexOf(q) >= 0) return 4;
-    if (r.x.indexOf(q) >= 0) return 5;
-    return -1;
   }
 
   function render(list, raw) {
@@ -114,38 +146,28 @@
     var lang = LANG ? ' lang="' + esc(LANG) + '"' : '';
     var glossLang = LOCALE.indexOf('pt') === 0 ? '' : ' lang="pt-BR"';
     results.innerHTML = '<ol class="td-words">' + list.slice(0, MAX).map(function (r) {
-      return '<li id="e-' + esc(r.id) + '"><a href="' + encodeURI(r.file) + '"><span class="td-word"><span class="td-hw"' + lang + '>'
+      return '<li><a id="e-' + esc(r.id) + '" href="' + encodeURI(r.file) + '"><span class="td-word"><span class="td-hw"' + lang + '>'
         + esc(r.entry) + '</span>' + (r.homonym ? '<sup class="td-homonym">' + esc(r.homonym) + '</sup>' : '') + '</span></a>'
-        + (r.audio ? ' <span class="td-has-audio" title="' + esc(T.ui_has_audio) + '" aria-label="' + esc(T.ui_has_audio) + '">♪</span>' : '')
-        + ' <span class="td-words__gloss"' + glossLang + '>' + esc(r.gloss) + '</span></li>';
+        + (r.audio ? ' <span class="td-has-audio" aria-hidden="true">♪</span><span class="td-sr">' + esc(T.ui_has_audio) + '</span>' : '')
+        + ' <span class="td-words__gloss"' + glossLang + '>' + esc(clip(r.gloss)) + '</span></li>';
     }).join('') + '</ol>';
   }
 
   var timer = null;
   function run(focusId) {
-    var raw = input.value.trim(), q = fold(raw);
+    var raw = input.value.trim();
     var url = new URL(location.href);
     if (raw) url.searchParams.set('q', raw); else url.searchParams.delete('q');
     if (!focusId) url.hash = '';
     history.replaceState(null, '', url);
-    var hint = document.getElementById('td-hint');
+    var hint = doc.getElementById('td-hint');
     if (hint) hint.hidden = !!raw;
-    if (!q) { results.innerHTML = ''; say(''); return; }
+    if (!engine.fold(raw)) { results.innerHTML = ''; say(''); return; }
     load().then(function (all) {
-      if (fold(input.value.trim()) !== q) return; // typed on meanwhile
-      var word = new RegExp('(^|[^a-z0-9])' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-      var v = vfold(raw), hits = [];
-      for (var i = 0; i < all.length; i++) {
-        var s = score(all[i], q, v, word);
-        if (s >= 0) hits.push([s, all[i]]);
-      }
-      hits.sort(function (a, b) { return a[0] - b[0] || a[1].order - b[1].order; });
-      render(hits.map(function (h) { return h[1]; }), raw);
-      if (focusId) {
-        var li = document.getElementById(focusId);
-        var a = li && li.querySelector('a');
-        if (a) { li.scrollIntoView({ block: 'center' }); a.focus(); }
-      }
+      if (input.value.trim() !== raw) return; // typed on meanwhile
+      render(engine.search(all, raw), raw);
+      var a = focusId && doc.getElementById(focusId);
+      if (a) { a.scrollIntoView({ block: 'center' }); a.focus(); }
     }, function () {});
   }
 
@@ -156,8 +178,6 @@
   var q0 = new URLSearchParams(location.search).get('q');
   if (q0) {
     input.value = q0;
-    var hint = document.getElementById('td-hint');
-    if (hint) hint.hidden = true;
-    run(location.hash.length > 1 ? location.hash.slice(1) : null);
+    run(/^#e-\d+$/.test(location.hash) ? location.hash.slice(1) : null);
   }
-})();
+})(typeof self !== 'undefined' ? self : this);

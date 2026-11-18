@@ -7,12 +7,12 @@
   <header class="td-entry__head">
     <h1 class="td-entry__hw">{{ headword(w, site.language_code) }}</h1>
     {% if pos %}<p class="td-entry__pos">{{ pos }}</p>{% endif %}
-    {% if row.ipa %}<p class="td-entry__ipa"><span class="td-label">{{ t.ui_pronunciation }}</span> <span class="td-ipa">/{{ row.ipa }}/</span></p>{% endif %}
+    {% if row.ipa %}<p class="td-entry__ipa"><span class="td-label">{{ t.ui_pronunciation }}</span> <span class="td-ipa"{% if site.language_code %} lang="{{ site.language_code }}-fonipa"{% endif %}>/{{ row.ipa }}/</span></p>{% endif %}
   </header>
   {% if audio %}
   <ul class="td-audio">
     {% for a in audio %}
-    <li><span class="td-label">{{ a.label }}</span><audio controls preload="none"><source src="{{ a.src }}" type="{{ a.type }}"></audio></li>
+    <li><span class="td-label" aria-hidden="true">{{ a.label }}</span><audio controls preload="none" aria-label="{{ a.label }}: {{ w.entry }}"><source src="{{ a.src }}" type="{{ a.type }}"></audio></li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -24,8 +24,11 @@
     {% if row.comment %}<dt>{{ t.ui_comment }}</dt><dd{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.comment }}</dd>{% endif %}
   </dl>
   {% endif %}
-  {% if picture %}
-  <figure class="td-entry__pic"><img src="{{ picture }}" alt="{{ w.entry }}" loading="lazy" decoding="async"></figure>
+  {% if picture and picture_credit %}
+  <figure class="td-entry__pic"><img src="{{ picture }}" alt="{{ w.entry }}" loading="lazy" decoding="async"><figcaption>{{ t.ui_photo }}: {{ picture_credit }}</figcaption></figure>
+  {% elif picture %}
+  {#- No credit known: link to the picture instead of showing it (D27; credits come from the team). -#}
+  <p class="td-entry__piclink"><a href="{{ picture }}" rel="noopener">{{ t.ui_picture }}</a>{% if picture_host %} <span class="td-label">{{ picture_host }}</span>{% endif %}</p>
   {% endif %}
   {% if related or wiki %}
   <section class="td-entry__related">

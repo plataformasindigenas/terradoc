@@ -17,6 +17,7 @@ from urllib.parse import unquote, urlsplit
 
 BUDGET_KB = 150  # per page before photos and audio, gzipped (REDESIGN-PLAN.md, Budgets)
 MAX_FILES = 20000  # sitepull's limit
+INDEX_BUDGET_KB = 120  # dictionary search index, gzipped (REDESIGN-PLAN.md, Budgets)
 
 
 class _Refs(HTMLParser):
@@ -168,11 +169,15 @@ def main(argv: list[str] | None = None) -> int:
     weights = page_weights(args.site)
     over = {p: w for p, w in weights.items() if w > args.budget_kb * 1024}
     links = broken_links(args.site)
+    indexes = {p.relative_to(args.site).as_posix(): _gz(p.read_bytes())
+               for p in sorted(args.site.glob("assets/search/*.json"))}
+    over_index = {p: w for p, w in indexes.items() if w > INDEX_BUDGET_KB * 1024}
     sitemap = sitemap_problems(args.site)
     report = {
         "files": len(files), "bytes": sum(p.stat().st_size for p in files),
         "heaviest": sorted(weights.items(), key=lambda kv: -kv[1])[:5],
         "over_budget": over, "broken_links": links, "sitemap": sitemap,
+        "search_index": indexes, "search_index_over_budget": over_index,
     }
     if args.json:
         print(json.dumps(report, indent=2))
@@ -180,11 +185,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{report['files']} files, {report['bytes'] / 1e6:.1f} MB")
         for p, w in report["heaviest"]:
             print(f"  {w / 1024:6.1f} KB  {p}")
+        for p, w in indexes.items():
+            print(f"  {w / 1024:6.1f} KB  {p} (search index, budget {INDEX_BUDGET_KB} KB)")
+        for p, w in over_index.items():
+            print(f"::error::{p}: {w / 1024:.1f} KB gzipped, budget {INDEX_BUDGET_KB} KB")
         for p, w in over.items():
             print(f"::error::{p}: {w / 1024:.1f} KB gzipped, budget {args.budget_kb:g} KB")
         for line in links[:50] + sitemap[:50]:
             print(f"::error::{line}")
-    bad = bool(over or links or sitemap or len(files) > MAX_FILES)
+    bad = bool(over or over_index or links or sitemap or len(files) > MAX_FILES)
     if len(files) > MAX_FILES:
         print(f"::error::{len(files)} files, over sitepull's MAX_FILES ({MAX_FILES})")
     return 1 if bad else 0

@@ -1,12 +1,21 @@
 /* terradoc v2 service worker: the site keeps working with a weak or no connection.
-   - assets/ (hashed names: never change) and the search index: cache first;
-   - pages: network first, the copy kept for later (the last MAX_PAGES visited);
-   - audio and photos: not stored (they would fill a cheap phone).
-   The build writes VERSION and PRECACHE into the first lines. */
+   - the shell (CSS, scripts, the two critical fonts, offline.html) is stored at install;
+   - other files in assets/ (fonts, search index, pack): stored when first used, then served
+     from the store (their names carry a hash, so they never change);
+   - pages: from the network, with a copy kept (the last MAX_PAGES); from the copy when the
+     network fails or is slower than TIMEOUT; offline.html for a page never opened;
+   - photos (assets/img/), audio and anything else: never stored (cheap phones fill up).
+   Several sites and previews share previews.terradoc.org, so every cache name carries this
+   worker's scope, and a worker only ever deletes its own caches. A new version (new CSS,
+   scripts, fonts, index or offline page) clears the old shell and the stored pages, whose
+   CSS and scripts the new release no longer has.
+   The build fills in VERSION, PRECACHE and OFFLINE. */
 var VERSION = '__VERSION__';
 var PRECACHE = __PRECACHE__;
-var OFFLINE = '__OFFLINE__';  // shown for a page never visited, when there is no connection
-var SHELL = 'td-shell-' + VERSION, PAGES = 'td-pages', MAX_PAGES = 300;
+var OFFLINE = '__OFFLINE__';
+var PREFIX = 'td|' + self.registration.scope + '|';
+var SHELL = PREFIX + 'shell-' + VERSION, PAGES = PREFIX + 'pages-' + VERSION;
+var MAX_PAGES = 300, TIMEOUT = 4000;
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(SHELL).then(function (c) {
@@ -16,8 +25,9 @@ self.addEventListener('install', function (e) {
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k.indexOf('td-shell-') === 0 && k !== SHELL; })
-      .map(function (k) { return caches.delete(k); }));
+    return Promise.all(keys.filter(function (k) {
+      return k.indexOf(PREFIX) === 0 && k !== SHELL && k !== PAGES;
+    }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 
@@ -27,29 +37,45 @@ function trim(cache) {
   });
 }
 
+function stored(req) {
+  return caches.open(PAGES).then(function (c) { return c.match(req, { ignoreSearch: true }); });
+}
+
 self.addEventListener('fetch', function (e) {
   var req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
-  if (/\/assets\//.test(url.pathname)) {
-    e.respondWith(caches.match(req).then(function (hit) {
-      return hit || fetch(req).then(function (res) {
-        if (res.ok) { var copy = res.clone(); caches.open(SHELL).then(function (c) { c.put(req, copy); }); }
-        return res;
+  if (url.href.indexOf(self.registration.scope) !== 0) return;
+  var path = url.href.slice(self.registration.scope.length);
+  if (/^assets\//.test(path) && !/^assets\/img\//.test(path)) {
+    e.respondWith(caches.open(SHELL).then(function (c) {
+      return c.match(req).then(function (hit) {
+        return hit || fetch(req).then(function (res) {
+          if (res.ok) c.put(req, res.clone());
+          return res;
+        });
       });
     }));
     return;
   }
   if (req.mode === 'navigate' || /\.html$/.test(url.pathname)) {
-    e.respondWith(fetch(req).then(function (res) {
+    var network = fetch(req).then(function (res) {
       if (res.ok) {
         var copy = res.clone();
         caches.open(PAGES).then(function (c) { return c.put(req, copy).then(function () { return trim(c); }); });
       }
       return res;
-    }).catch(function () {
-      return caches.match(req, { ignoreSearch: true }).then(function (hit) {
-        return hit || caches.match(new URL(OFFLINE, self.registration.scope).href);
-      });
-    }));
+    });
+    var slow = new Promise(function (resolve) {
+      setTimeout(function () { stored(req).then(resolve); }, TIMEOUT);
+    });
+    e.respondWith(Promise.race([network, slow.then(function (hit) { return hit || network; })])
+      .catch(function () {
+        var offline = new URL(OFFLINE, self.registration.scope).href;
+        return stored(req).then(function (hit) {
+          if (hit) return hit;
+          if (url.href === offline) return caches.match(offline, { cacheName: SHELL });
+          return Response.redirect(offline, 302);  // its relative links work only at its own address
+        });
+      }));
   }
 });

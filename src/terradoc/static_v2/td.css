@@ -32,6 +32,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+.td-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -218,8 +219,9 @@ a:hover { text-decoration-thickness: 2px; }
 .td-button--quiet:hover { background: var(--primary); color: var(--ground); }
 
 .td-words { list-style: none; margin: 0; padding: 0; columns: 1; }
-.td-words li { padding: var(--space-2) 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); break-inside: avoid; scroll-margin-top: 30vh; }
-.td-words li:target, .td-words li:focus-within { background: rgba(0, 0, 0, 0.035); box-shadow: inset 3px 0 0 var(--primary); padding-left: var(--space-2); }
+.td-words li { padding: var(--space-2) 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); break-inside: avoid; }
+.td-words a { scroll-margin-top: 30vh; }
+.td-words li:focus-within { background: rgba(0, 0, 0, 0.035); box-shadow: inset 3px 0 0 var(--primary); padding-left: var(--space-2); }
 .td-words a { font-size: var(--step-1); text-decoration: none; display: inline-block; min-height: 44px; padding-top: 0.35em; }
 .td-words a:hover .td-hw { text-decoration: underline; }
 .td-words__gloss { display: block; color: var(--ink); }
@@ -247,6 +249,8 @@ a:hover { text-decoration-thickness: 2px; }
 @media (max-width: 30em) { .td-entry__more { grid-template-columns: 1fr; gap: 0; } .td-entry__more dd { margin-bottom: var(--space-3); } }
 .td-entry__pic { margin: 0 0 var(--space-5); max-width: 24rem; }
 .td-entry__pic img { border-radius: var(--radius); }
+.td-entry__pic figcaption { font-family: var(--font-ui); font-size: var(--step--1); color: var(--muted); margin-top: var(--space-1); }
+.td-entry__piclink a { display: inline-flex; align-items: center; min-height: 44px; }
 .td-entry__related h2, .td-entry__cite summary { font-family: var(--font-ui); font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .td-entry__related ul { list-style: none; padding: 0; margin: 0 0 var(--space-5); }
 .td-entry__related li { padding: var(--space-1) 0; }

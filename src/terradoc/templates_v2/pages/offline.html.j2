@@ -1,0 +1,23 @@
+{#- Shown by the service worker for a page never opened, when there is no connection.
+    Carries its CSS inline (the stylesheet may not be stored). -#}
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{ t.ui_offline_title }} · {{ site.title }}</title>
+<style>{{ assets.inline_css | safe }}</style>
+</head>
+<body class="td-page-offline">
+<main class="td-prose">
+  <h1>{{ t.ui_offline_title }}</h1>
+  <p>{{ t.ui_offline_text }}</p>
+  <ul>
+    {% for s in locale_switches %}
+    <li lang="{{ s.hreflang }}"><a href="{{ s.code }}/index.html">{{ strings_by_locale[s.code].ui_home }}</a>{% if has_dictionary %} · <a href="{{ s.code }}/dictionary/index.html">{{ strings_by_locale[s.code].nav_dictionary or strings_by_locale[s.code].ui_dict_letters }}</a>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</main>
+</body>
+</html>

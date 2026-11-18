@@ -10,7 +10,7 @@
   {% include "components/letter_bar.html.j2" %}
   <ol class="td-words">
     {% for w in letter.words %}
-    <li id="e-{{ w.id }}"><a href="{{ w.file | urlencode }}">{{ headword(w, site.language_code) }}</a>{% if w.row.audio %} <span class="td-has-audio" title="{{ t.ui_has_audio }}" aria-label="{{ t.ui_has_audio }}">♪</span>{% endif %}
+    <li><a id="e-{{ w.id }}" href="{{ w.file | urlencode }}">{{ headword(w, site.language_code) }}</a>{% if w.row.audio %} <span class="td-has-audio" aria-hidden="true">♪</span><span class="td-sr">{{ t.ui_has_audio }}</span>{% endif %}
       <span class="td-words__gloss"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ gloss(w.row.definition) }}</span></li>
     {% endfor %}
   </ol>
