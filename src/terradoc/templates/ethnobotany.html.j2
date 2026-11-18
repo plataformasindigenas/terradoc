@@ -652,7 +652,7 @@
             if (entry._linked_dictionary && entry._linked_dictionary.length > 0) {
                 html += '<div class="showcase-detail-links"><strong>' + escapeHtml(T.see_in_dictionary || 'Ver no Dicionário') + ':</strong> ';
                 html += entry._linked_dictionary.map(function(d) {
-                    return '<a href="dictionary.html?search=' + encodeURIComponent(d.entry) + '">' + escapeHtml(d.entry) + '</a>';
+                    return '<a href="dictionary.html?search=' + encodeURIComponent(d.entry) + '">' + escapeHtml(d.entry) + (d.homonym ? '<sup>' + escapeHtml(String(d.homonym)) + '</sup>' : '') + '</a>';
                 }).join(', ');
                 html += '</div>';
             }

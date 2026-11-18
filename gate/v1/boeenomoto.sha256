@@ -399,7 +399,7 @@ e733551121ba3c69a486f643f8aadd0e7a0986882ce2dd88e1b0530e5e9f4e93  ./audio/urugad
 af352ff3c4cfed2f4abc2ecd55f052f994c5d99855725d70b6a087085e6a92fb  ./en/about.html
 edf43b344b92a1ffdba4baf63d37ae82c2785017dc04f9b48dd5cf9840e93df4  ./en/bibliography.html
 10ab2c7a8561cc4d2270181c38abf1307c0ff96cd7aa1fe93e60b94713f20eab  ./en/dictionary-data.json
-62c0bffd887fbca703378c188b70a403425d65d9b17234d41b9d810fd7972219  ./en/dictionary.html
+251194a2f462678e124883436de7af68dfd261ccd6743389b878c2f0f6906ba1  ./en/dictionary.html
 4d960de7beaef8a29af4993979e98498538a4a4b3cffdc63f25335b16bc7a140  ./en/encyclopedia-data.json
 45819d578dcd109576b4bde481b81fe893cc44c6475e3a20d0d51f7ac7201cf8  ./en/encyclopedia.html
 cfc8c86775e1fd5c66703bab6866c2bd64882a6300cc3cee4a7518f7bbc4c31e  ./en/encyclopedia/adugo-aredu.html
@@ -641,8 +641,8 @@ c286e9ba28f3cc71c1a8ab28c25ae1a45605b2159b63ce50c6497c9344529d1f  ./en/encyclope
 83f83588db4049e7db74a813f3ae6dc897ed5469cf45f93aeaef0c850379f638  ./en/encyclopedia/uwai.html
 07f0550640e4e03777207f414d1834422204fcc7086eca057a7b743d1aeea25e  ./en/encyclopedia/uwarinogo.html
 3c05ea08e08941edbd00fb12196314d2f68ae06cb1f353dad023f50be0be637f  ./en/encyclopedia/woe.html
-582543b562ed796631bdb9307563e85bbb73b4487a9800a8fb78ec09cd053274  ./en/ethnobotany.html
-49d737b7df7f404cf2e833246ab0080f4fd79fd8fb7362e6238ea7ea8455e405  ./en/fauna.html
+351fb9b2225c1e8fff3f561141d4d66f1b0ca6721a86bcd6d6a6ae6cd37131ad  ./en/ethnobotany.html
+4fd8198a5fdcfd5f417a10edb03521b869f3823e7cf58ff1d8da81ac9efd4b3e  ./en/fauna.html
 3f206f2131da0a3115c238a3e927edb4b1a2f22d11515dc2fce119c70f5fe18e  ./en/index.html
 6d3319f6e24b503c66a21831ccbab0f1b3d5a472b0eea52314cecf9a89960390  ./en/videos.html
 4d960de7beaef8a29af4993979e98498538a4a4b3cffdc63f25335b16bc7a140  ./encyclopedia-data.json
@@ -1049,7 +1049,7 @@ bd3f6368635059f70f0a333a419e679a78043fbb7a56bb6f698b9f7c8c151221  ./js/common.js
 bb00f9e2d95b7fff58e9c853711ea447e2ef7fe1a724d454bf3a77166de5a361  ./pt/about.html
 d3b762a0cf3b43235cfca106137e2e9220420195a8e370a057a21ccc915876a8  ./pt/bibliography.html
 10ab2c7a8561cc4d2270181c38abf1307c0ff96cd7aa1fe93e60b94713f20eab  ./pt/dictionary-data.json
-c29a37229cdf5cc8661ce0668eb7a021310f8f567a236ee83930a6b1b97a7935  ./pt/dictionary.html
+b7b22a9f80bd3ab2072932623aa7b841c1248458512ab76719d832c52566b4ad  ./pt/dictionary.html
 4d960de7beaef8a29af4993979e98498538a4a4b3cffdc63f25335b16bc7a140  ./pt/encyclopedia-data.json
 c55335903168a6483c6ce05c1e3af62d6feaafec41d25938c0c4f0c8a602036b  ./pt/encyclopedia.html
 4e09695c2573ed3a73d21574191eeb5a1b16bafe842cead6063b659b5f59eed7  ./pt/encyclopedia/adugo-aredu.html
@@ -1291,8 +1291,8 @@ eae8a32b0de794cac7d18a33f69b06708fd69c05122380bffe27f8ae30d28967  ./pt/encyclope
 e58dc13e57643e93f5256af4c7ada87ed6a93283cb320168b84dbd8a0258a3cf  ./pt/encyclopedia/uwai.html
 b0284958950b0bc780f30c47b0a40ff8dad798d95182faf3b3427e6f6b9a3092  ./pt/encyclopedia/uwarinogo.html
 ef08c5c3350f552c828ee22ab74b1c730d6c2b5a31b7278cc1fb18770fdb6cf5  ./pt/encyclopedia/woe.html
-e1bad2c0bc4843bc5df09b28628b86196bff52361902e026a6ea7d48d5a69384  ./pt/ethnobotany.html
-a838d85bd1e8b8b44da659999c040618eb74b02ce667e05add1cbc737911b195  ./pt/fauna.html
+2dc4eea0b27464c670f78c67e38a941bea9e51297ccb42770cee6e1f8fcf4de8  ./pt/ethnobotany.html
+f1476577e15deb8e8d49c37fbab5b01ea05785cdc71aee1f613e37483251941e  ./pt/fauna.html
 88efc3dc28dfb6b7f0b3e3dac6a760b7cd546dc14edae674dd0ef277941820e3  ./pt/index.html
 4e8ba37bff019dcc65b23e3fee06c2b140ff8cfe0fc9ed37e1fd9b1d0b1fbba4  ./pt/videos.html
 ec773c04a415a6a786686418501b3f43643738901c80487832ed9425214e8ae4  ./robots.txt

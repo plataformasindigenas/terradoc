@@ -185,6 +185,14 @@ def attach_recordings_to_dictionary(config: TerradocConfig):
 # ── Pure cross-linking strategies ──
 
 
+def _dictionary_link(d: dict) -> dict:
+    """What a fauna or ethnobotany page shows of a dictionary entry."""
+    link = {"id": d["id"], "entry": d.get("entry", ""), "definition": d.get("definition", "")}
+    if d.get("homonym"):  # only when present, so sites without the column are unchanged
+        link["homonym"] = d["homonym"]
+    return link
+
+
 def _index_by_scientific_name(entries: list[dict]) -> dict[str, list[dict]]:
     """Build a lookup from lowercased scientific_name to matching entries."""
     index: dict[str, list[dict]] = {}
@@ -218,11 +226,7 @@ def _link_dict_fauna(dict_entries: list[dict], fauna_entries: list[dict]) -> int
         sci = (entry.get("scientific_name") or "").strip().lower()
         if sci and sci in dict_by_sci:
             entry["_linked_dictionary"] = [
-                {
-                    "id": d["id"],
-                    "entry": d.get("entry", ""),
-                    "definition": d.get("definition", ""),
-                }
+                _dictionary_link(d)
                 for d in dict_by_sci[sci]
             ]
 
@@ -252,11 +256,7 @@ def _link_dict_ethnobotany(dict_entries: list[dict], ethno_entries: list[dict]) 
         sci = (entry.get("scientific_name") or "").strip().lower()
         if sci and sci in dict_by_sci:
             entry["_linked_dictionary"] = [
-                {
-                    "id": d["id"],
-                    "entry": d.get("entry", ""),
-                    "definition": d.get("definition", ""),
-                }
+                _dictionary_link(d)
                 for d in dict_by_sci[sci]
             ]
 
@@ -305,6 +305,8 @@ def _link_dict_encyclopedia(dict_entries: list[dict], enc_entries: list[dict]) -
 
     count = 0
     for entry in dict_entries:
+        if entry.get("homonym"):
+            continue  # which sense an article is about is not in the title: no automatic link
         raw = (entry.get("entry") or "").strip().lower().lstrip("-").replace(" ", "-")
         if raw and raw in enc_by_title:
             enc_entry = enc_by_title[raw]

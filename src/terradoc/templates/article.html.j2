@@ -660,7 +660,7 @@ article header h1 {
             <h2>{{ t.see_also | default('Ver também') }}</h2>
             {% if has_dict_links %}
                 {% for link in entry._linked_dictionary %}
-                <a href="../dictionary.html?search={{ link.entry | urlencode }}">{{ t.see_in_dictionary | default('Ver no Dicionário') }}: {{ link.entry }}</a>
+                <a href="../dictionary.html?search={{ link.entry | urlencode }}">{{ t.see_in_dictionary | default('Ver no Dicionário') }}: {{ link.entry }}{% if link.homonym %}<sup>{{ link.homonym }}</sup>{% endif %}</a>
                 {% endfor %}
             {% endif %}
             {% if has_fauna_links %}

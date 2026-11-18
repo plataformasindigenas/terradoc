@@ -4,6 +4,20 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-11-18
+
+### Added
+
+- **Homonym numbers.** A `homonym` column (int) in the dictionary: the headword shows it as a
+  superscript (aka¹, aka²), in the list, the entry, and fauna/ethnobotany links, and homonyms
+  sort by it. Entries with a homonym get no automatic encyclopedia link by title, since the
+  title does not say which sense an article is about. v1 manifests refrozen for this.
+
+### Fixed
+
+- **TSV cells stay text** until the schema converts them: the word "no" was read as `False`
+  and "0" as a number in text columns.
+
 ## [0.17.0] — 2026-11-17
 
 ### Added

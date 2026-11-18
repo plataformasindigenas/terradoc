@@ -160,6 +160,7 @@
             color: var(--td-color-text-muted);
             font-size: 0.8rem;
         }
+        .homonym { font-size: .6em; margin-left: .05em; font-weight: inherit; }
         .word-item {
             padding: 0.3rem 0.75rem;
             cursor: pointer;
@@ -384,7 +385,7 @@
         {% for entry in data %}
         <div class="entry">
             <div class="entry-header">
-                <span class="entry-word">{{ entry.entry }}</span>
+                <span class="entry-word">{{ entry.entry }}{% if entry.homonym %}<sup class="homonym">{{ entry.homonym }}</sup>{% endif %}</span>
                 {% if entry.pos %}<span class="entry-tag">{{ t['pos_' + entry.pos] | default(entry.pos) }}</span>{% endif %}
             </div>
             {% if entry.definition %}<p class="entry-definition">{{ entry.definition }}</p>{% endif %}
@@ -426,6 +427,10 @@
     (function() {
         var T = {{ t | tojson }};
         var REC_LABEL = {{ (t.dict_recording_label | default('Recording' if locale == 'en' else 'Gravação')) | tojson }};
+        // The headword, with its homonym number (aka¹, aka²) when the data has one.
+        function headwordHtml(e) {
+            return escapeHtml(e.entry) + (e.homonym ? '<sup class="homonym">' + escapeHtml(String(e.homonym)) + '</sup>' : '');
+        }
         var BASE_PATH = '{{ base_path | default("") }}';
         var posLabels = {};
         ['LEX','S','VC','ADV','PPASS','POSP','SUF','INTJ','VT','PRON','V','PRCL','PPAS','PPART','NUM','IP','DEM','CONJ','X','PROPN'].forEach(function(k) {
@@ -561,7 +566,7 @@
                 for (var gi = 0; gi < group.length; gi++) {
                     var e = group[gi];
                     var sel = e.id === selectedId ? ' selected' : '';
-                    html += '<div class="word-item' + sel + '" data-id="' + e.id + '">' + escapeHtml(e.entry) + '</div>';
+                    html += '<div class="word-item' + sel + '" data-id="' + e.id + '">' + headwordHtml(e) + '</div>';
                 }
                 html += '</div>';
             }
@@ -579,7 +584,7 @@
 
             var html = '';
             html += '<div class="detail-header">';
-            html += '<h2 class="detail-word">' + escapeHtml(entry.entry) + '</h2>';
+            html += '<h2 class="detail-word">' + headwordHtml(entry) + '</h2>';
 
             html += '<div class="detail-meta">';
             if (entry.ipa) {
@@ -807,12 +812,12 @@
         // Load data
         var json = { data: {{ data | tojson }} };
 {% if site.alphabet %}
-        allEntries = json.data.sort(function(a, b) { return ALPHA.compareWords(a.entry, b.entry); });
+        allEntries = json.data.sort(function(a, b) { return ALPHA.compareWords(a.entry, b.entry) || (a.homonym || 0) - (b.homonym || 0); });
 {% else %}
         allEntries = json.data.sort(function(a, b) {
             var ae = (a.entry || '').replace(/^-+/, '');
             var be = (b.entry || '').replace(/^-+/, '');
-            return ae.localeCompare(be, 'pt');
+            return ae.localeCompare(be, 'pt') || (a.homonym || 0) - (b.homonym || 0);
         });
 {% endif %}
 

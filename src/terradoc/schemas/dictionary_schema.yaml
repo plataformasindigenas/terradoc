@@ -6,6 +6,7 @@ primary_key: id
 fields:
   id: int
   entry: str
+  homonym: int?  # aka¹, aka²: the number, not typed into entry
   ipa: str?
   pos: str?
   definition: str?
