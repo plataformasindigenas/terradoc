@@ -459,17 +459,25 @@
             var rank = {}, byLength = [];
             letters.forEach(function(l, i) { var k = norm(l); if (!(k in rank)) { rank[k] = i; byLength.push(k); } });
             byLength.sort(function(a, b) { return b.length - a.length; });
-            function match(w, i) {
+            function exact(w, i) {
                 for (var j = 0; j < byLength.length; j++) {
                     if (w.substr(i, byLength[j].length) === byLength[j]) return byLength[j];
                 }
                 return null;
             }
+            // A letter outside the alphabet whose plain form is in it (ó, õ when the alphabet
+            // has o) counts as that letter; returns [letter, characters used].
+            function match(w, i) {
+                var m = exact(w, i);
+                if (m) return [m, m.length];
+                var base = w.charAt(i).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return (base && base in rank) ? [base, 1] : null;
+            }
             function key(word) {
                 var w = norm(word).replace(/^-+/, ''), out = [], i = 0;
                 while (i < w.length) {
                     var m = match(w, i);
-                    if (m) { out.push(rank[m]); i += m.length; continue; }
+                    if (m) { out.push(rank[m[0]]); i += m[1]; continue; }
                     var ch = w.charAt(i);
                     if (!/[\s\-'’.()]/.test(ch)) out.push(letters.length + ch.charCodeAt(0));
                     i += 1;
@@ -481,7 +489,7 @@
                     var w = norm(word).replace(/^-+/, '');
                     if (!w) return '?';
                     var m = match(w, 0);
-                    return (m || w.charAt(0)).toLocaleUpperCase();
+                    return (m ? m[0] : w.charAt(0)).toLocaleUpperCase();
                 },
                 compareLetters: function(a, b) {
                     var x = norm(a), y = norm(b);

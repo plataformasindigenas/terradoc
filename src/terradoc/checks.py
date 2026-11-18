@@ -447,7 +447,9 @@ def _first_letter(word: str, letters: list[str]) -> str | None:
     for letter in letters:  # longest first
         if w.startswith(letter):
             return letter
-    return None
+    # an accented letter outside the alphabet counts as its plain letter, as on the page
+    base = "".join(c for c in unicodedata.normalize("NFD", w[:1]) if not unicodedata.combining(c))
+    return base if base and base in letters else None
 
 
 def _check_alphabet(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:

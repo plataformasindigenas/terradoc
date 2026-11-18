@@ -11,7 +11,7 @@ c39ff2776c8f058621c26eeb721f2f3b94526bf2e92617f5a8e0cd4b2d6d56e6  ./dictionary-d
 ef42e3bd5227cab08c8bdb7a3776c5b4f408b650f9e268f2758fdaa256a4b619  ./en/about.html
 ed1de7c82b722cf41f377493fbc284f40316937226a213c7ccc48cd72017a644  ./en/bibliography.html
 c39ff2776c8f058621c26eeb721f2f3b94526bf2e92617f5a8e0cd4b2d6d56e6  ./en/dictionary-data.json
-5a50dc11289d7025cc094acb8fc16c5f51bba5fa80c03155a2279b5a765c5856  ./en/dictionary.html
+79e72cc3d14bc71df2fe8032af695ee21e15ad67ca8994b766962b28d29b3d89  ./en/dictionary.html
 e67c74b0330e1b74a4f815ecd646eced54d797386fa06b7ce78e3b2c756e0c2b  ./en/encyclopedia-data.json
 a6a38d373d9c6e699d810310c454ff529dbfa39d24d2ba578bcfe6152de78ab6  ./en/encyclopedia.html
 71373763671ccf15029e7aac80d645c745dab64d4ea494361a72e85d8c03e4b9  ./en/encyclopedia/abecedario.html
@@ -76,7 +76,7 @@ bd3f6368635059f70f0a333a419e679a78043fbb7a56bb6f698b9f7c8c151221  ./js/common.js
 7a499a4c2788683a447f3740347740f2edaa44880d186facbac1a09a891a152c  ./pt/about.html
 48781ae57117d992a3e3d8fd1d29c22966a074540e0f8a472ae91723d3ed25aa  ./pt/bibliography.html
 c39ff2776c8f058621c26eeb721f2f3b94526bf2e92617f5a8e0cd4b2d6d56e6  ./pt/dictionary-data.json
-18b8aeded1c1ab3685889658745b88bd73acb0f8198bb0ceaac4d0bad059634b  ./pt/dictionary.html
+fc93dec4a762abe7be4c45874e06e887f72034fff59acd2e394cc1a43135c225  ./pt/dictionary.html
 e67c74b0330e1b74a4f815ecd646eced54d797386fa06b7ce78e3b2c756e0c2b  ./pt/encyclopedia-data.json
 a463ef4dcc57f1c5b11b3c8a90e082fbf0bb253e6723de1c5ea656de2e0bc69a  ./pt/encyclopedia.html
 3fcab876a618ba391d32e1d7cb8aac091da195e4d1f59b613de67bef16d5754e  ./pt/encyclopedia/abecedario.html

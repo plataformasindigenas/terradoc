@@ -215,3 +215,23 @@ def test_block_contract():
     base = (ROOT / "src" / "terradoc" / "templates" / "base.html.j2").read_text()
     for block in ("title", "extra_styles", "content", "footer", "scripts"):
         assert f"{{% block {block} %}}" in base, block
+
+
+@pytest.mark.skipif(not __import__("shutil").which("node"), reason="needs node")
+def test_alphabet_sorting_in_the_browser_code(project):
+    """Run the page's ALPHA in node: digraphs, and accented letters outside the alphabet."""
+    import re
+
+    edit_config(project, alphabet=["a", "ã", "b", "k", "kw", "o", "u", "w"])
+    assert build(project).exit_code == 0
+    html = (Path("site") / "pt" / "dictionary.html").read_text()
+    code = re.search(r"var ALPHA = \(function\(letters\) \{.*?\}\)\(\[.*?\]\);", html, re.S).group(0)
+    words = ["wo", "kudógó", "kwa", "ku", "ãb", "ab", "bó", "ba", "óa"]
+    js = code + ("\nvar w = %s; w.sort(ALPHA.compareWords);"
+                 "\nconsole.log(JSON.stringify([w, ALPHA.letterOf('óa'), ALPHA.letterOf('kwa')]));"
+                 % __import__("json").dumps(words))
+    out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
+    order, first_o, first_kw = __import__("json").loads(out)
+    # ã is its own letter (after a); ó sorts as o; kw after every k-word
+    assert order == ["ab", "ãb", "ba", "bó", "ku", "kudógó", "kwa", "óa", "wo"]
+    assert [first_o, first_kw] == ["O", "KW"]
