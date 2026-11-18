@@ -12,6 +12,13 @@
       if (menu.open && !menu.contains(e.target)) menu.open = false;
     });
   }
+  // Offline: the service worker sits at the site root (data-root on <html>).
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    var root = document.documentElement.getAttribute('data-root') || '';
+    if (root.charAt(0) !== '/' && !/^https?:/.test(root)) {
+      navigator.serviceWorker.register(root + 'sw.js').catch(function () {});
+    }
+  }
   // Remember the language chosen with the switch (read by the site root page).
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('[data-td-locale]');

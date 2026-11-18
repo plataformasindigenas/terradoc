@@ -1,0 +1,18 @@
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import headword, count %}
+{% block main %}
+<div class="td-dict">
+  <header class="td-dict__head">
+    <h1><a class="td-dict__up" href="index.html">{{ t.nav_dictionary or title }}</a> <span class="td-dict__letter"{% if site.language_code and letter.letter != '_' %} lang="{{ site.language_code }}"{% endif %}>{{ letter.label if letter.letter != '_' else t.ui_dict_other }}</span></h1>
+    <p class="td-dict__count">{{ count(t, letter.words | length, locale) }}</p>
+  </header>
+  {% include "components/dict_search.html.j2" %}
+  {% include "components/letter_bar.html.j2" %}
+  <ol class="td-words">
+    {% for w in letter.words %}
+    <li id="e-{{ w.id }}"><a href="{{ w.file | urlencode }}">{{ headword(w, site.language_code) }}</a>{% if w.row.audio %} <span class="td-has-audio" title="{{ t.ui_has_audio }}" aria-label="{{ t.ui_has_audio }}">♪</span>{% endif %}
+      <span class="td-words__gloss"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ gloss(w.row.definition) }}</span></li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}

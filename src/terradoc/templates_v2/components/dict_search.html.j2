@@ -1,0 +1,14 @@
+{#- Dictionary search: plain GET to the dictionary index; td-dict.js searches as you type
+    and shows the keyboard (hidden without script, where it could not type). -#}
+<form class="td-search td-search--dict" role="search" action="{{ dict_root }}index.html" method="get">
+  <label class="td-search__label" for="td-q">{{ t.ui_search_label }}</label>
+  <div class="td-search__row">
+    <input class="td-search__input" id="td-q" name="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="{{ t.ui_search_placeholder }}"{% if site.language_code %} data-lang="{{ site.language_code }}"{% endif %}>
+    <button class="td-button" type="submit">{{ t.ui_search_submit }}</button>
+  </div>
+  {% if keyboard %}
+  <div class="td-keyboard" role="group" aria-label="{{ t.ui_keyboard }}" hidden>
+    {% for k in keyboard %}<button type="button" class="td-key" data-key="{{ k }}"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ k }}</button>{% endfor %}
+  </div>
+  {% endif %}
+</form>

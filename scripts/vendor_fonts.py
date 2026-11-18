@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Vendor the v2 fonts: Charis (text, vernacular, IPA) and Source Sans 3 (interface).
+"""Vendor the v2 fonts: a text face (Charis, Gentium or Andika, chosen per site with
+`theme.font_vernacular`; all three cover the vernacular orthographies and IPA) and Source
+Sans 3 (interface).
 
 Downloads the pinned upstream releases, checks their sha256, keeps only the Latin, IPA,
 Greek and combining-mark ranges (what any site can need; the build later subsets each
 font to the site's own characters) and renames the families `td-text` and `td-ui`, since
 "Charis", "SIL" and "Source" are Reserved Font Names under the SIL Open Font License and a
-modified font may not carry them. Writes src/terradoc/fonts_v2/ (woff2 + licences).
+modified font may not carry them. ("Gentium" and "Andika" are Reserved Font Names too.) Writes src/terradoc/fonts_v2/ (woff2 + licences).
 
 Run it only to move to a new upstream release (update RELEASES first):
 
@@ -31,6 +33,16 @@ RELEASES = {
         "sha256": "e3237b1303c5d31af8f59b1d1914886c5e873b77c71390e4742fb3bc1c187666",
         "licence": "Charis-7.000/OFL.txt",
     },
+    "gentium": {
+        "url": "https://github.com/silnrsi/font-gentium/releases/download/v7.000/Gentium-7.000.zip",
+        "sha256": "313e64963ba27851356060a725d36ce01680e5c5c63f46e4b40f15741c043e21",
+        "licence": "Gentium-7.000/OFL.txt",
+    },
+    "andika": {
+        "url": "https://github.com/silnrsi/font-andika/releases/download/v7.000/Andika-7.000.zip",
+        "sha256": "88ba6ea41ef4a8e5214b090df8fa2983be1babe4843efaa99cdb6078b0e2c070",
+        "licence": "Andika-7.000/OFL.txt",
+    },
     "source-sans": {
         "url": "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/TTF-source-sans-3.052R.zip",
         "sha256": "1b0dd1ec44b39f1dd98bbd153a1a3815f083639874ddee02c842bd601bad3d21",
@@ -41,11 +53,11 @@ RELEASES = {
 
 # (release, file in the zip, family, style name, output name)
 FONTS = [
-    ("charis", "Charis-7.000/Charis-Regular.ttf", "td-text", "Regular", "td-text-400.woff2"),
-    ("charis", "Charis-7.000/Charis-Italic.ttf", "td-text", "Italic", "td-text-400i.woff2"),
-    ("charis", "Charis-7.000/Charis-Bold.ttf", "td-text", "Bold", "td-text-700.woff2"),
+    (face, f"{Face}-7.000/{Face}-{style}.ttf", "td-text", style, f"td-{face}-{out}.woff2")
+    for face, Face in (("charis", "Charis"), ("gentium", "Gentium"), ("andika", "Andika"))
+    for style, out in (("Regular", "400"), ("Italic", "400i"), ("Bold", "700"))
+] + [
     ("source-sans", "TTF/SourceSans3-Regular.ttf", "td-ui", "Regular", "td-ui-400.woff2"),
-    ("source-sans", "TTF/SourceSans3-Semibold.ttf", "td-ui", "Semibold", "td-ui-600.woff2"),
 ]
 
 # Kept ranges; terradoc.fonts.COVERED is the same list (a test keeps them in step).
@@ -114,11 +126,14 @@ def main() -> None:
         print(f"  {out}: {(OUT / out).stat().st_size / 1024:.0f} KB")
     licences = ["# Font licences\n",
                 "The fonts here are modified (subset, renamed) versions of OFL fonts. "
-                "`td-text` is Charis 7.000 by SIL Global; `td-ui` is Source Sans 3.052 by "
-                "Adobe. Upstream releases and checksums: scripts/vendor_fonts.py.\n"]
-    charis = zips["charis"].read(RELEASES["charis"]["licence"]).decode("utf-8")
+                "`td-text` is Charis, Gentium or Andika 7.000 by SIL Global (one per site); "
+                "`td-ui` is Source Sans 3.052 by Adobe. Upstream releases and checksums: "
+                "scripts/vendor_fonts.py in terradoc.\n"]
+    for key, title in (("charis", "Charis"), ("gentium", "Gentium"), ("andika", "Andika")):
+        text = zips[key].read(RELEASES[key]["licence"]).decode("utf-8")
+        licences += [f"\n## td-text ({title})\n\n", text, "\n"]
     sans = fetch(RELEASES["source-sans"]["licence_url"], RELEASES["source-sans"]["licence_sha256"]).decode("utf-8")
-    licences += ["\n## td-text (Charis)\n\n", charis, "\n\n## td-ui (Source Sans 3)\n\n", sans]
+    licences += ["\n## td-ui (Source Sans 3)\n\n", sans]
     (OUT / "LICENSES.md").write_text("".join(licences), encoding="utf-8")
 
 

@@ -1,0 +1,28 @@
+{#- The v1 dictionary address. Old links carry ?entry=<id> or ?search=<q>: forward them to
+    the word's page or to the search. Not in the sitemap. -#}
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{ title }} · {{ site.title }}</title>
+<link rel="canonical" href="dictionary/index.html">
+<script>
+(function () {
+  var p = new URLSearchParams(location.search), id = p.get('entry'), q = p.get('search') || p.get('q');
+  function go(path) { location.replace(path); }
+  if (id) {
+    fetch({{ (root ~ search_index) | tojson }}).then(function (r) { return r.json(); }).then(function (d) {
+      for (var i = 0; i < d.rows.length; i++) if (String(d.rows[i][0]) === id) return go('dictionary/' + encodeURIComponent(d.rows[i][3]));
+      go('dictionary/index.html');
+    }).catch(function () { go('dictionary/index.html'); });
+  } else {
+    go('dictionary/index.html' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  }
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=dictionary/index.html"></noscript>
+</head>
+<body><p><a href="dictionary/index.html">{{ t.ui_forwarding }}</a></p></body>
+</html>

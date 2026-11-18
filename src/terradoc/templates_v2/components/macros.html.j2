@@ -1,0 +1,8 @@
+{#- Small shared pieces. -#}
+{% macro headword(w, lang) -%}
+<span class="td-word"><span class="td-hw"{% if lang %} lang="{{ lang }}"{% endif %}>{{ w.entry }}</span>{% if w.homonym %}<sup class="td-homonym">{{ w.homonym }}</sup>{% endif %}</span>
+{%- endmacro %}
+
+{% macro count(t, n, locale) -%}
+{% if n == 1 %}{{ t.ui_dict_count_one }}{% else %}{{ t.ui_dict_count | replace("{n}", n | number(locale)) }}{% endif %}
+{%- endmacro %}

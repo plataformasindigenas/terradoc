@@ -61,6 +61,8 @@ class Assets:
     emblem: str = ""
     icon: str = ""
     inline_css: str = ""         # for pages served from anywhere (404): no fonts, no pack
+    dict_js: str = ""
+    search_index: str = ""
     hero: images.Derived | None = None
     fonts: list = field(default_factory=list)
     pack: packs.Pack | None = None
@@ -94,6 +96,8 @@ def environment(config: TerradocConfig) -> Environment:
         trim_blocks=True, lstrip_blocks=True,
     )
     env.filters["number"] = format_number
+    from terradoc.dictionary_v2 import gloss
+    env.globals["gloss"] = gloss
     return env
 
 
@@ -161,11 +165,12 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
         shutil.rmtree(out / "assets")
 
     chars = site_characters(config, strings)
-    lacking = fonts.missing(chars)
+    text_face = config.theme.font_vernacular or "gentium"
+    lacking = fonts.missing(chars, text_face)
     if lacking:
         listed = " ".join(f"{c} (U+{ord(c):04X})" for c in lacking[:20])
         raise ValueError(f"the v2 text font lacks {len(lacking)} character(s) the site uses: {listed}")
-    assets.fonts = fonts.build(chars, out / "assets" / "fonts")
+    assets.fonts = fonts.build(chars, out / "assets" / "fonts", text_face)
     short = fonts.missing_in_built(chars, assets.fonts, out / "assets" / "fonts")
     if short:  # the subsetter dropped something it should have kept
         raise ValueError("font subsets lack characters the site uses: "
@@ -200,6 +205,9 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
     js = static_v2("td.js")
     assets.js = "assets/" + _hashed(js, "td", "js")
     (out / assets.js).write_bytes(js)
+    js = static_v2("td-dict.js")
+    assets.dict_js = "assets/" + _hashed(js, "td-dict", "js")
+    (out / assets.dict_js).write_bytes(js)
 
     if config.theme.favicon and (config.static_dir / config.theme.favicon).is_file():
         assets.icon = config.theme.favicon
@@ -215,13 +223,60 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
     return assets
 
 
-def routes(config: TerradocConfig, strings: dict[str, Strings]) -> list[Route]:
+def module_href(config: TerradocConfig, from_dir_depth: int = 1):
+    """A function giving the link to a module's page from a page `from_dir_depth` levels
+    below the locale directory (or "" when the module is off). Detail pages for fauna,
+    ethnobotany and the encyclopedia arrive in P3; until then links go to the module page."""
+    up = "../" * from_dir_depth
+
+    def href(slug: str) -> str:
+        return f"{up}{module_path(slug)}" if config.is_module_enabled(slug) else ""
+    return href
+
+
+DICT_JS_STRINGS = ("ui_dict_loading", "ui_dict_failed", "ui_retry", "ui_dict_none", "ui_dict_results",
+                   "ui_dict_results_one", "ui_dict_more", "ui_dict_hint", "ui_has_audio")
+
+
+def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets: Assets) -> list[Route]:
+    from terradoc import dictionary_v2 as dv
+
+    words, letters = data
+    title = t["nav_dictionary"] or config.module_label("dictionary")
+    bar = dv.letter_bar(config, letters)
+    shared = {"letter_bar": bar, "keyboard": dv.keyboard_keys(config), "dict_root": "",
+              "search_index": assets.search_index, "current_letter": None}
+    out = [Route(f"{loc}/dictionary/index.html", "pages/dictionary_index.html.j2", "dictionary", title, loc,
+                 {**shared, "total": len(words), "folds": dv.folds_for_script(config),
+                  "js_strings": {k: t[k] for k in DICT_JS_STRINGS}})]
+    for L in letters:
+        label = t.ui_dict_other if L.letter == dv.OTHER else L.label
+        out.append(Route(f"{loc}/dictionary/{L.file}", "pages/dictionary_letter.html.j2", "dictionary",
+                         f"{title}: {label}", loc, {**shared, "letter": L, "current_letter": L.letter}))
+    href = module_href(config, 1)
+    by_letter = {w.id: L for L in letters for w in L.words}
+    for w in words:
+        path = f"{loc}/dictionary/{w.file}"
+        ctx = dv.entry_context(config, w, t, prefix(path), config.docs_dir, href)
+        ctx["back_href"] = f"{by_letter[w.id].file}#e-{w.id}"
+        out.append(Route(path, "pages/dictionary_entry.html.j2", "dictionary",
+                         w.entry + (f" {w.homonym}" if w.homonym else ""), loc, ctx))
+    out.append(Route(f"{loc}/dictionary.html", "pages/dictionary_compat.html.j2", "dictionary", title, loc,
+                     {"search_index": assets.search_index}, sitemap=False))
+    return out
+
+
+def routes(config: TerradocConfig, strings: dict[str, Strings], assets: Assets | None = None,
+           dict_data=None) -> list[Route]:
     out: list[Route] = []
     for loc in config.locales:
         t = strings[loc]
         out.append(Route(f"{loc}/index.html", "pages/home.html.j2", "home", config.site_title or config.project_name, loc))
         for mod in config.enabled_modules():
             slug = mod["slug"]
+            if slug == "dictionary" and dict_data and dict_data[0] and assets is not None:
+                out.extend(dictionary_routes(config, loc, t, dict_data, assets))
+                continue
             out.append(Route(f"{loc}/{module_path(slug)}", "pages/pending.html.j2", slug,
                              t[f"nav_{slug}"] or mod["name"], loc))
         out.append(Route(f"{loc}/about.html", "pages/pending.html.j2", "about", t["nav_about"] or t.ui_about, loc))
@@ -309,6 +364,24 @@ def write_sitemap_v2(out: Path, config: TerradocConfig, pages: list[Route]) -> N
     print(f"  Generated sitemap.xml ({len(urls)} URLs)")
 
 
+def write_service_worker(out: Path, config: TerradocConfig, assets: Assets) -> None:
+    """sw.js at the site root: precaches the shell (CSS, scripts, critical fonts, the search
+    index, each locale's home and dictionary index); its version changes with them."""
+    default = config.default_locale if config.default_locale in config.locales else config.locales[0]
+    pages = [f"{loc}/index.html" for loc in config.locales]
+    if assets.search_index:
+        pages += [f"{loc}/dictionary/index.html" for loc in config.locales]
+    files = [assets.css, assets.js, *assets.preload] + ([assets.dict_js, assets.search_index]
+                                                        if assets.search_index else [])
+    precache = [f for f in files + pages if f and (out / f).is_file()]
+    version = hashlib.sha256("\n".join(files).encode()).hexdigest()[:10]
+    sw = (static_v2("sw.js").decode("utf-8")
+          .replace("'__VERSION__'", json.dumps(version))
+          .replace("__PRECACHE__", json.dumps(precache))
+          .replace("'__OFFLINE__'", json.dumps(f"{default}/index.html")))
+    (out / "sw.js").write_text(sw, encoding="utf-8")
+
+
 def build_site_v2(config: TerradocConfig) -> dict:
     """Render the v2 site into config.docs_dir; returns a small report (sizes, counts)."""
     from terradoc.build_site import copy_audio_files, write_robots_txt
@@ -321,8 +394,14 @@ def build_site_v2(config: TerradocConfig) -> dict:
     for problem in assets.pack.problems if assets.pack else []:
         print(f"  pack: {problem}")
     env = environment(config)
+    copy_audio_files(config)  # before the entry pages, which link only recordings that exist
 
-    pages = routes(config, strings)
+    from terradoc import dictionary_v2 as dv
+
+    dict_data = dv.load(config) if config.is_module_enabled("dictionary") else ([], [])
+    if dict_data[0]:
+        assets.search_index = dv.write_index(dict_data[0], out)
+    pages = routes(config, strings, assets, dict_data)
     for route in pages:
         html = env.get_template(route.template).render(**page_context(config, route, strings, assets))
         target = out / route.path
@@ -349,7 +428,7 @@ def build_site_v2(config: TerradocConfig) -> dict:
     ctx.update(specimen_context(config))
     (out / "specimen.html").write_text(env.get_template(specimen.template).render(**ctx), encoding="utf-8")
 
-    copy_audio_files(config)
+    write_service_worker(out, config, assets)
     write_robots_txt(out, config.base_url)
     write_sitemap_v2(out, config, pages)
     report = {

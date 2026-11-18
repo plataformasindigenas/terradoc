@@ -42,21 +42,39 @@ class Face:
     style: str      # normal | italic
     critical: bool  # preloaded on every page
 
+    @property
+    def stem(self) -> str:
+        """Name of the shipped file before its hash: td-text-400, td-ui-400."""
+        suffix = f"{self.weight}{'i' if self.style == 'italic' else ''}"
+        return f"{self.family}-{suffix}"
 
-FACES = (
-    Face("td-text-400.woff2", "td-text", 400, "normal", True),
-    Face("td-text-400i.woff2", "td-text", 400, "italic", False),
-    Face("td-text-700.woff2", "td-text", 700, "normal", False),
-    Face("td-ui-400.woff2", "td-ui", 400, "normal", True),
-)
-# td-ui-600 is vendored but not shipped: the interface uses one weight, so a page needs at
-# most two font files before its content (Charis 400 and Source Sans 400).
+
+# The text face (td-text) is chosen per site with theme.font_vernacular; Gentium by default.
+# Charis was the first choice (D16), but its tilde is so flat that ã õ ũ read as ā ō ū at
+# text sizes (2026-11-18, screenshots at 17–24 px); Gentium and Andika draw a clear tilde.
+TEXT_FACES = ("charis", "gentium", "andika")
+
+
+def faces(text: str = "gentium") -> tuple[Face, ...]:
+    if text not in TEXT_FACES:
+        raise ValueError(f"theme.font_vernacular: '{text}' is not available (v2 has: {', '.join(TEXT_FACES)})")
+    return (
+        Face(f"td-{text}-400.woff2", "td-text", 400, "normal", True),
+        Face(f"td-{text}-400i.woff2", "td-text", 400, "italic", False),
+        Face(f"td-{text}-700.woff2", "td-text", 700, "normal", False),
+        Face("td-ui-400.woff2", "td-ui", 400, "normal", True),
+    )
+
+
+FACES = faces("gentium")
+# The interface uses one weight, so a page needs at most two font files before its content
+# (the text face 400 and Source Sans 400).
 
 
 @dataclass(frozen=True)
 class BuiltFace:
     face: Face
-    name: str   # file name written, e.g. td-text-400.3f2a1b9c.woff2
+    name: str   # file name written, e.g. td-text-400.3f2a1b9c9d.woff2
     size: int
 
 
@@ -92,11 +110,11 @@ def strings_in(obj):
             yield from strings_in(v)
 
 
-def missing(chars: set[str]) -> list[str]:
+def missing(chars: set[str], text: str = "gentium") -> list[str]:
     """Covered-range characters the text face lacks (sorted)."""
     from fontTools.ttLib import TTFont
 
-    cmap = TTFont(_vendored("td-text-400.woff2")).getBestCmap()
+    cmap = TTFont(_vendored(faces(text)[0].file)).getBestCmap()
     return sorted(c for c in chars if covered(c) and ord(c) not in cmap)
 
 
@@ -116,7 +134,7 @@ def missing_in_built(chars: set[str], built: list["BuiltFace"], out_dir: Path) -
     return out
 
 
-def build(chars: set[str], out_dir: Path) -> list[BuiltFace]:
+def build(chars: set[str], out_dir: Path, text: str = "gentium") -> list[BuiltFace]:
     """Subset every face to `chars` (the covered ones) into out_dir; names carry a content
     hash, so a changed subset never meets a cached old one."""
     from fontTools import subset
@@ -126,7 +144,7 @@ def build(chars: set[str], out_dir: Path) -> list[BuiltFace]:
     unicodes = sorted({ord(c) for c in chars if covered(c)} | {0x20, 0xA0})
     out_dir.mkdir(parents=True, exist_ok=True)
     built = []
-    for face in FACES:
+    for face in faces(text):
         # recalcTimestamp=False: saving must not write the current time into head.modified,
         # or every build gives new bytes, new names and new pages (sitepull hardlinks).
         font = TTFont(_vendored(face.file), recalcTimestamp=False)
@@ -143,7 +161,7 @@ def build(chars: set[str], out_dir: Path) -> list[BuiltFace]:
         buf = io.BytesIO()
         font.save(buf)
         data = buf.getvalue()
-        stem = face.file.removesuffix(".woff2")
+        stem = face.stem
         name = f"{stem}.{hashlib.sha256(data).hexdigest()[:10]}.woff2"
         (out_dir / name).write_bytes(data)
         built.append(BuiltFace(face, name, len(data)))

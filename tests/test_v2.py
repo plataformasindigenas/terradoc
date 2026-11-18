@@ -192,9 +192,21 @@ def test_covered_ranges_match_the_vendoring_script():
     assert tuple(tuple(r) for r in ranges) == fonts.COVERED
 
 
-def test_font_covers_the_orthographies():
+@pytest.mark.parametrize("face", fonts.TEXT_FACES)
+def test_font_covers_the_orthographies(face):
     chars = fonts.collect(["ẽ ĩ ũ ỹ ɨ ʉ ɛ ɔ ə ŋ ʔ ɾ ʃ ɲ ʼ ɡ ˈ ː β ɸ ʂ", "g̃ ɨ̃ a̱ ñ ç"])
-    assert fonts.missing(chars) == []
+    assert fonts.missing(chars, face) == []
+
+
+def test_text_face_is_chosen_per_site(project):
+    set_theme(project, templates="v2", palette=BORORO, font_vernacular="gentium")
+    assert build(project).exit_code == 0
+    from fontTools.ttLib import TTFont
+    f = next(Path("site/assets/fonts").glob("td-text-400.*.woff2"))
+    assert "Gentium" in " ".join(str(n) for n in TTFont(f)["name"].names if n.nameID == 7)
+    set_theme(project, font_vernacular="garamond")
+    result = CliRunner().invoke(main, ["check", "-c", str(project / "terradoc.yaml")])
+    assert result.exit_code != 0 and "font_vernacular" in result.output
 
 
 def test_missing_reports_covered_characters_only():
@@ -205,6 +217,7 @@ def test_missing_reports_covered_characters_only():
 def test_subset_is_small_and_hashed(tmp_path):
     built = fonts.build(fonts.collect(["Boe Eno Moto, aregódu ɔɛ ẽ"]), tmp_path)
     assert {b.face.file for b in built} == {f.file for f in fonts.FACES}
+    assert {b.name.split(".")[0] for b in built} == {"td-text-400", "td-text-400i", "td-text-700", "td-ui-400"}
     for b in built:
         assert (tmp_path / b.name).stat().st_size == b.size < 25_000
         assert b.name.count(".") == 2
@@ -225,7 +238,7 @@ def test_v2_site_builds_with_working_links(project):
     assert sitecheck.broken_links(site) == []
     assert all(w < 150 * 1024 for w in sitecheck.page_weights(site).values())
     home = (site / "pt" / "index.html").read_text()
-    assert '<html lang="pt-BR">' in home
+    assert '<html lang="pt-BR" data-root="../">' in home
     assert 'lang="bor"' in home
     assert 'action="../pt/dictionary/index.html"' in home
     assert 'rel="preload"' in home and "td-text-400." in home

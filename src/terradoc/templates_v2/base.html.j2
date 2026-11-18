@@ -1,6 +1,6 @@
 {#- v2 page skeleton. Blocks for pages: title, head, main. Context: see build_v2.page_context. -#}
 <!DOCTYPE html>
-<html lang="{{ t.html_lang }}">
+<html lang="{{ t.html_lang }}" data-root="{{ root }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,7 +20,8 @@
 <link rel="alternate" hreflang="{{ s.hreflang }}" href="{{ s.absolute }}">
 {% endfor %}
 {% block head %}{% endblock %}
-{% if not (standalone is defined and standalone) %}<script src="{{ root }}{{ assets.js }}" defer></script>{% endif %}
+{% if not (standalone is defined and standalone) %}<script src="{{ root }}{{ assets.js }}" defer></script>
+{% if page == 'dictionary' %}<script src="{{ root }}{{ assets.dict_js }}" defer></script>{% endif %}{% endif %}
 </head>
 <body class="td-page-{{ page }}">
 <a class="td-skip" href="#main">{{ t.ui_skip }}</a>

@@ -1,0 +1,48 @@
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import headword %}
+{% block main %}
+{% set w = word %}
+<article class="td-entry" data-entry="{{ w.id }}">
+  <p class="td-entry__back"><a href="{{ back_href }}" data-td-back>{{ t.ui_back }}</a></p>
+  <header class="td-entry__head">
+    <h1 class="td-entry__hw">{{ headword(w, site.language_code) }}</h1>
+    {% if pos %}<p class="td-entry__pos">{{ pos }}</p>{% endif %}
+    {% if row.ipa %}<p class="td-entry__ipa"><span class="td-label">{{ t.ui_pronunciation }}</span> <span class="td-ipa">/{{ row.ipa }}/</span></p>{% endif %}
+  </header>
+  {% if audio %}
+  <ul class="td-audio">
+    {% for a in audio %}
+    <li><span class="td-label">{{ a.label }}</span><audio controls preload="none"><source src="{{ a.src }}" type="{{ a.type }}"></audio></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if row.definition %}<div class="td-entry__def"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.definition }}</div>{% endif %}
+  {% if row.example_sent or row.scientific_name or row.comment %}
+  <dl class="td-entry__more">
+    {% if row.example_sent %}<dt>{{ t.ui_example }}</dt><dd class="td-entry__example">{{ row.example_sent }}</dd>{% endif %}
+    {% if row.scientific_name %}<dt>{{ t.ui_scientific }}</dt><dd><i>{{ row.scientific_name }}</i></dd>{% endif %}
+    {% if row.comment %}<dt>{{ t.ui_comment }}</dt><dd{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.comment }}</dd>{% endif %}
+  </dl>
+  {% endif %}
+  {% if picture %}
+  <figure class="td-entry__pic"><img src="{{ picture }}" alt="{{ w.entry }}" loading="lazy" decoding="async"></figure>
+  {% endif %}
+  {% if related or wiki %}
+  <section class="td-entry__related">
+    <h2>{{ t.ui_see_also }}</h2>
+    <ul>
+      {% for r in related %}<li><span class="td-label">{{ r.label }}</span> <a href="{{ r.href }}"{% if r.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ r.name }}</a></li>{% endfor %}
+      {% if wiki %}<li><span class="td-label">Wikipédia</span> <a href="{{ wiki }}" rel="noopener">{{ wiki | replace("https://", "") | truncate(48, true, "…") }}</a></li>{% endif %}
+    </ul>
+  </section>
+  {% endif %}
+  <details class="td-entry__cite">
+    <summary>{{ t.ui_cite }}</summary>
+    <p>{{ w.entry }}{% if w.homonym %} ({{ t.ui_homonym }} {{ w.homonym }}){% endif %}. In: {{ site.title }}, {{ t.nav_dictionary or title }}. {{ canonical or (loc_root ~ 'dictionary/' ~ w.file) }}</p>
+  </details>
+  <nav class="td-entry__pager" aria-label="{{ t.ui_prev }} / {{ t.ui_next }}">
+    {% if w.prev %}<a rel="prev" href="{{ w.prev.file | urlencode }}"><span class="td-label">{{ t.ui_prev }}</span> {{ headword(w.prev, site.language_code) }}</a>{% endif %}
+    {% if w.next %}<a rel="next" href="{{ w.next.file | urlencode }}"><span class="td-label">{{ t.ui_next }}</span> {{ headword(w.next, site.language_code) }}</a>{% endif %}
+  </nav>
+</article>
+{% endblock %}

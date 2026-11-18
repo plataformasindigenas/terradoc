@@ -1,0 +1,17 @@
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import count %}
+{% block main %}
+<div class="td-dict" data-index="{{ root }}{{ search_index }}" data-folds="{{ folds | tojson | forceescape }}"
+     data-strings="{{ js_strings | tojson | forceescape }}" data-lang="{{ site.language_code }}" data-locale="{{ locale }}">
+  <header class="td-dict__head">
+    <h1>{{ title }}</h1>
+    <p class="td-dict__count">{{ count(t, total, locale) }}</p>
+  </header>
+  {% include "components/dict_search.html.j2" %}
+  {% include "components/letter_bar.html.j2" %}
+  <p class="td-dict__hint" id="td-hint">{{ t.ui_dict_hint }}</p>
+  <noscript><p class="td-dict__hint">{{ t.ui_dict_nojs }}</p></noscript>
+  <p class="td-dict__status" id="td-status" role="status"></p>
+  <div class="td-results" id="td-results"></div>
+</div>
+{% endblock %}

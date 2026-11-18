@@ -151,7 +151,9 @@ class ThemeConfig:
     hero_alt: str = ""  # what the hero photograph shows, for screen readers
     hero_people: bool = True  # False: the hero shows a landscape or object (D25); recorded
     # now, used by later checks on withdrawn images
-    font_vernacular: str = "charis"  # the text face for vernacular text; v2 ships charis
+    # The v2 text face (vernacular, Portuguese and IPA alike): gentium (default), charis,
+    # andika. Charis was D16's choice, but its tilde reads as a macron at text sizes.
+    font_vernacular: str = "gentium"
 
     def to_dict(self) -> dict:
         result = {
@@ -194,6 +196,12 @@ class TerradocConfig:
     # The language's own alphabet, in order; letters may be digraphs ("mb", "ng").
     # Empty = first character and Portuguese collation, as before.
     alphabet: list[str] = field(default_factory=list)
+    # v2 dictionary search: letters that count as the same letter when searching, as
+    # {letter: stands for}, e.g. {r: l, b: w, u: o} (Enawenê-Nawê). Accents are always ignored.
+    search_folds: dict[str, str] = field(default_factory=dict)
+    # Extra keys for the on-screen keyboard (it shows the alphabet's non-ASCII letters plus
+    # these), e.g. [á, é, í, ó, ú].
+    keyboard: list[str] = field(default_factory=list)
     unknown_theme_keys: list[str] = field(default_factory=list)  # filled by load_config
     locale_labels: dict[str, str] = field(default_factory=lambda: {
         "pt": "Português",
@@ -408,6 +416,17 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
             if not isinstance(raw["alphabet"], list) or not all(isinstance(x, str) and x.strip() for x in raw["alphabet"]):
                 raise ValueError("terradoc.yaml: 'alphabet' must be a list of letters, e.g. [a, ã, e, mb]")
             config.alphabet = [str(x).strip() for x in raw["alphabet"]]
+        if "search_folds" in raw:
+            folds = raw["search_folds"]
+            if not isinstance(folds, dict) or not all(
+                    isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip()
+                    for k, v in folds.items()):
+                raise ValueError("terradoc.yaml: 'search_folds' must map letters to letters, e.g. {r: l, u: o}")
+            config.search_folds = {k.strip(): v.strip() for k, v in folds.items()}
+        if "keyboard" in raw:
+            if not isinstance(raw["keyboard"], list) or not all(isinstance(x, str) and x.strip() for x in raw["keyboard"]):
+                raise ValueError("terradoc.yaml: 'keyboard' must be a list of letters, e.g. [á, é]")
+            config.keyboard = [x.strip() for x in raw["keyboard"]]
         if "locales" in raw:
             config.locales = raw["locales"]
         if "locale_labels" in raw and isinstance(raw["locale_labels"], dict):

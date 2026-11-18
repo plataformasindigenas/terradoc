@@ -503,9 +503,11 @@ def _check_theme_v2(config: TerradocConfig) -> list[Issue]:
         if not config.theme.hero_alt:
             issues.append(Issue("warning", "theme",
                 "theme.hero_alt: say what the hero photograph shows, for screen readers", yaml_file))
-    if config.theme.font_vernacular not in ("charis",):
+    from terradoc.fonts import TEXT_FACES
+    if config.theme.font_vernacular not in TEXT_FACES:
         issues.append(Issue("error", "theme",
-            f"theme.font_vernacular: '{config.theme.font_vernacular}' is not available (v2 has: charis)", yaml_file))
+            f"theme.font_vernacular: '{config.theme.font_vernacular}' is not available "
+            f"(v2 has: {', '.join(TEXT_FACES)})", yaml_file))
     return issues
 
 
