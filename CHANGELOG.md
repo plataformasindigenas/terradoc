@@ -9,7 +9,7 @@ All notable changes to terradoc are documented here.
 ### Changed
 
 - **Accented letters outside the alphabet sort as their plain letter.** With
-  `alphabet: [a, …, o, …]`, *kudógó* sorts and groups under o-words' rules (ó as o) instead of
+  `alphabet: [a, …, o, …]`, *kudógó* sorts as *kudogo* instead of putting ó
   after the last letter; letters listed in the alphabet (Makurap's ã, ẽ) keep their own place.
   `check` uses the same rule for its first-letter warnings. v1 manifest for Makurap refrozen.
 
