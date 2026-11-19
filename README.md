@@ -131,6 +131,9 @@ A site can also publish its own Markdown pages (`data/pages/<locale>/<slug>.md`:
 credits, privacy), and a site of pages only, like the Plataformas Indígenas portal, needs no
 data at all (`docs/pages.md`).
 
+For the people who edit the content: a step-by-step guide in Portuguese, with screenshots,
+from editing a file to seeing it live (`docs/guia/`).
+
 The standard workflow is:
 
 1. Scaffold a new project.
