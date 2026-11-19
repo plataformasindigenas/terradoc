@@ -3,7 +3,7 @@
 # - gate: build every platform as it is today with the terradoc it pins and with this commit,
 #   and report what changed. A failed build fails the job; differences only go to the summary,
 #   since many are intended (read them before releasing).
-# - v2: build every platform's branch in gate/v2/sites.txt (master), twice (the bytes must
+# - v2: build every platform's branch in gate/v2/sites.txt (and the portal), twice (the bytes must
 #   match), check links, page weight, the sitemap and the file count, and keep a screenshot of
 #   the font specimen (gate/v2.sh).
 #
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        site: [boeenomoto, enawenenawe, makurap]
+        site: [boeenomoto, enawenenawe, makurap, portal]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        site: [boeenomoto, enawenenawe, makurap]
+        site: [boeenomoto, enawenenawe, makurap, portal]
     env:
       SITE: ${{ matrix.site }}
     steps:
