@@ -3,6 +3,6 @@
 # github.com/plataformasindigenas, folder to the repository root.
 boeenomoto master
 enawenenawe master
-portal v2 www portal
+portal master www portal
 paresi inicio
 terena inicio
