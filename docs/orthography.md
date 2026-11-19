@@ -37,9 +37,11 @@ terradoc bundles two families, subset for each site at build time:
   default. All three cover Latin, IPA, Greek and the combining marks;
 - **Source Sans 3** for the interface (menus, labels, buttons).
 
-`terradoc check` reports, as an error, any character the data uses that the text face lacks
-in those ranges: the build would stop on it. Other scripts (a title in Malayalam in the
-bibliography) come from the reader's own fonts. Sites cannot add fonts of their own.
+`terradoc check` reports, as an error, any character the site shows (data, settings, locale
+strings) that the text face lacks in those ranges: the build would stop on it. Other scripts
+(a title in Malayalam in the bibliography) come from the reader's own fonts. The faces above
+are the only ones terradoc subsets and serves; a site that needs another would have to serve
+it itself from `static/` through a template override.
 
 ## Interface languages
 

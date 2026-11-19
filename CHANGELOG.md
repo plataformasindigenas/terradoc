@@ -39,33 +39,84 @@ platforms moved to v2 on 2026-11-19 and build byte-identical output with this re
   `config/templates/v2/`.
 - `terradoc check`: v1 page configs (`config/<page>.yaml`) and v1 patterns
   (`config/templates/motifs/`) are errors ("no longer read; delete"). The text face
-  (`theme.font_vernacular`) must cover the data's characters (an error: the build would stop
-  on it anyway). Without a palette a site uses `palette.DEFAULT`, the project's neutral
+  (`theme.font_vernacular`) must cover every character the site shows (an error: the build
+  would stop on it anyway); it runs after the dry export with the renderer's own collection,
+  so check and build see the same text. Without a palette a site uses `palette.DEFAULT`, the project's neutral
   colours (the v1-colours fallback is gone). Reserved names in `static/` are now v2's root
   files (`sw.js`, `offline.html`, `specimen.html`, `assets/`, …) instead of v1's.
 - `gate/v2.sh` builds each site's `master` (`gate/v2/sites.txt`).
 
 ### Tests
 
-443 → 373. Removed with what they tested (v1 only):
-- `test_decor.py` (18, v1 decoration macros), `test_gallery_spotlight.py` (2, v1 gallery and
-  spotlight card), `test_motifs.py` (12, v1 motif packs; v2 packs are in `test_v2.py`),
-  `test_build_site.py` (16, v1 language picker, styles, sitemap writer).
-- `test_config.py`: 16 tests of presets, `ThemeColors`, `module_intensity`, `term_*`, `to_dict`.
-- `test_index_builder.py`: 10 `copy_data_*` tests.
-- `test_orthography.py`: the v1 font checks (Sora, Plex, `font_family_ipa`, `extra_css`), the
-  v1 page's in-browser sorting script and its footer block.
-- `test_pipeline.py`: `test_videos_oral_template_renders` (v1 page; v2 audio is in
-  `test_v2_content.py`).
-- `test_v2.py::test_v1_dirs_unchanged`; `test_v2_dictionary.py`'s comparison with the v1 page
-  script (it agreed; its cases are now fixed in `test_order_with_digraphs_and_nasal_vowels`).
+443 → 374. Removed, with what they tested (v1 only):
+- `test_decor.py` (v1 decoration macros): `test_hero_decor_balanced`, `test_hero_decor_minimal`,
+  `test_hero_decor_rich`, `test_motif_divider_patterns`, `test_motif_divider_minimal_hidden`,
+  `test_badge_circle_with_label`, `test_badge_circle_minimal_hidden`,
+  `test_section_accent_returns_style`, `test_section_accent_minimal`,
+  `test_section_accent_rich`, `test_progress_dots_count`, `test_progress_dots_minimal_hidden`,
+  `test_category_marker_shapes`, `test_category_marker_minimal_hidden`,
+  `test_spine_divider_balanced`, `test_spine_divider_minimal_hidden`,
+  `test_section_spine_balanced`, `test_all_macros_hidden_at_minimal`.
+- `test_gallery_spotlight.py` (v1 gallery and spotlight card):
+  `test_gallery_only_for_entries_with_four_or_more_images`,
+  `test_spotlight_card_only_when_locale_keys_present` (v2 gallery: `test_render.py`).
+- `test_motifs.py` (v1 motif packs; v2 packs are in `test_v2.py`):
+  `test_default_is_the_neutral_pack`, `test_bundled_packs_are_neutral_only`,
+  `test_unknown_pack_is_a_check_error`, `test_unknown_pack_blocks_build`,
+  `test_pack_name_cannot_escape`, `test_none_and_dots_need_no_pack`,
+  `test_site_pack_is_used_everywhere`, `test_one_override_keeps_the_rest_bundled`,
+  `test_site_page_template_overrides_bundled_one`,
+  `test_template_set_v1_is_the_default_and_explicit_v1_is_identical`. Moved to
+  `test_render.py`: `test_unknown_theme_key_is_an_error` (with a v2 key),
+  `test_unavailable_template_set_is_refused`.
+- `test_build_site.py` (v1 language picker, styles and sitemap writer):
+  `test_build_language_picker`, `test_language_root_redirects`,
+  `test_build_language_picker_custom_theme`, `test_build_language_picker_custom_assets`,
+  `test_build_language_picker_single_locale`, `test_build_language_picker_custom_locale_labels`,
+  `test_theme_dict_includes_style_terra`, `test_theme_dict_includes_style_classic`,
+  `test_base_template_has_body_class`, `test_base_template_has_fonts_css_link`,
+  `test_language_picker_loads_fonts_css_and_style_class`, `test_decor_template_exists`,
+  `test_terradoc_css_has_td_term`, `test_sitemap_absolute_and_without_error_pages` and
+  `test_no_sitemap_without_base_url` (v2's sitemap: `test_v2.py`). Moved to `test_render.py`:
+  `test_number_filter` (same cases), robots.txt (`test_robots_names_the_sitemap_only_with_an_absolute_address`).
+- `test_config.py`: `test_theme_colors_defaults`, `test_theme_to_dict`,
+  `test_theme_config_to_dict_includes_assets`, `test_theme_presets_exist`,
+  `test_default_theme_is_terra`, `test_preset_loading_terra`, `test_preset_loading_classic`,
+  `test_preset_with_color_override`, `test_theme_config_to_dict_includes_style`,
+  `test_load_config_rejects_non_mapping_theme_colors`,
+  `test_load_config_rejects_non_mapping_theme_colors_dark`, `test_module_intensity_default`,
+  `test_module_intensity_from_yaml`, `test_term_color_default`, `test_term_weight_default`,
+  `test_to_dict_includes_layer2_fields`.
+- `test_index_builder.py`: `test_copy_data_dictionary`, `test_copy_data_corpus`,
+  `test_copy_data_encyclopedia_index`, `test_copy_data_encyclopedia_graph`,
+  `test_copy_data_encyclopedia_graph_disabled`, `test_copy_data_disabled_module_skipped`,
+  `test_copy_data_missing_source_file`, `test_copy_data_all_modules`,
+  `test_copy_data_no_modules_enabled`, `test_copy_data_preserves_content`.
+- `test_orthography.py`: `test_ipa_missing_from_heading_font_is_a_warning`,
+  `test_tilde_vowel_is_covered_by_inter`, `test_site_font_is_not_checked`,
+  `test_mono_ipa_font_is_flagged`, `test_ipa_font_and_extra_css_reach_the_page`,
+  `test_bundled_fonts_include_the_tilde_vowels` (v1 fonts), `test_alphabet_sorting_in_the_browser_code`
+  (v1 page script), `test_footer_block_can_be_replaced` (v1 block). Ported:
+  `test_no_alphabet_keeps_the_old_dictionary_code` → `test_no_alphabet_uses_first_letters`;
+  `test_alphabet_reaches_the_dictionary` and `test_site_page_can_extend_terradocs_own` and
+  `test_block_contract` on v2 pages.
+- `test_pipeline.py`: `test_videos_oral_template_renders` (v1 page; v2 audio:
+  `test_v2_content.py`); `test_clean_refuses_old_layout_docs_after_plain_build` →
+  `test_clean_refuses_docs_with_files_terradoc_did_not_make`. Ported on v2: static copy,
+  static collisions (v2 names), missing theme media (favicon), credit links, 404.
+- `test_v2.py::test_v1_dirs_unchanged` → `test_v2_is_the_default`;
+  `test_v2_dictionary.py::test_python_and_v1_page_order_agree_on_real_words` →
+  `test_order_with_digraphs_and_nasal_vowels` (the v1 script agreed; the order is now fixed).
+- `test_homonym.py::test_homonym_column` checks the v2 letter page.
 
-Kept by moving or porting: `format_number`, robots.txt, unknown theme setting, unavailable
-template set (`test_render.py`); alphabet pages, digraph order, template override by block,
-the block contract (`test_orthography.py`); `--clean` refusal, missing theme media, static
-collisions, credit links (`test_pipeline.py`); homonym order (`test_homonym.py`). New: v2
-article gallery, text-face coverage error, `init` + `build` with zero errors, v1 refusal and
-v1 leftovers in `check`.
+New: `test_render.py` (also `test_explicit_v2_is_still_accepted`, `test_article_gallery`),
+`test_theme_media_lists_only_what_is_set`, `test_v1_theme_keys_are_kept_as_unknown_for_check`,
+`test_text_font_covers_ipa_and_tilde_vowels`,
+`test_character_missing_from_the_text_font_is_an_error`,
+`test_font_check_sees_what_the_build_shows`, `test_bundled_text_faces_have_ipa_and_tilde_vowels`,
+`test_site_base_reaches_every_page`, `test_cli_v1_is_refused_with_the_release_that_removed_it`,
+`test_cli_v1_leftovers_are_check_errors`; `test_cli_init_then_build_smoke` now requires zero
+errors.
 
 ## [0.22.1] — 2026-11-19
 

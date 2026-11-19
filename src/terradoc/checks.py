@@ -12,13 +12,13 @@ Rules (see the platforms' pipeline plan, section 5):
   (community consent to publish) or ``consent: external`` (someone else's
   public media that we only embed);
 - media: every ``images/...`` or ``audio/...`` path referenced by the data or
-  the theme must exist in ``static/`` (or, for older layouts, ``docs/``);
-- theme: every motif setting names a pack that exists, in the site's
-  ``config/templates/motifs/<name>/`` or in terradoc's (never a silent fallback
-  to another people's motif);
+  the theme must exist in ``static/``;
+- theme: the palette (roles, contrast), the pack (``config/templates/v2/motifs/<name>/``
+  or terradoc's neutral ``weave``; never another people's), v1 leftovers (settings,
+  page configs, patterns: removed in 0.23.0);
 - orthography (warnings): dictionary headwords whose first letter is not in the
-  site's ``alphabet``; letters in the data that the font for that kind of text
-  lacks (they would render in a fallback font, mid-word);
+  site's ``alphabet``;
+- fonts (error, after the dry export): characters the site shows that the text face lacks;
 - locales (warnings): UI keys of the default locale missing from another locale;
 - a dry export into a throwaway bundle, so anything the build would trip on
   (bad BibTeX, HTML in Markdown, broken cross-links) is caught here too.
@@ -522,35 +522,6 @@ def _check_alphabet(config: TerradocConfig, loaded: dict[str, tuple[Path, list[d
     return issues
 
 
-def _check_fonts(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict]]]) -> list[Issue]:
-    """The v2 text face (theme.font_vernacular) must have every character the data uses in
-    the ranges terradoc ships (Latin, IPA, Greek, combining marks); the build would stop."""
-    from terradoc import fonts
-
-    if config.theme.font_vernacular not in fonts.TEXT_FACES:
-        return []  # reported by the theme check
-    where: dict[str, str] = {}
-    for name, (path, rows) in loaded.items():
-        rel = _rel(config, path)
-        for row in rows:
-            for text in _iter_strings(row):
-                for ch in fonts.collect([text]):
-                    where.setdefault(ch, rel)
-    if config.is_module_enabled("encyclopedia"):
-        for md in sorted((config.data_dir / "encyclopedia").glob("*.md")):
-            for ch in fonts.collect([md.read_text(encoding="utf-8", errors="replace")]):
-                where.setdefault(ch, _rel(config, md))
-    lacking = fonts.missing(set(where), config.theme.font_vernacular)
-    if not lacking:
-        return []
-    listed = ", ".join(f"{ch} (U+{ord(ch):04X}, {where[ch]})" for ch in lacking[:8])
-    more = f" and {len(lacking) - 8} more" if len(lacking) > 8 else ""
-    return [Issue("error", "font",
-        f"the text font ({config.theme.font_vernacular}) lacks characters the data uses: "
-        f"{listed}{more}; the build would stop. Try theme.font_vernacular: charis or andika",
-        "terradoc.yaml")]
-
-
 def _check_locales(config: TerradocConfig) -> list[Issue]:
     if not config.locales:
         return []
@@ -590,7 +561,30 @@ def _check_dry_export(config: TerradocConfig) -> list[Issue]:
                 export_bundle(dry, run_checks=False)
         except Exception as exc:
             return [Issue("error", "export", f"{type(exc).__name__}: {exc}")]
+        return _check_fonts(dry)
     return []
+
+
+def _check_fonts(config: TerradocConfig) -> list[Issue]:
+    """The text face (theme.font_vernacular) must have every character the site shows in the
+    ranges terradoc ships (Latin, IPA, Greek, combining marks), or the build stops. Uses the
+    renderer's own collection (exported data, settings, locale strings, templates), so check
+    and build see the same text. `config` points at a freshly exported bundle."""
+    from terradoc import fonts
+    from terradoc.build_v2 import load_strings, site_characters
+
+    if config.theme.font_vernacular not in fonts.TEXT_FACES:
+        return []  # reported by the theme check
+    strings = {loc: load_strings(loc, config) for loc in config.locales}
+    lacking = fonts.missing(site_characters(config, strings), config.theme.font_vernacular)
+    if not lacking:
+        return []
+    listed = ", ".join(f"{ch} (U+{ord(ch):04X})" for ch in lacking[:12])
+    more = f" and {len(lacking) - 12} more" if len(lacking) > 12 else ""
+    return [Issue("error", "font",
+        f"the text font ({config.theme.font_vernacular}) lacks characters the site uses "
+        f"(data, settings or locale strings): {listed}{more}; the build would stop. "
+        "Try theme.font_vernacular: charis or andika", "terradoc.yaml")]
 
 
 def render_preflight(config: TerradocConfig) -> list[Issue]:
@@ -618,7 +612,6 @@ def run_checks(config: TerradocConfig) -> list[Issue]:
     issues += _check_static(config)
     issues += _check_theme(config)
     issues += _check_alphabet(config, loaded)
-    issues += _check_fonts(config, loaded)
     issues += _check_locales(config)
     if not any(i.level == "error" for i in issues):
         issues += _check_dry_export(config)

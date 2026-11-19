@@ -128,7 +128,21 @@ def test_character_missing_from_the_text_font_is_an_error(project, monkeypatch):
     write_dictionary(project, ("boɾo", ""))
     result = check(project)
     assert result.exit_code != 0
-    assert "the text font (gentium) lacks characters the data uses: ɾ (U+027E" in result.output
+    assert "the text font (gentium) lacks characters the site uses (data, settings or locale strings): ɾ (U+027E" in result.output
+
+
+def test_font_check_sees_what_the_build_shows(project, monkeypatch):
+    """Review 2026-11-19: settings count (the project name is on every page); the
+    encyclopedia README is not published, so it does not."""
+    from terradoc import fonts
+
+    monkeypatch.setattr(fonts, "missing", lambda chars, text="gentium": sorted(c for c in chars if c in "ŉƀ"))
+    (project / "data" / "encyclopedia" / "README.md").write_text("notes ƀ\n", encoding="utf-8")
+    assert "[font]" not in check(project).output
+    edit_config(project, project_name="demo ŉ", site_title="demo ŉ")
+    result = check(project)
+    assert result.exit_code != 0
+    assert "ŉ (U+0149)" in result.output and "ƀ" not in result.output
 
 
 @pytest.mark.parametrize("face", ["gentium", "charis", "andika"])
