@@ -10,10 +10,6 @@ smoke_base = http://127.0.0.1:8088
 url = https://github.com/plataformasindigenas/enawenenawe.git
 default_branch = master
 
-[makurap]
-url = https://github.com/plataformasindigenas/makurap.git
-default_branch = master
-
 [boeenomoto]
 url = https://github.com/plataformasindigenas/boeenomoto.git
 default_branch = master

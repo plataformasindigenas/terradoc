@@ -58,15 +58,15 @@ def test_python_alphabet_order():
 
 
 def test_order_with_digraphs_and_nasal_vowels():
-    """Makurap's alphabet (digraph letters, nasal vowels as letters). Until 0.23.0 this was
-    checked against the v1 page script, which agreed; the order is now fixed here."""
+    """An alphabet with digraph letters and nasal vowels as letters (made-up words). Until
+    0.23.0 this was checked against the v1 page script, which agreed; the order is now fixed here."""
     letters = ["a", "ã", "e", "ẽ", "g", "i", "ĩ", "k", "l", "m", "mb", "n", "nd", "ng", "nj", "o", "õ",
                "p", "r", "t", "u", "ũ", "w", "x", "y"]
-    words = ["mbore", "mamõap yãpet", "ãto", "ndutnda", "nga", "na", "-ka", "kõ", "ko", "óra", "o'a",
-             "ẽpe", "epe", "x-ray", "yã", "ũen", "uen", "wã", "ming", "mito"]
+    words = ["mbita", "mamõ tak", "ãti", "ndika", "ngo", "na", "-ka", "kõ", "ko", "óri", "o'i",
+             "ẽti", "eti", "x-ray", "yã", "ũti", "uti", "wã", "ming", "mito"]
     assert sorted(words, key=Alphabet(letters).sort_key) == [
-        "ãto", "epe", "ẽpe", "-ka", "ko", "kõ", "mamõap yãpet", "ming", "mito", "mbore", "na",
-        "ndutnda", "nga", "o'a", "óra", "uen", "ũen", "wã", "x-ray", "yã"]
+        "ãti", "eti", "ẽti", "-ka", "ko", "kõ", "mamõ tak", "ming", "mito", "mbita", "na",
+        "ndika", "ngo", "o'i", "óri", "uti", "ũti", "wã", "x-ray", "yã"]
 
 
 # ── names ────────────────────────────────────────────────────────────────

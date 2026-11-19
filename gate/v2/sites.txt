@@ -3,5 +3,4 @@
 # github.com/plataformasindigenas, folder to the repository root.
 boeenomoto master
 enawenenawe master
-makurap master
 portal v2 www portal

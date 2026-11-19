@@ -4,7 +4,7 @@
 (sites_routes) {
 	header X-Robots-Tag "noindex, nofollow"
 	# /<slug>/, /<slug>/<preview>/…, /<slug>/_prod/… ; anything else is a 404.
-	@served path_regexp ^/(enawenenawe|makurap|boeenomoto|plataformas|terradoc)(/|/([a-z0-9][a-z0-9-]{0,39}|_prod)(/.*)?)?$
+	@served path_regexp ^/(enawenenawe|boeenomoto|plataformas|terradoc)(/|/([a-z0-9][a-z0-9-]{0,39}|_prod)(/.*)?)?$
 	handle @served {
 		root * /srv/sites/www
 		file_server

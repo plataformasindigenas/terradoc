@@ -165,7 +165,7 @@ LANG_TAG = re.compile(r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
 
 def load_corpus(config) -> list[Item]:
     """Texts; `_lang` is the row's `language` when it is a language tag, else the site's
-    language (the field often holds a name, "Makurap"). File names are unique."""
+    language (the field often holds the language's name). File names are unique."""
     items, used = [], set()
     for r in read_rows(config, "corpus"):
         cid = str(r.get("id") or "")

@@ -316,8 +316,8 @@ errors.
 
 - **Accented letters outside the alphabet sort as their plain letter.** With
   `alphabet: [a, …, o, …]`, *kudógó* sorts as *kudogo* instead of putting ó
-  after the last letter; letters listed in the alphabet (Makurap's ã, ẽ) keep their own place.
-  `check` uses the same rule for its first-letter warnings. v1 manifest for Makurap refrozen.
+  after the last letter; letters listed in the alphabet (nasal vowels such as ã, ẽ) keep their own place.
+  `check` uses the same rule for its first-letter warnings. v1 manifest for one platform refrozen.
 
 ## [0.18.0] — 2026-11-18
 
@@ -455,7 +455,7 @@ Each people's visual motifs now belong to that people's site, not to terradoc.
 
 Upgrading: copy your pack from the 0.12.1 package (`templates/hero/hero_{bg,motif,divider}_<name>.html.j2`,
 the badge in `decor.html.j2`, the grain in `base.html.j2`) into `config/templates/motifs/<name>/`.
-Bororo, Enawenê-Nawê and Makurap were migrated with byte-identical output.
+The platforms were migrated with byte-identical output.
 
 ## [0.12.1] — 2026-11-14
 
@@ -524,8 +524,7 @@ Bororo, Enawenê-Nawê and Makurap were migrated with byte-identical output.
 - **`.release.json`** in the site root: project, terradoc version, source
   commit and ref (`GITHUB_SHA`/`GITHUB_REF_NAME` or git), file count, bytes.
   No timestamps, so identical inputs give identical output.
-- **`videos_oral.html.j2`**: oral-corpus layout for self-hosted media (from the
-  Makurap platform); select it in `config/videos.yaml`.
+- **`videos_oral.html.j2`**: oral-corpus layout for self-hosted media; select it in `config/videos.yaml`.
 - **About page image credits**, shown when the locale defines `about_credits`
   (and optionally `about_credits_heading`).
 
@@ -541,7 +540,7 @@ Bororo, Enawenê-Nawê and Makurap were migrated with byte-identical output.
 ### Compatibility
 
 Rendered HTML is byte-identical to 0.10.0 for the three Plataformas sites
-(Bororo, Enawenê-Nawê, Makurap), checked from clean checkouts.
+(every platform), checked from clean checkouts.
 
 ## [0.10.0] — 2026-10-09
 

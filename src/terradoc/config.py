@@ -61,7 +61,7 @@ class TerradocConfig:
     # ISO 639-3 / BCP 47 code of the people's language (bor, unk, mpu): `lang` on
     # vernacular text in v2, so browsers and screen readers do not read it as Portuguese.
     language_code: str = ""
-    # The site's public address, e.g. "https://makurap.terradoc.org". The sitemap needs
+    # The site's public address, e.g. "https://boeenomoto.terradoc.org". The sitemap needs
     # absolute URLs; without base_url no sitemap is written.
     base_url: str = ""
     # Where the footer's project link ("Plataformas Indígenas", string ui_project) goes.
