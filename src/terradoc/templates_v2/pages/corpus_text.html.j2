@@ -1,0 +1,16 @@
+{% extends "base.html.j2" %}
+{% block main %}
+{% set i = item %}
+<article class="td-article td-article--text">
+  <p class="td-entry__back"><a href="../corpus.html">{{ module_title }}</a></p>
+  <header class="td-article__head">
+    <h1{% if text_lang %} lang="{{ text_lang }}"{% endif %}>{{ i.name }}</h1>
+    {% if row.description %}<p class="td-article__lede"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.description }}</p>{% endif %}
+  </header>
+  <div class="td-text"{% if text_lang %} lang="{{ text_lang }}"{% endif %}>{{ row.content | trim }}</div>
+  <nav class="td-entry__pager" aria-label="{{ t.ui_prev }} / {{ t.ui_next }}">
+    {% if i.prev %}<a rel="prev" href="{{ i.prev.file | urlencode }}"><span class="td-label">{{ t.ui_prev }}</span> <span{% if text_lang %} lang="{{ text_lang }}"{% endif %}>{{ i.prev.name }}</span></a>{% endif %}
+    {% if i.next %}<a rel="next" href="{{ i.next.file | urlencode }}"><span class="td-label">{{ t.ui_next }}</span> <span{% if text_lang %} lang="{{ text_lang }}"{% endif %}>{{ i.next.name }}</span></a>{% endif %}
+  </nav>
+</article>
+{% endblock %}

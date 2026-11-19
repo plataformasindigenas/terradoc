@@ -1,0 +1,40 @@
+{#- Videos: a local file plays in the page (preload none); a YouTube video is a poster
+    linking to YouTube (no embedded player: nothing loads from YouTube until the reader
+    chooses to go there). -#}
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import counted, picture %}
+{% block main %}
+<div class="td-list td-list--videos">
+  <header class="td-list__head">
+    <h1>{{ title }}</h1>
+    <p class="td-list__count">{{ counted(t, 'recordings' if all_audio else 'videos', total, locale) }}</p>
+  </header>
+  {% if t.videos_intro %}<p class="td-list__intro">{{ t.videos_intro }}</p>{% endif %}
+  {% for g in video_groups %}
+  <section class="td-group">
+    {% if video_groups | length > 1 and g.label %}<h2 class="td-group__title">{{ g.label }}</h2>{% endif %}
+    <ul class="td-videos">
+      {% for v in g.videos %}
+      <li class="td-video">
+        {% if v.local and v.audio %}
+        <h3 class="td-video__title">{{ v.title }}</h3>
+        <audio controls preload="none" src="{{ root }}{{ v.local }}" aria-label="{{ v.title }}"></audio>
+        {% elif v.local %}
+        <video controls preload="none" src="{{ root }}{{ v.local }}"{% if v.poster %} poster="{{ root }}{{ v.poster.webp[-1][0] }}"{% endif %}></video>
+        <h3 class="td-video__title">{{ v.title }}</h3>
+        {% else %}
+        <a class="td-video__link" href="{{ v.youtube }}" rel="noopener">
+          {% if v.poster %}{{ picture(v.poster, root, "(min-width: 44em) 22rem, 100vw", "") }}{% else %}<span class="td-video__noposter"></span>{% endif %}
+          <span class="td-video__title">{{ v.title }}</span>
+          <span class="td-label">{{ t.ui_watch_youtube }}</span>
+        </a>
+        {% endif %}
+        {% if v.language or v.duration %}<p class="td-video__meta">{{ [v.language, v.duration] | select | join(' · ') }}</p>{% endif %}
+        {% if v.description %}<p class="td-video__text"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ v.description }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{#- Every reference, author-year, sorted by author; anchors #ref-<key> for the articles. -#}
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import counted %}
+{% block main %}
+<div class="td-list td-list--refs">
+  <header class="td-list__head">
+    <h1>{{ title }}</h1>
+    <p class="td-list__count">{{ counted(t, 'bibliography', refs | length, locale) }}</p>
+  </header>
+  {% if t.bibliography_intro %}<p class="td-list__intro">{{ t.bibliography_intro }}</p>{% endif %}
+  {% set filter_target = "items" %}{% include "components/list_filter.html.j2" %}
+  <ul class="td-refs" id="items">
+    {% for b in refs %}
+    <li data-td-item id="ref-{{ b.key }}">{% for kind, text in b.parts %}{% if kind == 'i' %}<i>{{ text }}</i>{% elif kind == 'thesis' %}{{ t['ui_' ~ b.thesis] }}{{ text }}{% else %}{{ text }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}{% if b.link %} <a class="td-refs__link" href="{{ b.link }}" rel="noopener">{{ b.link | replace('https://', '') | truncate(60, true, '…') }}</a>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

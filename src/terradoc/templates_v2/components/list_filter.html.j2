@@ -1,0 +1,7 @@
+{#- Filter box for a long list (td.js): hidden without script, where the list is complete
+    anyway. Reads ?search= / ?q= (old v1 links) and filters items of `filter_target`. -#}
+<div class="td-filter" data-td-filter="{{ filter_target }}" data-td-strings="{{ {'count': t.ui_filter_count, 'none': t.ui_filter_none} | tojson | forceescape }}" hidden>
+  <label class="td-search__label" for="td-filter-{{ filter_target }}">{{ t.ui_filter_label }}</label>
+  <input class="td-search__input" id="td-filter-{{ filter_target }}" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="{{ t.ui_filter_placeholder }}">
+  <p class="td-filter__status" role="status"></p>
+</div>

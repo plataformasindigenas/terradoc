@@ -1,0 +1,17 @@
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import counted %}
+{% block main %}
+<div class="td-list">
+  <header class="td-list__head">
+    <h1>{{ title }}</h1>
+    <p class="td-list__count">{{ counted(t, 'corpus', items | length, locale) }}</p>
+  </header>
+  {% if t.corpus_intro %}<p class="td-list__intro">{{ t.corpus_intro }}</p>{% endif %}
+  <ul class="td-articles">
+    {% for i in items %}
+    <li><a class="td-articles__title" href="corpus/{{ i.file | urlencode }}"{% if i.row._lang %} lang="{{ i.row._lang }}"{% endif %}>{{ i.name }}</a>
+      {% if i.row.description %}<p class="td-articles__abstract"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ gloss(i.row.description) }}</p>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

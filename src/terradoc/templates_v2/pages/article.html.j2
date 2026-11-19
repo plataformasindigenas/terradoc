@@ -1,0 +1,69 @@
+{#- One encyclopedia article: ~68ch measure, a side column on wide screens (picture,
+    infobox, categories), the text, then examples, references and links. -#}
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import picture as pic_, credit, related_link %}
+{% macro figure(p, alt, sizes, eager=false) -%}
+{% if p.img %}<figure class="td-figure">{{ pic_(p.img, root, sizes, p.alt or alt, eager) }}{% if p.credit %}<figcaption>{% if p.alt %}{{ p.alt }}. {% endif %}{{ credit(t, p.credit, p.source) }}</figcaption>{% elif p.alt %}<figcaption>{{ p.alt }}</figcaption>{% endif %}</figure>
+{%- elif p.external %}<p class="td-entry__piclink"><a href="{{ p.external }}" rel="noopener">{{ p.alt or t.ui_picture }}</a> <span class="td-label">{{ p.host }}</span>{% if p.credit %} {{ credit(t, p.credit, p.source) }}{% endif %}</p>{% endif %}
+{%- endmacro %}
+{% block main %}
+{% set i = item %}
+<article class="td-article" data-entry="{{ i.id }}">
+  <p class="td-entry__back"><a href="../encyclopedia.html#i-{{ i.id }}">{{ module_title }}</a></p>
+  <header class="td-article__head">
+    <h1{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ i.name }}</h1>
+    {% if row.variants %}<p class="td-article__variants"><span class="td-label">{{ t.ui_variants }}</span> {% for v in row.variants %}<span{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ v }}</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+    {% if row.abstract %}<p class="td-article__lede"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.abstract }}</p>{% endif %}
+  </header>
+  {% if lead_picture or infobox or row.entry_type or categories or external %}
+  <aside class="td-article__side">
+    {% if lead_picture %}{{ figure(lead_picture, i.name, "(min-width: 60em) 20rem, 100vw", true) }}{% endif %}
+    {% if infobox or row.entry_type %}
+    <dl class="td-infobox">
+      {% if row.entry_type %}<dt>{{ t.ui_type }}</dt><dd>{{ t['entry_type_' ~ row.entry_type] or row.entry_type }}</dd>{% endif %}
+      {% for k, v in infobox %}<dt>{{ k }}</dt><dd{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ v }}</dd>{% endfor %}
+    </dl>
+    {% endif %}
+    {% if categories %}
+    <p class="td-article__cats"><span class="td-label">{{ t.ui_categories }}</span><br>{% for c in categories %}<a href="../encyclopedia.html?category={{ c | urlencode }}">{{ c | replace('/', ' › ') }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+    {% if external %}<p><a href="{{ external }}" rel="noopener">{{ t.ui_external }}</a></p>{% endif %}
+  </aside>
+  {% endif %}
+  {% if html %}<div class="td-article__body"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ html | safe }}</div>{% endif %}
+  {% if gallery %}
+  <section class="td-gallery">
+    <h2>{{ t.ui_gallery }}</h2>
+    {% for p in gallery %}{{ figure(p, i.name, "(min-width: 44em) 20rem, 100vw") }}{% endfor %}
+  </section>
+  {% endif %}
+  {% if examples %}
+  <section class="td-article__examples">
+    <h2>{{ t.ui_examples }}</h2>
+    {% for ex in examples %}
+    <p>{% if ex.indigenous %}<span class="td-example"{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ ex.indigenous }}</span>{% endif %}{% if ex.translation %}<br><span class="td-example__tr"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ ex.translation }}</span>{% endif %}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+  {% if references %}
+  <section class="td-article__refs">
+    <h2>{{ t.ui_references }}</h2>
+    <ol>{% for r in references %}<li>{% if r.bib and has_bibliography %}<a href="../bibliography.html#ref-{{ r.key | urlencode }}">{{ r.bib.authors or r.bib.title }}{% if r.bib.year %} ({{ r.bib.year }}){% endif %}</a>{% if r.bib.authors %}. {{ r.bib.title }}{% endif %}{% else %}{{ r.text }}{% endif %}</li>{% endfor %}</ol>
+  </section>
+  {% endif %}
+  {% if see_also or related %}
+  <section class="td-entry__related">
+    <h2>{{ t.ui_see_also }}</h2>
+    <ul>
+      {% for s in see_also %}<li><a href="{{ s.file | urlencode }}">{{ s.name }}</a></li>{% endfor %}
+      {% for r in related %}<li>{{ related_link(r, site.language_code) }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  <details class="td-entry__cite">
+    <summary>{{ t.ui_cite }}</summary>
+    <p>{{ i.name }}. In: {{ site.title }}, {{ module_title }}{% if row.date %} ({{ row.date }}){% endif %}. {{ canonical or (loc_root ~ 'encyclopedia/' ~ i.file) }}</p>
+  </details>
+  {% if row.date %}<p class="td-article__date">{{ t.ui_updated }} {{ row.date }}</p>{% endif %}
+</article>
+{% endblock %}

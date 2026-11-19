@@ -6,3 +6,23 @@
 {% macro count(t, n, locale) -%}
 {% if n == 1 %}{{ t.ui_dict_count_one }}{% else %}{{ t.ui_dict_count | replace("{n}", n | number(locale)) }}{% endif %}
 {%- endmacro %}
+
+{#- A link to another module's page (content_v2.Links.related). -#}
+{% macro related_link(r, lang) -%}
+<span class="td-label">{{ r.label }}</span> <a href="{{ r.href }}"><span{% if r.vernacular and lang %} lang="{{ lang }}"{% endif %}>{{ r.name }}</span>{% if r.homonym %}<sup class="td-homonym">{{ r.homonym }}</sup>{% endif %}</a>
+{%- endmacro %}
+
+{#- A responsive picture: WebP copies (images.derive) with the original as the fallback. -#}
+{% macro picture(d, root, sizes, alt, eager=false) -%}
+<picture><source type="image/webp" srcset="{{ d.srcset(root) }}" sizes="{{ sizes }}"><img src="{{ root }}{{ d.src }}" width="{{ d.width }}" height="{{ d.height }}" alt="{{ alt }}"{% if not eager %} loading="lazy"{% endif %} decoding="async"></picture>
+{%- endmacro %}
+
+{#- Credit line for a picture: text, linked to its source when there is one. -#}
+{% macro credit(t, text, source) -%}
+{% if text %}<span class="td-credit">{{ t.ui_photo }}: {% if source %}<a href="{{ source }}" rel="noopener">{{ text }}</a>{% else %}{{ text }}{% endif %}</span>{% endif %}
+{%- endmacro %}
+
+{#- "{n} things" with the singular for 1: strings ui_n_<key> and ui_n_<key>_one. -#}
+{% macro counted(t, key, n, locale) -%}
+{% if n == 1 and t['ui_n_' ~ key ~ '_one'] %}{{ t['ui_n_' ~ key ~ '_one'] }}{% else %}{{ t['ui_n_' ~ key] | replace("{n}", n | number(locale)) }}{% endif %}
+{%- endmacro %}

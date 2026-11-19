@@ -1,0 +1,47 @@
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import picture as pic_, credit, related_link %}
+{% block main %}
+{% set i = item %}
+<article class="td-entry td-entry--species" data-entry="{{ i.id }}">
+  <p class="td-entry__back"><a href="{{ back_href }}">{{ module_title }}</a></p>
+  <header class="td-entry__head">
+    <h1 class="td-entry__hw"{% if i.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ i.name }}</h1>
+    {% if i.vernacular and row.name_portuguese %}<p class="td-entry__sub"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.name_portuguese }}</p>{% endif %}
+    {% if row.scientific_name %}<p class="td-entry__sci"><i>{{ row.scientific_name }}</i></p>{% endif %}
+    {% if kind == 'fauna' and row.classification_indigenous %}<p class="td-entry__pos"><span{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ row.classification_indigenous }}</span></p>{% endif %}
+  </header>
+  {% if picture and picture.img %}
+  <figure class="td-figure">{{ pic_(picture.img, root, "(min-width: 44em) 40rem, 100vw", i.name, eager=true) }}
+    {% if picture.credit %}<figcaption>{{ credit(t, picture.credit, picture.source) }}</figcaption>{% endif %}</figure>
+  {% elif picture and picture.external %}
+  {#- Another site's file: a link, so nothing loads from it unless the reader chooses. -#}
+  <p class="td-entry__piclink"><a href="{{ picture.external }}" rel="noopener">{{ t.ui_picture }}</a> <span class="td-label">{{ picture.host }}</span>{% if picture.credit %} {{ credit(t, picture.credit, picture.source) }}{% endif %}</p>
+  {% endif %}
+  {% if fields %}
+  <dl class="td-entry__more">
+    {% for key, label, value in fields %}<dt>{{ label }}</dt><dd{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ value }}</dd>{% endfor %}
+  </dl>
+  {% endif %}
+  {% if abundance %}
+  <table class="td-table">
+    <caption>{{ t.ui_abundance }}</caption>
+    <thead><tr><th scope="col">{{ t.ui_village }}</th><th scope="col">{{ t.ui_abundance }}</th></tr></thead>
+    <tbody>{% for a in abundance %}<tr><td>{{ a.village }}</td><td{% if site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ a.level }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% endif %}
+  {% if related %}
+  <section class="td-entry__related">
+    <h2>{{ t.ui_see_also }}</h2>
+    <ul>{% for r in related %}<li>{{ related_link(r, site.language_code) }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+  <details class="td-entry__cite">
+    <summary>{{ t.ui_cite }}</summary>
+    <p>{{ i.name }}. In: {{ site.title }}, {{ module_title }}. {{ canonical or (loc_root ~ kind ~ '/' ~ i.file) }}</p>
+  </details>
+  <nav class="td-entry__pager" aria-label="{{ t.ui_prev }} / {{ t.ui_next }}">
+    {% if i.prev %}<a rel="prev" href="{{ i.prev.file | urlencode }}"><span class="td-label">{{ t.ui_prev }}</span> <span{% if i.prev.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ i.prev.name }}</span></a>{% endif %}
+    {% if i.next %}<a rel="next" href="{{ i.next.file | urlencode }}"><span class="td-label">{{ t.ui_next }}</span> <span{% if i.next.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ i.next.name }}</span></a>{% endif %}
+  </nav>
+</article>
+{% endblock %}

@@ -4,6 +4,47 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-11-19
+
+### Added
+
+- **v2 pages for the other modules** (REDESIGN-PLAN.md P3), all working without JavaScript:
+  - **Fauna and ethnobotany:** a list with names in the language first, Portuguese and
+    scientific names, thumbnails; grouped by the people's classification (animals) or family
+    (plants), or one A–Z list showing each item's group when there would be more than 12
+    groups. A page per item, `fauna/<id>-<slug>.html` and `ethnobotany/<id>-<slug>.html`:
+    picture with credit, filled fields only, abundance per village, links, "how to cite",
+    previous/next.
+  - **Encyclopedia:** all articles A–Z with their summaries (Markdown links shown as text);
+    category chips (script) and `?category=a/b` from v1 links. Article pages keep the v1
+    address `encyclopedia/<id>.html`: summary, a side column on wide screens (picture,
+    infobox, type, categories, external link), text (images written as `images/x.jpg` point
+    at the site root), pictures, examples, references linked to the bibliography, see also.
+  - **Bibliography:** author-year list sorted by author, LaTeX accents removed (`\'a`,
+    `\c{c}`, `--`), DOI links, anchors `#ref-<key>`; rows with no author and no title and
+    "Source list item" notes left out.
+  - **Videos:** a local file plays in the page (a sound player for files under `audio/` or
+    with an audio extension; the list then counts "gravações"); a YouTube video is a local
+    poster linking to YouTube, never an embedded player.
+  - **Corpus:** a list and a page per text, `lang` from the row's `language` when it is a
+    language tag, else the site's `language_code`.
+  - **About:** the site's `about_mission`, `about_partners`, `about_contact`,
+    `about_citation` and `about_credits` strings.
+- **Links between modules in both directions:** a word's `_linked_fauna` also shows on the
+  animal's page, an animal's `_linked_dictionary` on the word's page, and so on; links to
+  pages that are not built are dropped.
+- **List filter** (td.js) on long lists; reads `?search=` and `?q=` from v1 links.
+- **Pictures:** WebP copies at 160/480/960 px, made in parallel and kept in `assets/img/`
+  between builds (unused ones are removed at the end); the build reports pictures shown
+  without a credit per module. Paths from the data are confined to `static/`.
+- Portuguese content on other locales' pages carries `lang="pt-BR"`.
+
+### Changed
+
+- **Other sites' pictures are links, never loaded with the page** (dictionary, fauna,
+  ethnobotany, encyclopedia), with the credit next to the link when there is one: nothing
+  loads from another site unless the reader chooses.
+
 ## [0.21.0] — 2026-11-18
 
 ### Added

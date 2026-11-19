@@ -1,0 +1,15 @@
+{#- About: the site's own about_* strings (written by the team; HTML allowed there). -#}
+{% extends "base.html.j2" %}
+{% block main %}
+<div class="td-prose td-about">
+  <h1>{{ t.about_title or title }}</h1>
+  {% if t.about_subtitle %}<p class="td-article__lede">{{ t.about_subtitle }}</p>{% endif %}
+  {% for s in sections %}
+  <section class="td-about__section" id="{{ s.key }}">
+    <h2>{{ s.heading }}</h2>
+    {% if s.plain %}<p class="td-about__cite">{{ s.body }}</p>{% else %}<div class="td-about__body">{{ s.body | safe }}</div>{% endif %}
+  </section>
+  {% endfor %}
+  {% if not sections %}<p>{{ t.ui_pending_text }}</p>{% endif %}
+</div>
+{% endblock %}

@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import importlib.resources
 import json
+import re
 import shutil
 from urllib.parse import quote
 from dataclasses import dataclass, field
@@ -163,8 +164,13 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
     assets = Assets()
     # assets/ is terradoc's (check refuses static/assets/): start it empty, so old hashed
     # files do not pile up in a directory built without --clean.
+    # assets/img/ is kept (encoding WebP is slow; names carry a hash of the source) and
+    # pruned of unused files at the end of the build (prune_images).
     if (out / "assets").is_dir():
-        shutil.rmtree(out / "assets")
+        for p in (out / "assets").iterdir():
+            if p.name == "img" and p.is_dir():
+                continue
+            shutil.rmtree(p) if p.is_dir() else p.unlink()
 
     chars = site_characters(config, strings)
     text_face = config.theme.font_vernacular or "gentium"
@@ -228,22 +234,12 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
     return assets
 
 
-def module_href(config: TerradocConfig, from_dir_depth: int = 1):
-    """A function giving the link to a module's page from a page `from_dir_depth` levels
-    below the locale directory (or "" when the module is off). Detail pages for fauna,
-    ethnobotany and the encyclopedia arrive in P3; until then links go to the module page."""
-    up = "../" * from_dir_depth
-
-    def href(slug: str) -> str:
-        return f"{up}{module_path(slug)}" if config.is_module_enabled(slug) else ""
-    return href
-
-
 DICT_JS_STRINGS = ("ui_dict_loading", "ui_dict_failed", "ui_retry", "ui_dict_none", "ui_dict_results",
                    "ui_dict_results_one", "ui_dict_more", "ui_dict_hint", "ui_has_audio")
 
 
-def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets: Assets) -> list[Route]:
+def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets: Assets,
+                      site: "SiteData | None" = None) -> list[Route]:
     from terradoc import dictionary_v2 as dv
 
     words, letters = data
@@ -258,11 +254,12 @@ def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets
         label = t.ui_dict_other if L.letter == dv.OTHER else L.label
         out.append(Route(f"{loc}/dictionary/{L.file}", "pages/dictionary_letter.html.j2", "dictionary",
                          f"{title}: {label}", loc, {**shared, "letter": L, "current_letter": L.letter}))
-    href = module_href(config, 1)
     by_letter = {w.id: L for L in letters for w in L.words}
+    labels = related_labels(config, t)
     for w in words:
         path = f"{loc}/dictionary/{w.file}"
-        ctx = dv.entry_context(config, w, t, prefix(path), config.docs_dir, href)
+        related = site.links.related("dictionary", w.id, labels) if site else []
+        ctx = dv.entry_context(config, w, t, prefix(path), config.docs_dir, related)
         ctx["back_href"] = f"{quote(by_letter[w.id].file)}#e-{w.id}"
         out.append(Route(path, "pages/dictionary_entry.html.j2", "dictionary",
                          w.entry + (f" {w.homonym}" if w.homonym else ""), loc, ctx))
@@ -271,21 +268,232 @@ def dictionary_routes(config: TerradocConfig, loc: str, t: Strings, data, assets
     return out
 
 
+def related_labels(config: TerradocConfig, t: Strings) -> dict[str, str]:
+    return {k: t[f"nav_{k}"] or config.module_label(k) for k in ("dictionary", "fauna", "ethnobotany", "encyclopedia")}
+
+
 def routes(config: TerradocConfig, strings: dict[str, Strings], assets: Assets | None = None,
-           dict_data=None) -> list[Route]:
+           dict_data=None, site: "SiteData | None" = None) -> list[Route]:
     out: list[Route] = []
     for loc in config.locales:
         t = strings[loc]
         out.append(Route(f"{loc}/index.html", "pages/home.html.j2", "home", config.site_title or config.project_name, loc))
         for mod in config.enabled_modules():
             slug = mod["slug"]
+            title = t[f"nav_{slug}"] or mod["name"]
             if slug == "dictionary" and dict_data and dict_data[0] and assets is not None:
-                out.extend(dictionary_routes(config, loc, t, dict_data, assets))
+                out.extend(dictionary_routes(config, loc, t, dict_data, assets, site))
                 continue
-            out.append(Route(f"{loc}/{module_path(slug)}", "pages/pending.html.j2", slug,
-                             t[f"nav_{slug}"] or mod["name"], loc))
-        out.append(Route(f"{loc}/about.html", "pages/pending.html.j2", "about", t["nav_about"] or t.ui_about, loc))
+            built = content_routes(config, loc, t, slug, title, site) if site else None
+            if built is not None:
+                out.extend(built)
+                continue
+            out.append(Route(f"{loc}/{module_path(slug)}", "pages/pending.html.j2", slug, title, loc))
+        out.append(Route(f"{loc}/about.html", "pages/about.html.j2", "about", t["nav_about"] or t.ui_about, loc,
+                         {"sections": about_sections(t)}))
     return out
+
+
+# ── P3: the other modules ────────────────────────────────────────────────────
+
+@dataclass
+class SiteData:
+    """Everything the v2 pages other than the dictionary show, loaded once per build."""
+    links: object = None
+    fauna: list = field(default_factory=list)
+    ethnobotany: list = field(default_factory=list)
+    encyclopedia: list = field(default_factory=list)
+    corpus: list = field(default_factory=list)
+    bibliography: list = field(default_factory=list)
+    videos: list = field(default_factory=list)
+    pictures: dict = field(default_factory=dict)     # static path -> images.Derived
+    uncredited: dict = field(default_factory=dict)   # module -> count of pictures shown without credit
+
+
+def load_site_data(config: TerradocConfig, dict_words) -> SiteData:
+    from terradoc import content_v2 as cv
+
+    site = SiteData(links=cv.Links())
+    on = config.is_module_enabled
+    for w in dict_words:
+        site.links.add("dictionary", w.id, w.file, w.entry, True, w.homonym)
+    site.links.add_rows("dictionary", [(w.id, w.row) for w in dict_words])
+    if on("fauna"):
+        site.fauna = cv.load_species(config, "fauna")
+    if on("ethnobotany"):
+        site.ethnobotany = cv.load_species(config, "ethnobotany")
+    if on("encyclopedia"):
+        site.encyclopedia = cv.load_encyclopedia(config)
+    if on("corpus"):
+        site.corpus = cv.load_corpus(config)
+    if on("bibliography"):
+        site.bibliography = cv.load_bibliography(config)
+    if on("videos"):
+        site.videos = cv.load_videos(config, config.docs_dir)
+    for kind in ("fauna", "ethnobotany", "encyclopedia"):
+        items = getattr(site, kind)
+        for i in items:
+            site.links.add(kind, i.id, i.file, i.name, i.vernacular)
+        site.links.add_rows(kind, [(i.id, i.row) for i in items])
+    return site
+
+
+def static_image(config: TerradocConfig, rel: str) -> Path | None:
+    """A picture path from the data, confined to static/ (None if it is not a file there)."""
+    if not rel:
+        return None
+    path = (config.static_dir / rel).resolve()
+    root = config.static_dir.resolve()
+    return path if root in path.parents and path.is_file() else None
+
+
+def derive_pictures(config: TerradocConfig, site: SiteData) -> None:
+    """WebP copies of every local picture the pages show (in parallel), then each item's
+    `picture`: {img, external, credit, source}."""
+    from terradoc import content_v2 as cv
+
+    wanted = []
+    for kind in ("fauna", "ethnobotany"):
+        wanted += [cv.picture_parts(i.row.get("pic_link"))[0] for i in getattr(site, kind)]
+    for i in site.encyclopedia:
+        wanted += [cv.picture_parts(img.get("url"))[0] for img in i.row.get("images") or [] if isinstance(img, dict)]
+    wanted += [cv.picture_parts(v["thumbnail"])[0] for v in site.videos]
+    jobs = [(p, rel) for rel in wanted if rel for p in [static_image(config, rel)] if p]
+    site.pictures, failed = images.derive_many(jobs, config.docs_dir)
+    for rel, error in sorted(failed.items()):
+        print(f"  picture not shown (cannot be read as an image): static/{rel}: {error}")
+
+    def pic(link, credit, source, module):
+        local, external = cv.picture_parts(link)
+        credit, source = re.sub(r"^(foto|photo|imagem|image)\s*:\s*", "", cv.clean(credit), flags=re.I), str(source or "")
+        source = source if source.startswith(("http://", "https://")) else ""
+        if local and local in site.pictures:
+            if not credit:
+                site.uncredited[module] = site.uncredited.get(module, 0) + 1
+            return {"img": site.pictures[local], "external": "", "credit": credit, "source": source}
+        if external:  # another site's file: linked, never loaded with the page (privacy, D27)
+            return {"img": None, "external": external, "credit": credit, "source": source,
+                    "host": cv.host_of(external)}
+        return None
+
+    for kind in ("fauna", "ethnobotany"):
+        for i in getattr(site, kind):
+            i.row["_picture"] = pic(i.row.get("pic_link"), i.row.get("pic_credit"), i.row.get("pic_source"), kind)
+    for i in site.encyclopedia:
+        pictures = []
+        for img in i.row.get("images") or []:
+            p = pic(img.get("url"), img.get("credit"), img.get("source"), "encyclopedia") \
+                if isinstance(img, dict) else None
+            if p:
+                p["alt"] = cv.clean(img.get("alt"))
+                pictures.append(p)
+        i.row["_pictures"] = pictures
+    for v in site.videos:
+        local, _ = cv.picture_parts(v["thumbnail"])
+        v["poster"] = site.pictures.get(local)
+
+
+def prune_images(out: Path, site: SiteData | None, assets: Assets) -> None:
+    keep = set()
+    for d in list(site.pictures.values() if site else []) + ([assets.hero] if assets.hero else []):
+        keep.update(p for p, _ in d.webp)
+    folder = out / "assets" / "img"
+    if folder.is_dir():
+        for f in folder.iterdir():
+            if f"assets/img/{f.name}" not in keep:
+                f.unlink()
+
+
+def about_sections(t: Strings) -> list[dict]:
+    """The site's about_* strings (written by the team, HTML allowed), in v1's order."""
+    out = []
+    for key in ("mission", "partners", "contact", "citation", "credits"):
+        body = t[f"about_{key}"]
+        if body:
+            out.append({"key": key, "heading": t[f"about_{key}_heading"] or t[f"ui_about_{key}"],
+                        "body": body, "plain": key == "citation"})
+    return out
+
+
+def species_fields(kind: str, row: dict, t: Strings) -> list[tuple[str, str, str]]:
+    """(key, label, value) of the filled fields of an animal or plant, in reading order
+    (names and the scientific name are in the page header)."""
+    from terradoc import content_v2 as cv
+
+    keys = (("category", "ui_family"), ("info", "ui_info")) if kind == "fauna" else (
+        ("family", "ui_family"), ("usage", "ui_usage"), ("types_of_use", "ui_types_of_use"),
+        ("descriptions_of_use", "ui_description_of_use"), ("fruiting_period", "ui_fruiting"),
+        ("environment", "ui_environment"))
+    return [(key, t[label], cv.clean(row.get(key))) for key, label in keys if cv.clean(row.get(key))]
+
+
+def content_routes(config: TerradocConfig, loc: str, t: Strings, slug: str, title: str,
+                   site: SiteData) -> list[Route] | None:
+    """Routes of one module, or None when v2 has no page for it yet (pending page)."""
+    from terradoc import content_v2 as cv
+
+    labels = related_labels(config, t)
+    out: list[Route] = []
+    if slug in ("fauna", "ethnobotany"):
+        items = getattr(site, slug)
+        sections = cv.groups(items, t[f"ui_{slug}_ungrouped"])
+        cv.link_chain([i for g in sections for i in g["items"]])  # previous / next follow the list
+        out.append(Route(f"{loc}/{slug}.html", "pages/species_list.html.j2", slug, title, loc,
+                         {"kind": slug, "groups": sections, "total": len(items)}))
+        for i in items:
+            out.append(Route(f"{loc}/{slug}/{i.file}", "pages/species.html.j2", slug, i.name, loc, {
+                "kind": slug, "item": i, "row": i.row, "picture": i.row.get("_picture"),
+                "fields": species_fields(slug, i.row, t),
+                "abundance": [a for a in i.row.get("abundance") or [] if isinstance(a, dict)],
+                "related": site.links.related(slug, i.id, labels),
+                "back_href": f"../{slug}.html#i-{i.id}", "module_title": title}))
+        return out
+    if slug == "encyclopedia":
+        cats = cv.top_categories(site.encyclopedia)
+        out.append(Route(f"{loc}/encyclopedia.html", "pages/encyclopedia_list.html.j2", slug, title, loc,
+                         {"items": site.encyclopedia, "categories": cats}))
+        titles = {i.id: i for i in site.encyclopedia}
+        bib = {b["key"]: b for b in site.bibliography}
+        for i in site.encyclopedia:
+            path = f"{loc}/encyclopedia/{i.file}"
+            refs = []
+            for r in i.row.get("resolved_references") or []:
+                if not isinstance(r, dict):
+                    continue
+                key = str(r.get("key") or "")
+                refs.append({"bib": bib.get(key), "key": key,
+                             "text": cv.delatex(r.get("formatted") or key).replace("*", "")})
+            pictures = i.row.get("_pictures") or []
+            out.append(Route(path, "pages/article.html.j2", slug, i.name, loc, {
+                "item": i, "row": i.row, "module_title": title,
+                "html": cv.rewrite_article_html(i.row.get("content_html") or "", prefix(path)),
+                "lead_picture": pictures[0] if pictures else None, "gallery": pictures[1:],
+                "infobox": [(t[f"infobox_{k}"] or cv.humanize(str(k)), cv.clean(v))
+                            for k, v in (i.row.get("infobox") or {}).items() if cv.clean(v)],
+                "categories": [str(c) for c in i.row.get("categories") or [] if c],
+                "references": refs, "has_bibliography": config.is_module_enabled("bibliography"),
+                "see_also": [titles[s] for s in i.row.get("see_also") or [] if s in titles and s != i.id],
+                "examples": [e for e in i.row.get("examples") or [] if isinstance(e, dict)],
+                "related": site.links.related("encyclopedia", i.id, labels),
+                "external": str(i.row.get("url") or "") if str(i.row.get("url") or "").startswith("http") else ""}))
+        return out
+    if slug == "bibliography":
+        out.append(Route(f"{loc}/bibliography.html", "pages/bibliography.html.j2", slug, title, loc,
+                         {"refs": site.bibliography}))
+        return out
+    if slug == "videos":
+        out.append(Route(f"{loc}/videos.html", "pages/videos.html.j2", slug, title, loc,
+                         {"video_groups": cv.video_groups(site.videos), "total": len(site.videos),
+                          "all_audio": bool(site.videos) and all(v["audio"] for v in site.videos)}))
+        return out
+    if slug == "corpus":
+        out.append(Route(f"{loc}/corpus.html", "pages/corpus_list.html.j2", slug, title, loc,
+                         {"items": site.corpus}))
+        for i in site.corpus:
+            out.append(Route(f"{loc}/corpus/{i.file}", "pages/corpus_text.html.j2", slug, i.name, loc,
+                             {"item": i, "row": i.row, "module_title": title, "text_lang": i.row["_lang"]}))
+        return out
+    return None
 
 
 def page_context(config: TerradocConfig, route: Route, strings: dict[str, Strings],
@@ -406,7 +614,11 @@ def build_site_v2(config: TerradocConfig) -> dict:
     dict_data = dv.load(config) if config.is_module_enabled("dictionary") else ([], [])
     if dict_data[0]:
         assets.search_index = dv.write_index(dict_data[0], out)
-    pages = routes(config, strings, assets, dict_data)
+    site = load_site_data(config, dict_data[0])
+    derive_pictures(config, site)
+    for module, n in sorted(site.uncredited.items()):
+        print(f"  {module}: {n} picture(s) shown without a credit (D27: add pic_credit / credit)")
+    pages = routes(config, strings, assets, dict_data, site)
     for route in pages:
         html = env.get_template(route.template).render(**page_context(config, route, strings, assets))
         target = out / route.path
@@ -437,6 +649,7 @@ def build_site_v2(config: TerradocConfig) -> dict:
     ctx = page_context(config, offline, strings, assets, root="")
     ctx.update({"strings_by_locale": strings, "has_dictionary": bool(assets.search_index)})
     (out / "offline.html").write_text(env.get_template(offline.template).render(**ctx), encoding="utf-8")
+    prune_images(out, site, assets)
     write_service_worker(out, assets)
     write_robots_txt(out, config.base_url)
     write_sitemap_v2(out, config, pages)

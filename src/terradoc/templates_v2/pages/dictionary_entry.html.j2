@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "components/macros.html.j2" import headword %}
+{% from "components/macros.html.j2" import headword, related_link %}
 {% block main %}
 {% set w = word %}
 <article class="td-entry" data-entry="{{ w.id }}">
@@ -24,17 +24,18 @@
     {% if row.comment %}<dt>{{ t.ui_comment }}</dt><dd{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ row.comment }}</dd>{% endif %}
   </dl>
   {% endif %}
-  {% if picture and picture_credit %}
-  <figure class="td-entry__pic"><img src="{{ picture }}" alt="{{ w.entry }}" loading="lazy" decoding="async"><figcaption>{{ t.ui_photo }}: {{ picture_credit }}</figcaption></figure>
+  {% if picture and not picture_host %}
+  <figure class="td-entry__pic"><img src="{{ picture }}" alt="{{ w.entry }}" loading="lazy" decoding="async">{% if picture_credit %}<figcaption>{{ t.ui_photo }}: {{ picture_credit }}</figcaption>{% endif %}</figure>
   {% elif picture %}
-  {#- No credit known: link to the picture instead of showing it (D27; credits come from the team). -#}
-  <p class="td-entry__piclink"><a href="{{ picture }}" rel="noopener">{{ t.ui_picture }}</a>{% if picture_host %} <span class="td-label">{{ picture_host }}</span>{% endif %}</p>
+  {#- A link, not an image: these are other sites' files (Wikimedia Commons), and nothing
+      loads from another site unless the reader chooses (privacy; credits per D27). -#}
+  <p class="td-entry__piclink"><a href="{{ picture }}" rel="noopener">{{ t.ui_picture }}</a>{% if picture_host %} <span class="td-label">{{ picture_host }}</span>{% endif %}{% if picture_credit %} <span class="td-credit">{{ t.ui_photo }}: {{ picture_credit }}</span>{% endif %}</p>
   {% endif %}
   {% if related or wiki %}
   <section class="td-entry__related">
     <h2>{{ t.ui_see_also }}</h2>
     <ul>
-      {% for r in related %}<li><span class="td-label">{{ r.label }}</span> <a href="{{ r.href }}"{% if r.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ r.name }}</a></li>{% endfor %}
+      {% for r in related %}<li>{{ related_link(r, site.language_code) }}</li>{% endfor %}
       {% if wiki %}<li><span class="td-label">Wikipédia</span> <a href="{{ wiki }}" rel="noopener">{{ wiki | replace("https://", "") | truncate(48, true, "…") }}</a></li>{% endif %}
     </ul>
   </section>

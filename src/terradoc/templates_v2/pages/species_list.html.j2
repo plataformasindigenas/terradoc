@@ -1,0 +1,38 @@
+{#- Fauna or ethnobotany: names in the language first, grouped (the people's own
+    classification for animals, family for plants). Works without script. -#}
+{% extends "base.html.j2" %}
+{% from "components/macros.html.j2" import counted, picture %}
+{% block main %}
+<div class="td-list">
+  <header class="td-list__head">
+    <h1>{{ title }}</h1>
+    <p class="td-list__count">{{ counted(t, kind, total, locale) }}</p>
+  </header>
+  {% if t[kind ~ '_intro'] %}<p class="td-list__intro">{{ t[kind ~ '_intro'] }}</p>{% endif %}
+  {% set filter_target = "items" %}{% include "components/list_filter.html.j2" %}
+  {% if groups | length > 1 %}
+  <nav class="td-groups" aria-label="{{ t.ui_groups }}">
+    <ul>{% for g in groups %}<li><a href="#{{ g.anchor }}"{% if g.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ g.label }}</a> <span class="td-groups__n">{{ g['items'] | length }}</span></li>{% endfor %}</ul>
+  </nav>
+  {% endif %}
+  <div id="items">
+  {% for g in groups %}
+  <section class="td-group" data-td-group{% if groups | length > 1 %} aria-labelledby="{{ g.anchor }}"{% endif %}>
+    {% if groups | length > 1 %}<h2 class="td-group__title" id="{{ g.anchor }}"{% if g.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ g.label }}</h2>{% endif %}
+    <ul class="td-cards">
+      {% for i in g['items'] %}
+      {% set p = i.row._picture %}
+      <li data-td-item><a class="td-card" id="i-{{ i.id }}" href="{{ kind }}/{{ i.file | urlencode }}">
+        <span class="td-card__thumb">{% if p and p.img %}{{ picture(p.img, root, "5rem", "") }}{% endif %}</span>
+        <span class="td-card__text"><span class="td-card__name"{% if i.vernacular and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ i.name }}</span>
+        {% if i.vernacular and i.row.name_portuguese %}<span class="td-card__sub"{% if locale != 'pt' %} lang="pt-BR"{% endif %}>{{ i.row.name_portuguese }}</span>{% endif %}
+        {% if i.row.scientific_name %}<span class="td-card__sci"><i>{{ i.row.scientific_name }}</i></span>{% endif %}
+        {% if g.flat and i.group %}<span class="td-card__group"{% if kind == 'fauna' and site.language_code %} lang="{{ site.language_code }}"{% endif %}>{{ i.group }}</span>{% endif %}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+  </div>
+</div>
+{% endblock %}

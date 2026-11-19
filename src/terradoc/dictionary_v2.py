@@ -171,8 +171,9 @@ def folds_for_script(config) -> dict[str, str]:
     return {plain(k): plain(v) for k, v in config.search_folds.items()}
 
 
-def entry_context(config, w: Word, t, root: str, out: Path, module_href) -> dict:
-    """Everything an entry page shows; optional blocks only when filled."""
+def entry_context(config, w: Word, t, root: str, out: Path, related: list[dict]) -> dict:
+    """Everything an entry page shows; optional blocks only when filled. `related`: pages
+    of other modules linked to this word (content_v2.Links)."""
     r = w.row
     pos = str(r.get("pos") or "").strip()
     audio = []
@@ -182,16 +183,6 @@ def entry_context(config, w: Word, t, root: str, out: Path, module_href) -> dict
             audio.append({"src": f"{root}audio/{a['file_path']}",
                           "type": "audio/webm" if a.get("format", "webm") == "webm" else "audio/wav",
                           "label": f"{t['ui_recording']} {i}" if len(files) > 1 else t["ui_recording"]})
-    related = []
-    for kind, key, label_key in (("fauna", "_linked_fauna", "ui_in_fauna"),
-                                 ("ethnobotany", "_linked_ethnobotany", "ui_in_ethnobotany"),
-                                 ("encyclopedia", "_linked_encyclopedia", "ui_in_encyclopedia")):
-        href = module_href(kind)
-        for item in r.get(key) or []:
-            if href and isinstance(item, dict):
-                name = item.get("name_indigenous") or item.get("title") or ""
-                related.append({"kind": kind, "label": t[label_key], "name": name, "href": href,
-                                "vernacular": kind != "encyclopedia"})
     pic = str(r.get("pic_link") or "")
     host = ""
     if pic.startswith(("http://", "https://")):
