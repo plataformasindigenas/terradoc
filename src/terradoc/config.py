@@ -55,6 +55,7 @@ class TerradocConfig:
     locale_labels: dict[str, str] = field(default_factory=lambda: {
         "pt": "Português",
         "en": "English",
+        "es": "Español",
     })
     default_locale: str = "pt"
     # ISO 639-3 / BCP 47 code of the people's language (bor, unk, mpu): `lang` on
@@ -63,6 +64,8 @@ class TerradocConfig:
     # The site's public address, e.g. "https://makurap.terradoc.org". The sitemap needs
     # absolute URLs; without base_url no sitemap is written.
     base_url: str = ""
+    # Where the footer's project link ("Plataformas Indígenas", string ui_project) goes.
+    project_url: str = "https://terradoc.org/"
     featured_article_id: str = ""
     bib_file: str = "references.bib"
     ethnobotany_encyclopedia_categories: list[str] = field(
@@ -228,7 +231,7 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
         for key in ("project_name", "project_subtitle", "site_title",
                      "site_tagline", "culture_name",
                      "meta_prefix", "default_locale", "featured_article_id",
-                     "bib_file", "base_url", "language_code"):
+                     "bib_file", "base_url", "language_code", "project_url"):
             if key in raw:
                 setattr(config, key, raw[key])
 

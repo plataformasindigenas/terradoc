@@ -1,0 +1,9 @@
+{#- A site's own page (data/pages/<locale>/<slug>.md, pages_v2.py). -#}
+{% extends "base.html.j2" %}
+{% block main %}
+<article class="td-prose td-page">
+  <h1>{{ title }}</h1>
+  {% if content.description %}<p class="td-article__lede">{{ content.description }}</p>{% endif %}
+  {{ content.html | safe }}
+</article>
+{% endblock %}

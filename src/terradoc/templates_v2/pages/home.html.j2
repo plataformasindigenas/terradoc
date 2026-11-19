@@ -18,6 +18,8 @@
   {% endif %}
 </section>
 {% if assets.band %}<div class="td-band td-band--divider" aria-hidden="true"></div>{% endif %}
+{% if home_html %}<div class="td-prose td-page td-home__text">{{ home_html | safe }}</div>{% endif %}
+{% if modules %}
 <section class="td-modules" aria-labelledby="td-modules-title">
   <h2 id="td-modules-title" class="td-modules__title">{{ t.ui_modules_title }}</h2>
   <ul class="td-modules__list">
@@ -29,4 +31,5 @@
     {% endfor %}
   </ul>
 </section>
+{% endif %}
 {% endblock %}

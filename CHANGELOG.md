@@ -4,6 +4,51 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-11-19
+
+**Pages**, so the Plataformas Indígenas portal can be a terradoc site (meta P7-PLAN.md, D23).
+The three platforms build byte-identical output with this release.
+
+### Added
+
+- `data/pages/<locale>/<slug>.md`: a site's own Markdown pages at `<locale>/<slug>.html`
+  (front matter `title`, `description`, `nav`, `aliases`), and `home.md` shown on the home
+  page. Pictures from `static/` as responsive WebP with credit; a list whose items all show a
+  picture becomes cards; `{#id}` sets a heading's anchor. See `docs/pages.md` (new module
+  `pages_v2.py`, templates `pages/page.html.j2` and `pages/alias.html.j2`, `static_v2/td-pages.css`,
+  added to the site's CSS only when it has pages).
+- `aliases:` write forwarding pages at old addresses (relative target, noindex, canonical).
+- Spanish interface strings (`strings/es.yaml`, translated by Claude from pt; **to be
+  reviewed by the team**); `locale_labels` knows `es: Español`. Strings `ui_moved`,
+  `ui_moved_link` in pt, en and es.
+- `project_url` in `terradoc.yaml`: where the footer's project link goes (default
+  `https://terradoc.org/`, as before).
+- `terradoc check`: page errors (front matter, missing locale, reserved names, aliases with
+  `.`/`..` parts or clashing with an address, missing or external pictures); a static file at an
+  alias is an error; pictures in pages without a credit are a warning (and counted in the build
+  log, D27).
+- `site_title` and `hero_alt` in a site's `locales/<locale>.yaml` override the settings per
+  language (the portal is titled in pt, en and es). No platform sets them.
+
+### Changed
+
+- A site without data modules builds: no empty module list on the home page, no about page
+  (and no link to it) unless the site writes `about_*` texts, no palette or `language_code`
+  warning.
+- The font subset includes page text, and only the labels of the site's own locales.
+- `gate/v2/sites.txt` takes an optional repository and folder (`portal v2 www portal`);
+  `gate/v2.sh` and the `gate` job of `sites-gate` read them (the `gate` job now also fetches the
+  branch the manifest names).
+
+### Tests
+
+- New `tests/test_pages.py` (15 tests: a site of pages only, menu order, pictures and cards,
+  aliases and sitemap, check errors, static file at an alias, no HTML or attributes from page
+  text, project link, platforms unchanged, page text in the font subset, no people-layer
+  warnings, aliases with dot parts, front matter delimiter lines, uncredited page pictures,
+  site title and hero text per locale). 390 tests in all. `test_unknown_locale_gets_english_strings_and_its_own_lang` now uses `fr` (es is
+  bundled); new `test_spanish_strings_are_bundled_with_every_key`.
+
 ## [0.23.0] — 2026-11-19
 
 **v2 is terradoc's only template set; v1 is removed** (meta REDESIGN-PLAN.md P6). All three

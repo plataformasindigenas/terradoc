@@ -350,9 +350,13 @@ def _check_media(config: TerradocConfig, loaded: dict[str, tuple[Path, list[dict
 
 
 def _generated_names(config: TerradocConfig) -> tuple[set[str], tuple[str, ...]]:
-    """Paths the render step writes: exact files, and directory prefixes."""
+    """Paths the render step writes: exact files (with the pages' forwarding aliases), and
+    directory prefixes."""
+    from terradoc import pages_v2
+
     files = {"index.html", "404.html", "robots.txt", "sitemap.xml", ".release.json", "sw.js",
              "offline.html", "specimen.html"}
+    files |= {a for p in pages_v2.load(config)[0] for a in p.aliases}
     prefixes = tuple(f"{loc}/" for loc in config.locales) + ("assets/",)
     return files, prefixes
 
@@ -420,9 +424,10 @@ def _check_theme_v2(config: TerradocConfig) -> list[Issue]:
             for problem in palette.contrast_problems(roles):
                 issues.append(Issue("error", "theme", problem, yaml_file))
     else:
-        issues.append(Issue("warning", "theme",
-            "theme.palette is not set; the site uses the project's neutral colours. Name each "
-            "role after its material: see terradoc.palette", yaml_file))
+        if config.enabled_modules():  # a site of pages only (the portal) is the project's own: neutral
+            issues.append(Issue("warning", "theme",
+                "theme.palette is not set; the site uses the project's neutral colours. Name each "
+                "role after its material: see terradoc.palette", yaml_file))
         roles = dict(palette.DEFAULT)
     # A pack that does not exist is an error; an element left out is a warning (the site
     # shows its palette there).
@@ -449,7 +454,7 @@ def _check_theme_v2(config: TerradocConfig) -> list[Issue]:
         issues.append(Issue("error", "theme",
             f"config/ has v1 page configs ({', '.join(page_configs)}), which terradoc no longer "
             "reads (v1 was removed in 0.23.0); delete them", yaml_file))
-    if not config.language_code:
+    if not config.language_code and config.enabled_modules():
         issues.append(Issue("warning", "theme",
             "language_code is not set: vernacular text gets no lang attribute (e.g. bor, unk, mpu)", yaml_file))
     for key in ("hero_image", "favicon"):
@@ -601,11 +606,34 @@ def render_preflight(config: TerradocConfig) -> list[Issue]:
             if i.level == "error"]
 
 
+def _check_pages(config: TerradocConfig) -> list[Issue]:
+    """data/pages/: front matter, a page in every locale, aliases, pictures from static/."""
+    from terradoc import pages_v2
+
+    pages, problems = pages_v2.load(config)
+    issues = [Issue("error", "pages", msg, file) for file, msg in problems]
+    for page in pages:
+        rel = _rel(config, page.source)
+        for src in pages_v2.image_sources(page):
+            if not _media_exists(config, src) or not _inside(config.static_dir, src):
+                issues.append(Issue("error", "pages", f"missing picture '{src}' (pictures come from static/)", rel))
+        uncredited = [src for src, credit in pages_v2.local_images(page) if not credit]
+        if uncredited:
+            issues.append(Issue("warning", "pages", f"{len(uncredited)} picture(s) without a credit "
+                                f"(D27; write it after the path: ![…](images/x.jpg \"credit\")): "
+                                + ", ".join(uncredited[:6]) + (" …" if len(uncredited) > 6 else ""), rel))
+        for src in pages_v2.external_images(page):
+            issues.append(Issue("error", "pages", f"picture from another site '{src}': pages show pictures "
+                                                  "from static/ only (link to others instead)", rel))
+    return issues
+
+
 def run_checks(config: TerradocConfig) -> list[Issue]:
     issues = _check_preflight(config)
     tab_issues, loaded = _check_tabular(config)
     issues += tab_issues
     issues += _check_encyclopedia(config)
+    issues += _check_pages(config)
     issues += _check_consent(config, loaded)
     issues += _check_audio_manifest(config, loaded)
     issues += _check_media(config, loaded)

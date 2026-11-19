@@ -1,4 +1,6 @@
-# site branch: what the v2 gate builds (gate/v2.sh)
+# site branch [repository [folder]]: what the v2 gate builds (gate/v2.sh) and the release
+# gate compares (sites-gate.yml). Repository defaults to the site's name under
+# github.com/plataformasindigenas, folder to the repository root.
 boeenomoto master
 enawenenawe master
 makurap master

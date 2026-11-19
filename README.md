@@ -127,6 +127,10 @@ with `config/templates/v2/` (`terradoc init --eject-templates`), but a local cop
 receiving terradoc's template fixes, so prefer configuration, locale keys and single-block
 overrides (`docs/packs.md`). The v1 templates were removed in 0.23.0.
 
+A site can also publish its own Markdown pages (`data/pages/<locale>/<slug>.md`: team,
+credits, privacy), and a site of pages only, like the Plataformas Indígenas portal, needs no
+data at all (`docs/pages.md`).
+
 The standard workflow is:
 
 1. Scaffold a new project.

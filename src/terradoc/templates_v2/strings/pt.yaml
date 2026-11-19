@@ -97,3 +97,6 @@ ui_n_corpus: "{n} textos"
 ui_n_corpus_one: "1 texto"
 ui_n_recordings: "{n} gravações"
 ui_n_recordings_one: "1 gravação"
+# Pages (0.24.0)
+ui_moved: "Esta página mudou de endereço."
+ui_moved_link: "Abrir a página nova"

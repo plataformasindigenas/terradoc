@@ -72,7 +72,13 @@ jobs:
           python-version: "3.12"
 
       - name: Fetch the site
-        run: git clone -q --depth 1 "https://github.com/plataformasindigenas/${SITE}.git" site
+        run: |
+          set -euo pipefail
+          # branch, repository and folder from gate/v2/sites.txt (the portal is www/portal)
+          read -r ref repo folder < <(awk -v s="$SITE" '$1 == s { print $2, ($3 ? $3 : $1), ($4 ? $4 : ".") }' \
+            terradoc/gate/v2/sites.txt)
+          git clone -q --depth 1 --branch "$ref" "https://github.com/plataformasindigenas/${repo}.git" repo
+          ln -s "repo/${folder}" site
 
       - name: Build with the site's pinned terradoc
         run: |

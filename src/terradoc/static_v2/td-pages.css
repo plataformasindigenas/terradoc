@@ -1,0 +1,12 @@
+/* Site pages (data/pages/, 0.24.0): added to the site's CSS only when it has pages. */
+.td-page h2 { margin-top: var(--space-7); }
+.td-home__text { padding-top: var(--space-5); }
+.td-pic { display: block; margin: var(--space-4) 0; }
+.td-pic img { display: block; max-width: 100%; height: auto; }
+.td-pic__credit { display: block; margin-top: var(--space-1); font-family: var(--font-ui); font-size: var(--step--1); color: var(--muted); }
+.td-pagecards { list-style: none; padding: 0; display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); }
+.td-pagecards > li { margin: 0; }
+.td-pagecards .td-pic { margin: 0 0 var(--space-2); }
+.td-pagecards .td-pic img { width: auto; max-height: 12rem; }
+.td-pagecards p { margin: 0 0 var(--space-2); }
+.td-pagecards h2, .td-pagecards h3 { margin: 0 0 var(--space-1); font-size: var(--step-1); }

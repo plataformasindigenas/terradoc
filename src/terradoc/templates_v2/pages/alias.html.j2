@@ -1,0 +1,18 @@
+{#- An old address (a page's `aliases:`): forwards to the page that replaced it. The target is
+    relative, so a preview forwards inside the preview. -#}
+<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url={{ target }}">
+{% if canonical %}<link rel="canonical" href="{{ canonical }}">
+{% endif %}
+<title>{{ title }}</title>
+</head>
+<body>
+<p>{{ t.ui_moved }} <a href="{{ target }}">{{ t.ui_moved_link }}: {{ title }}</a></p>
+<script>location.replace({{ target | tojson }} + location.search + location.hash);</script>
+</body>
+</html>

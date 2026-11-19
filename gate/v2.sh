@@ -6,8 +6,8 @@
 #
 #   gate/v2.sh [site ...]
 #
-# Each site is built from the branch named in gate/v2/sites.txt (master: every site is on v2
-# since 2026-11-19, and v2 is terradoc's only template set since 0.23.0).
+# Each site is built from the branch named in gate/v2/sites.txt, from its repository and folder
+# there (the portal is the portal/ folder of www).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -27,12 +27,12 @@ td="$work/venv/bin/terradoc"
 
 status=0
 for site in "${sites[@]}"; do
-  ref="$(awk -v s="$site" '$1 == s { print $2 }' "$manifest")"
-  if [ -z "$ref" ]; then echo "::error::$site: not in gate/v2/sites.txt"; status=1; continue; fi
-  src="$work/$site"
-  if ! git clone -q --depth 1 --branch "$ref" "https://github.com/plataformasindigenas/$site.git" "$src"; then
-    echo "::error::$site: cannot fetch branch $ref"; status=1; continue
+  read -r ref repo folder < <(awk -v s="$site" '$1 == s { print $2, ($3 ? $3 : $1), ($4 ? $4 : ".") }' "$manifest") || true
+  if [ -z "${ref:-}" ]; then echo "::error::$site: not in gate/v2/sites.txt"; status=1; continue; fi
+  if ! git clone -q --depth 1 --branch "$ref" "https://github.com/plataformasindigenas/$repo.git" "$work/repo-$site"; then
+    echo "::error::$site: cannot fetch branch $ref of $repo"; status=1; continue
   fi
+  src="$work/repo-$site/$folder"
   build() {  # build <out>
     ( cd "$src" && "$td" build --config terradoc.yaml --templates v2 --out "$1" \
         --bundle-dir "$work/bundle-$site" --format github ) > "$1.log" 2>&1
@@ -41,7 +41,7 @@ for site in "${sites[@]}"; do
     tail -n 30 "$work/out-$site.log"; echo "::error::$site@$ref: v2 build failed"; status=1; continue
   fi
   grep -E '^::(error|warning)' "$work/out-$site.log" || true
-  echo "== $site@$ref ($(git -C "$src" rev-parse --short HEAD))"
+  echo "== $site@$ref ($(git -C "$work/repo-$site" rev-parse --short HEAD))"
   "$work/venv/bin/python" -m terradoc.sitecheck "$work/out-$site" || status=1
   if build "$work/again-$site" && diff -rq -x .release.json "$work/out-$site" "$work/again-$site" > "$work/$site.diff"; then
     echo "$site: a second build is byte-identical"

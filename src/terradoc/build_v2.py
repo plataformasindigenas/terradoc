@@ -29,7 +29,7 @@ from pathlib import Path
 import yaml
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader, StrictUndefined, select_autoescape
 
-from terradoc import fonts, images, packs
+from terradoc import fonts, images, packs, pages_v2
 from terradoc import palette as palette_mod
 from terradoc.config import TerradocConfig
 
@@ -154,7 +154,7 @@ def site_characters(config: TerradocConfig, strings: dict[str, Strings]) -> set[
     templates and stylesheet themselves (separators like "·")."""
     texts: list[str] = [config.site_title, config.project_name, config.site_tagline,
                         config.project_subtitle, *config.alphabet, *config.module_labels.values(),
-                        *config.locale_labels.values(), config.theme.hero_credit,
+                        *(config.locale_label(code) for code in config.locales), config.theme.hero_credit,
                         config.theme.hero_alt, static_v2("td.css").decode("utf-8"),
                         *config.keyboard, *config.search_folds, *config.search_folds.values()]
     for d in (config.local_template_dir, bundled_dir()):
@@ -162,6 +162,8 @@ def site_characters(config: TerradocConfig, strings: dict[str, Strings]) -> set[
             texts.extend(p.read_text(encoding="utf-8") for p in sorted(d.rglob("*.j2")))
     for s in strings.values():
         texts.extend(fonts.strings_in(dict(s)))
+    for page in sorted(pages_v2.pages_dir(config).rglob("*.md")):
+        texts.append(page.read_text(encoding="utf-8"))
     for path in sorted(config.bundle_dir.glob("*.json")):
         if path.name == "manifest.json":
             continue
@@ -218,6 +220,8 @@ def build_assets(config: TerradocConfig, strings: dict[str, Strings]) -> Assets:
     people = ":root{" + ";".join(vars_) + "}\n" + "\n".join(rules) + "\n"
     assets.inline_css = (static_v2("td.css").decode("utf-8") + ":root{"
                          + ";".join(f"--{r}:{v}" for r, v in colors.items()) + "}\n")
+    if any(pages_v2.pages_dir(config).rglob("*.md")):
+        people += static_v2("td-pages.css").decode("utf-8")
     css = (static_v2("td.css").decode("utf-8")
            + "\n/* people layer: " + config.meta_prefix + " */\n"
            + fonts.font_face_css(assets.fonts, "fonts/") + people).encode("utf-8")
@@ -288,7 +292,8 @@ def routes(config: TerradocConfig, strings: dict[str, Strings], assets: Assets |
     out: list[Route] = []
     for loc in config.locales:
         t = strings[loc]
-        out.append(Route(f"{loc}/index.html", "pages/home.html.j2", "home", config.site_title or config.project_name, loc))
+        out.append(Route(f"{loc}/index.html", "pages/home.html.j2", "home",
+                         t["site_title"] or config.site_title or config.project_name, loc))
         for mod in config.enabled_modules():
             slug = mod["slug"]
             title = t[f"nav_{slug}"] or mod["name"]
@@ -300,9 +305,26 @@ def routes(config: TerradocConfig, strings: dict[str, Strings], assets: Assets |
                 out.extend(built)
                 continue
             out.append(Route(f"{loc}/{module_path(slug)}", "pages/pending.html.j2", slug, title, loc))
-        out.append(Route(f"{loc}/about.html", "pages/about.html.j2", "about", t["nav_about"] or t.ui_about, loc,
-                         {"sections": about_sections(t)}))
+        for page in site.pages if site else []:
+            if page.locale == loc and page.slug != pages_v2.HOME:
+                page.html = pages_v2.render(page, site.pictures, prefix(page.path), t.ui_photo)
+                out.append(Route(page.path, "pages/page.html.j2", page.slug, page.title, loc,
+                                 {"content": page, **({"description": page.description} if page.description else {})}))
+        if has_about(config, strings):
+            out.append(Route(f"{loc}/about.html", "pages/about.html.j2", "about", t["nav_about"] or t.ui_about, loc,
+                             {"sections": about_sections(t)}))
     return out
+
+
+def has_about(config: TerradocConfig, strings: dict[str, Strings]) -> bool:
+    """The about page exists when the site has data modules or wrote about_* texts (a site of
+    pages only, like the portal, has its own pages instead)."""
+    return bool(config.enabled_modules()) or any(about_sections(s) for s in strings.values())
+
+
+def nav_pages(site: "SiteData | None", loc: str) -> list:
+    pages = [p for p in (site.pages if site else []) if p.locale == loc and p.nav is not None]
+    return sorted(pages, key=lambda p: (p.nav, p.slug))
 
 
 # ── P3: the other modules ────────────────────────────────────────────────────
@@ -317,6 +339,7 @@ class SiteData:
     corpus: list = field(default_factory=list)
     bibliography: list = field(default_factory=list)
     videos: list = field(default_factory=list)
+    pages: list = field(default_factory=list)        # pages_v2.Page
     pictures: dict = field(default_factory=dict)     # static path -> images.Derived
     uncredited: dict = field(default_factory=dict)   # module -> count of pictures shown without credit
 
@@ -346,6 +369,9 @@ def load_site_data(config: TerradocConfig, dict_words) -> SiteData:
         for i in items:
             site.links.add(kind, i.id, i.file, i.name, i.vernacular)
         site.links.add_rows(kind, [(i.id, i.row) for i in items])
+    site.pages, problems = pages_v2.load(config)
+    if problems:
+        raise ValueError("pages: " + "; ".join(f"{f}: {m}" for f, m in problems))
     return site
 
 
@@ -369,10 +395,16 @@ def derive_pictures(config: TerradocConfig, site: SiteData) -> None:
     for i in site.encyclopedia:
         wanted += [cv.picture_parts(img.get("url"))[0] for img in i.row.get("images") or [] if isinstance(img, dict)]
     wanted += [cv.picture_parts(v["thumbnail"])[0] for v in site.videos]
+    for page in site.pages:
+        wanted += pages_v2.image_sources(page)
     jobs = [(p, rel) for rel in wanted if rel for p in [static_image(config, rel)] if p]
     site.pictures, failed = images.derive_many(jobs, config.docs_dir)
     for rel, error in sorted(failed.items()):
         print(f"  picture not shown (cannot be read as an image): static/{rel}: {error}")
+    for page in site.pages:
+        for src, credit in pages_v2.local_images(page):
+            if src in site.pictures and not credit:
+                site.uncredited["pages"] = site.uncredited.get("pages", 0) + 1
 
     def pic(link, credit, source, module):
         local, external = cv.picture_parts(link)
@@ -508,7 +540,7 @@ def content_routes(config: TerradocConfig, loc: str, t: Strings, slug: str, titl
 
 
 def page_context(config: TerradocConfig, route: Route, strings: dict[str, Strings],
-                 assets: Assets, *, root: str | None = None) -> dict:
+                 assets: Assets, *, root: str | None = None, site: "SiteData | None" = None) -> dict:
     loc = route.locale or (config.default_locale if config.default_locale in config.locales
                            else config.locales[0])
     t = strings[loc]
@@ -524,27 +556,37 @@ def page_context(config: TerradocConfig, route: Route, strings: dict[str, String
     } for code in config.locales]
     nav = [{"label": t[f"nav_{m['slug']}"] or m["name"], "href": f"{loc_root}{module_path(m['slug'])}",
             "current": route.page == m["slug"]} for m in config.enabled_modules()]
-    nav.append({"label": t["nav_about"] or t.ui_about, "href": f"{loc_root}about.html",
-                "current": route.page == "about"})
-    site = {"title": config.site_title or config.project_name,
-            "tagline": config.site_tagline or config.project_subtitle,
-            "alphabet": config.alphabet, "language_code": config.language_code}
+    modules = [{"label": n["label"], "href": n["href"], "description": t[f"card_{m['slug']}_desc"]}
+               for n, m in zip(nav, config.enabled_modules())]
+    nav += [{"label": p.title, "href": f"{loc_root}{p.slug}.html", "current": route.page == p.slug}
+            for p in nav_pages(site, loc)]
+    about = has_about(config, strings)
+    if about:
+        nav.append({"label": t["nav_about"] or t.ui_about, "href": f"{loc_root}about.html",
+                    "current": route.page == "about"})
+    site_info = {"title": t["site_title"] or config.site_title or config.project_name,
+                 "tagline": config.site_tagline or config.project_subtitle,
+                 "alphabet": config.alphabet, "language_code": config.language_code}
     ctx = {
         "t": t, "locale": loc, "root": root, "loc_root": loc_root, "page": route.page,
-        "title": route.title, "description": t["meta_description"] or site["tagline"],
-        "site": site, "nav": nav, "locale_switches": switches, "assets": assets,
+        "title": route.title, "description": t["meta_description"] or site_info["tagline"],
+        "site": site_info, "nav": nav, "locale_switches": switches, "assets": assets,
+        "about_href": f"{loc_root}about.html" if about else "", "project_url": config.project_url,
         "canonical": f"{base}/{quote(route.path)}" if base and route.sitemap else "",
         "search_action": (f"{loc_root}{module_path('dictionary')}"
                           if config.is_module_enabled("dictionary") else ""),
     }
     if route.page == "home":
+        home = next((p for p in (site.pages if site else [])
+                     if p.locale == loc and p.slug == pages_v2.HOME), None)
+        if home is not None:
+            home.html = pages_v2.render(home, site.pictures, root, t.ui_photo)
         ctx.update({
+            "home_html": home.html if home is not None else "",
             "sentence": t["home_sentence"] or t["index_hero_subtitle"],
             "hero": assets.hero, "hero_credit": config.theme.hero_credit,
-            "hero_alt": config.theme.hero_alt,
-            "modules": [{"label": n["label"], "href": n["href"],
-                         "description": t[f"card_{m['slug']}_desc"]}
-                        for n, m in zip(nav, config.enabled_modules())],
+            "hero_alt": t["hero_alt"] or config.theme.hero_alt,
+            "modules": modules,
         })
     ctx.update(route.context)
     return ctx
@@ -588,6 +630,31 @@ def write_sitemap_v2(out: Path, config: TerradocConfig, pages: list[Route]) -> N
     print(f"  Generated sitemap.xml ({len(urls)} URLs)")
 
 
+def write_aliases(out: Path, config: TerradocConfig, env: Environment, pages: list[Route],
+                  site: SiteData, strings: dict[str, Strings]) -> None:
+    """A small forwarding page at each old address a page lists in `aliases:` (relative
+    target, so it forwards inside a preview too; noindex, canonical to the new address)."""
+    taken = {r.path for r in pages} | pages_v2.GENERATED
+    base = config.base_url.rstrip("/")
+    n = 0
+    for page in site.pages:
+        for alias in page.aliases:
+            if alias in taken or alias.startswith(tuple(f"{loc}/{d}/" for loc in config.locales
+                                                        for d in ("dictionary", "fauna", "ethnobotany",
+                                                                  "encyclopedia", "corpus"))):
+                raise ValueError(f"pages: alias '{alias}' ({page.source.name}) is already an address of the site")
+            taken.add(alias)
+            ctx = {"t": strings[page.locale], "title": page.title,
+                   "target": pages_v2.alias_target(alias, page.path),
+                   "canonical": f"{base}/{quote(page.path)}" if base else ""}
+            target = out / alias
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(env.get_template("pages/alias.html.j2").render(**ctx), encoding="utf-8")
+            n += 1
+    if n:
+        print(f"  Wrote {n} forwarding page(s) for old addresses")
+
+
 def write_service_worker(out: Path, assets: Assets) -> None:
     """sw.js at the site root. It stores only the shell at install (CSS, the page script, the
     two critical fonts, offline.html); the search index and the rest are stored when used.
@@ -628,10 +695,11 @@ def build_site_v2(config: TerradocConfig) -> dict:
     site = load_site_data(config, dict_data[0])
     derive_pictures(config, site)
     for module, n in sorted(site.uncredited.items()):
-        print(f"  {module}: {n} picture(s) shown without a credit (D27: add pic_credit / credit)")
+        how = '"credit" after the path' if module == "pages" else "pic_credit / credit"
+        print(f"  {module}: {n} picture(s) shown without a credit (D27: add {how})")
     pages = routes(config, strings, assets, dict_data, site)
     for route in pages:
-        html = env.get_template(route.template).render(**page_context(config, route, strings, assets))
+        html = env.get_template(route.template).render(**page_context(config, route, strings, assets, site=site))
         target = out / route.path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
@@ -639,7 +707,7 @@ def build_site_v2(config: TerradocConfig) -> dict:
 
     default = config.default_locale if config.default_locale in config.locales else config.locales[0]
     root_route = Route("index.html", "pages/language.html.j2", "language", config.site_title, None, sitemap=False)
-    ctx = page_context(config, root_route, strings, assets, root="")
+    ctx = page_context(config, root_route, strings, assets, root="", site=site)
     ctx.update({"codes": list(config.locales), "default_locale": default})
     (out / "index.html").write_text(env.get_template(root_route.template).render(**ctx), encoding="utf-8")
     # The error page may be served for a missing path at any depth and under any mount
@@ -647,19 +715,20 @@ def build_site_v2(config: TerradocConfig) -> dict:
     # the site's public address (or the domain root without base_url).
     nf = Route("404.html", "pages/404.html.j2", "404", strings[default].ui_404_title, None, sitemap=False)
     absolute = config.base_url.rstrip("/") + "/" if config.base_url else "/"
-    ctx = page_context(config, nf, strings, assets, root=absolute)
+    ctx = page_context(config, nf, strings, assets, root=absolute, site=site)
     ctx["standalone"] = True
     (out / "404.html").write_text(env.get_template(nf.template).render(**ctx), encoding="utf-8")
 
     specimen = Route("specimen.html", "pages/specimen.html.j2", "specimen", "Specimen", None, sitemap=False)
-    ctx = page_context(config, specimen, strings, assets, root="")
+    ctx = page_context(config, specimen, strings, assets, root="", site=site)
     ctx.update(specimen_context(config))
     (out / "specimen.html").write_text(env.get_template(specimen.template).render(**ctx), encoding="utf-8")
 
     offline = Route("offline.html", "pages/offline.html.j2", "offline", "", None, sitemap=False)
-    ctx = page_context(config, offline, strings, assets, root="")
+    ctx = page_context(config, offline, strings, assets, root="", site=site)
     ctx.update({"strings_by_locale": strings, "has_dictionary": bool(assets.search_index)})
     (out / "offline.html").write_text(env.get_template(offline.template).render(**ctx), encoding="utf-8")
+    write_aliases(out, config, env, pages, site, strings)
     prune_images(out, site, assets)
     write_service_worker(out, assets)
     write_robots_txt(out, config.base_url)

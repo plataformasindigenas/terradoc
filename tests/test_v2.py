@@ -319,8 +319,18 @@ def test_fonts_cover_template_and_credit_characters(project):
 def test_unknown_locale_gets_english_strings_and_its_own_lang(project):
     from terradoc.build_v2 import load_strings
     cfg = load_config(project / "terradoc.yaml")
+    t = load_strings("fr", cfg)
+    assert t.html_lang == "fr" and t.ui_skip == "Skip to content"
+
+
+def test_spanish_strings_are_bundled_with_every_key(project):
+    """es since 0.24.0 (the portal is pt/en/es): same keys as pt."""
+    from terradoc.build_v2 import bundled_dir, load_strings
+    cfg = load_config(project / "terradoc.yaml")
     t = load_strings("es", cfg)
-    assert t.html_lang == "es" and t.ui_skip == "Skip to content"
+    assert t.html_lang == "es" and t.ui_skip == "Saltar al contenido"
+    keys = lambda loc: set(yaml.safe_load((bundled_dir() / "strings" / f"{loc}.yaml").read_text()))  # noqa: E731
+    assert keys("es") == keys("pt") == keys("en")
 
 
 def test_v2_check_errors(project):
