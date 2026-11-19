@@ -11,7 +11,7 @@
   {% if t.encyclopedia_intro %}<p class="td-list__intro">{{ t.encyclopedia_intro }}</p>{% endif %}
   {% set filter_target = "items" %}{% include "components/list_filter.html.j2" %}
   {% if categories | length > 1 %}
-  <nav class="td-chips" aria-label="{{ t.ui_categories }}" data-td-chips="items" hidden>
+  <nav class="td-chips td-needs-js" aria-label="{{ t.ui_categories }}" data-td-chips="items">
     <ul>
       <li><a href="encyclopedia.html" data-td-category="">{{ t.ui_all }}</a></li>
       {% for c in categories %}<li><a href="encyclopedia.html?category={{ c.key | urlencode }}" data-td-category="{{ c.key }}">{{ t['category_' ~ c.key] or c.key | replace('-', ' ') | capitalize }}</a> <span class="td-groups__n">{{ c.count }}</span></li>{% endfor %}

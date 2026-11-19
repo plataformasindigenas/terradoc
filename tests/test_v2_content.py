@@ -220,3 +220,21 @@ def test_portuguese_content_is_tagged_on_other_locales(project):
     page = Path("site/en/fauna/1-adugo.html").read_text()
     assert '<dd lang="pt-BR">Felino.</dd>' in page
     assert '<dd>Felino.</dd>' in Path("site/pt/fauna/1-adugo.html").read_text()
+
+
+# ── P5 checks (Lighthouse, screenshots) ─────────────────────────────────
+
+def test_script_controls_are_in_place_at_first_paint(project):
+    """The filter box is shown by a class set in <head>, not revealed later by td.js (that
+    moved the list down: Lighthouse CLS 0.34 on the Bororo encyclopedia)."""
+    set_theme(project, templates="v2", palette=BORORO)
+    add_modules(project)
+    assert build(project).exit_code == 0
+    page = Path("site/pt/fauna.html").read_text()
+    head = page.split("</head>")[0]
+    assert "className += ' td-js'" in head and head.index("td-js") < head.index("<script src=")
+    assert 'class="td-filter td-needs-js"' in page and 'data-td-filter="items"' in page
+    assert "hidden>" not in page.split('data-td-filter="items"')[1].split("</div>")[0][:400]
+    css = next(Path("site/assets").glob("site.*.css")).read_text()
+    assert "html:not(.td-js) .td-needs-js" in css
+    assert ".td-entry__cite summary::after" in css  # "Como citar" reads as a control

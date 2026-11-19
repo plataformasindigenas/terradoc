@@ -20,7 +20,8 @@
 <link rel="alternate" hreflang="{{ s.hreflang }}" href="{{ s.absolute }}">
 {% endfor %}
 {% block head %}{% endblock %}
-{% if not (standalone is defined and standalone) %}<script src="{{ root }}{{ assets.js }}" defer></script>
+{% if not (standalone is defined and standalone) %}<script>document.documentElement.className += ' td-js';</script>{# before first paint: script-only controls take their place at once (no layout shift) #}
+<script src="{{ root }}{{ assets.js }}" defer></script>
 {% if page == 'dictionary' %}<script src="{{ root }}{{ assets.dict_js }}" defer></script>{% endif %}{% endif %}
 </head>
 <body class="td-page-{{ page }}">

@@ -4,6 +4,17 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.22.1] — 2026-11-19
+
+### Fixed
+
+- v2: the list filter box and the encyclopedia's category chips are in place from the first
+  paint (a class set in `<head>`), instead of being revealed by `td.js` after the list had
+  drawn. On the Bororo encyclopedia this moved the whole list down (Lighthouse CLS 0.34,
+  now 0). Without script they stay hidden and the lists are complete, as before.
+- v2: "Como citar" on word, species and article pages shows an arrow and the link colour, so
+  it reads as something to open (the flex layout had removed the browser's marker).
+
 ## [0.22.0] — 2026-11-19
 
 ### Added

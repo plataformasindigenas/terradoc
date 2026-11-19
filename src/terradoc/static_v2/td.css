@@ -255,7 +255,11 @@ a:hover { text-decoration-thickness: 2px; }
 .td-entry__related ul { list-style: none; padding: 0; margin: 0 0 var(--space-5); }
 .td-entry__related li { padding: var(--space-1) 0; }
 .td-entry__cite { margin: var(--space-5) 0; border-top: 1px solid rgba(0, 0, 0, 0.12); padding-top: var(--space-3); }
-.td-entry__cite summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.td-entry__cite summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--primary); }
+/* display:flex drops the native marker: draw the same chevron as the menu, so it reads as a control */
+.td-entry__cite summary::-webkit-details-marker { display: none; }
+.td-entry__cite summary::after { content: ""; width: 0.5em; height: 0.5em; margin-left: 0.6em; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-25%) rotate(45deg); }
+.td-entry__cite[open] summary::after { transform: translateY(15%) rotate(-135deg); }
 .td-entry__cite p { font-size: var(--step--1); overflow-wrap: anywhere; }
 .td-entry__pager { display: flex; justify-content: space-between; gap: var(--space-4); border-top: 2px solid var(--fill); padding-top: var(--space-3); }
 .td-entry__pager a { text-decoration: none; display: flex; flex-direction: column; min-height: 44px; }
@@ -263,6 +267,7 @@ a:hover { text-decoration-thickness: 2px; }
 .td-entry__pager a:hover .td-hw { text-decoration: underline; }
 
 [hidden] { display: none !important; }
+html:not(.td-js) .td-needs-js { display: none; }
 
 /* Lists of the other modules (P3) */
 .td-list { max-width: var(--page); margin: 0 auto; padding: var(--space-6) var(--gutter) var(--space-8); }
