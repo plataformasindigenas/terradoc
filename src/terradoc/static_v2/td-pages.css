@@ -7,6 +7,6 @@
 .td-pagecards { list-style: none; padding: 0; display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); }
 .td-pagecards > li { margin: 0; }
 .td-pagecards .td-pic { margin: 0 0 var(--space-2); }
-.td-pagecards .td-pic img { width: auto; max-height: 12rem; }
+.td-pagecards .td-pic img { width: 100%; height: 12rem; object-fit: contain; object-position: left center; }  /* a fixed box: no shift while photos load */
 .td-pagecards p { margin: 0 0 var(--space-2); }
 .td-pagecards h2, .td-pagecards h3 { margin: 0 0 var(--space-1); font-size: var(--step-1); }

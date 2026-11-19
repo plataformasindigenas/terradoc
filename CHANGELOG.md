@@ -4,6 +4,14 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.24.1] — 2026-11-19
+
+### Fixed
+
+- Card pictures in pages (`data/pages/`) get a fixed 12rem box (`object-fit: contain`), so the
+  layout no longer shifts while they load (the portal's team page measured CLS 0.12 in
+  Lighthouse). Only sites with pages are affected; the platforms build byte-identical output.
+
 ## [0.24.0] — 2026-11-19
 
 **Pages**, so the Plataformas Indígenas portal can be a terradoc site (meta P7-PLAN.md, D23).
