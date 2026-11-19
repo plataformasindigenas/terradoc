@@ -4,3 +4,5 @@
 boeenomoto master
 enawenenawe master
 portal v2 www portal
+paresi inicio
+terena inicio
