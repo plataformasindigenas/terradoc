@@ -1,5 +1,5 @@
-"""0.14.0: alphabet, fonts, locale completeness, the terradoc/ namespace, extra_css,
-and an independent consumer of the bundle."""
+"""Alphabet, fonts, locale completeness, the terradoc/ namespace and an independent
+consumer of the bundle (0.14.0; on the v2 templates since 0.23.0)."""
 
 import subprocess
 import sys
@@ -57,21 +57,27 @@ def check(project: Path):
 
 # ── alphabet ─────────────────────────────────────────────────────────────
 
-def test_no_alphabet_keeps_the_old_dictionary_code(project):
+def test_no_alphabet_uses_first_letters(project):
+    write_dictionary(project, ("akapti", ""), ("bora", ""))
     assert build(project).exit_code == 0
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    assert "ALPHA" not in html
-    assert "ae.localeCompare(be, 'pt')" in html
+    d = Path("site") / "pt" / "dictionary"
+    assert (d / "a.html").is_file() and (d / "b.html").is_file()
 
 
 def test_alphabet_reaches_the_dictionary(project):
+    """Digraphs are letters with their own page, in the alphabet's order on the letter bar."""
     edit_config(project, alphabet=["a", "ã", "e", "mb", "m", "nd", "n"])
+    write_dictionary(project, ("mbeku", ""), ("mata", ""), ("ãto", ""), ("aka", ""), ("ndu", ""))
     result = build(project)
     assert result.exit_code == 0, result.output
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    assert 'ALPHA = (function(letters)' in html
-    assert '"mb", "m", "nd", "n"]' in html  # tojson escapes ã as \\u00e3, which JS reads back
-    assert "ALPHA.compareWords" in html
+    d = Path("site") / "pt" / "dictionary"
+    for letter in ("a", "ã", "mb", "m", "nd"):
+        assert (d / f"{letter}.html").is_file(), letter
+    assert "mbeku" in (d / "mb.html").read_text() and "mbeku" not in (d / "m.html").read_text()
+    bar = (d / "index.html").read_text()
+    from urllib.parse import quote
+    order = [bar.index(f'href="{quote(x)}.html"') for x in ("a", "ã", "mb", "m", "nd")]
+    assert order == sorted(order)
 
 
 def test_alphabet_must_be_a_list_of_letters(project):
@@ -106,50 +112,30 @@ def test_alphabet_matching_is_nfc(project):
 
 # ── fonts ────────────────────────────────────────────────────────────────
 
-def test_ipa_missing_from_heading_font_is_a_warning(project):
-    write_dictionary(project, ("boɾo", "ˈboɾo"))
+def test_text_font_covers_ipa_and_tilde_vowels(project):
+    """The data's IPA and nasal vowels are in the text face: no [font] issue."""
+    write_dictionary(project, ("boɾo", "ˈboɾo"), ("erẽy", "eˈɾẽj"))
     result = check(project)
     assert result.exit_code == 0, result.output
-    assert "headings text uses letters that Sora lacks" in result.output
-    assert "ɾ (U+027E" in result.output
-    assert "ipa text" not in result.output  # IPA renders in Inter, which has it
-
-
-def test_tilde_vowel_is_covered_by_inter(project):
-    write_dictionary(project, ("erẽy", ""))
-    result = check(project)
-    assert "body text" not in result.output
-
-
-def test_site_font_is_not_checked(project):
-    edit_config(project, theme={"font_family_headings": "'Noto Sans', sans-serif"})
-    write_dictionary(project, ("boɾo", ""))
-    result = check(project)
     assert "[font]" not in result.output
 
 
-def test_mono_ipa_font_is_flagged(project):
-    edit_config(project, theme={"font_family_ipa": "'IBM Plex Mono', monospace"})
-    write_dictionary(project, ("boro", "ˈboɾo"))
+def test_character_missing_from_the_text_font_is_an_error(project, monkeypatch):
+    """`check` says it before the build would stop (fonts.missing is what the build uses)."""
+    from terradoc import fonts
+
+    monkeypatch.setattr(fonts, "missing", lambda chars, text="gentium": sorted(c for c in chars if c == "ɾ"))
+    write_dictionary(project, ("boɾo", ""))
     result = check(project)
-    assert "ipa text uses letters that IBM Plex Mono lacks" in result.output
+    assert result.exit_code != 0
+    assert "the text font (gentium) lacks characters the data uses: ɾ (U+027E" in result.output
 
 
-def test_ipa_font_and_extra_css_reach_the_page(project):
-    (project / "static" / "css").mkdir(parents=True)
-    (project / "static" / "css" / "site.css").write_text("body{}")
-    edit_config(project, theme={"font_family_ipa": "'Charis SIL', serif", "extra_css": ["css/site.css"]})
-    result = build(project)
-    assert result.exit_code == 0, result.output
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    assert "--td-font-ipa: 'Charis SIL', serif;" in html
-    assert 'href="../css/site.css"' in html
+@pytest.mark.parametrize("face", ["gentium", "charis", "andika"])
+def test_bundled_text_faces_have_ipa_and_tilde_vowels(face):
+    from terradoc import fonts
 
-
-def test_bundled_fonts_include_the_tilde_vowels():
-    css = (ROOT / "src" / "terradoc" / "static" / "css" / "fonts.css").read_text()
-    assert "inter-vietnamese.woff2" in css
-    assert (ROOT / "src" / "terradoc" / "static" / "fonts" / "inter-vietnamese.woff2").is_file()
+    assert fonts.missing(set("ãẽĩõũỹɾɨʃʒˈː"), face) == []
 
 
 # ── locales ──────────────────────────────────────────────────────────────
@@ -175,26 +161,28 @@ def test_missing_locale_file_is_a_warning(project):
 # ── templates ────────────────────────────────────────────────────────────
 
 def test_site_page_can_extend_terradocs_own(project):
-    d = project / "config" / "templates"
+    d = project / "config" / "templates" / "v2" / "pages"
     d.mkdir(parents=True)
-    (d / "dictionary.html.j2").write_text(
-        '{% extends "terradoc/dictionary.html.j2" %}'
-        '{% block extra_styles %}{{ super() }}/* SITE-EXTRA */{% endblock %}')
+    (d / "dictionary_index.html.j2").write_text(
+        '{% extends "terradoc/pages/dictionary_index.html.j2" %}'
+        '{% block head %}{{ super() }}<meta name="site-extra" content="1">{% endblock %}')
+    write_dictionary(project, ("akapti", ""))
     result = build(project)
     assert result.exit_code == 0, result.output
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    assert "/* SITE-EXTRA */" in html
-    assert "letter-bar" in html  # the rest of terradoc's page is still there
+    html = (Path("site") / "pt" / "dictionary" / "index.html").read_text()
+    assert '<meta name="site-extra" content="1">' in html
+    assert "td-letters" in html or 'href="a.html"' in html  # the rest of terradoc's page
 
 
-def test_footer_block_can_be_replaced(project):
-    d = project / "config" / "templates"
+def test_site_base_reaches_every_page(project):
+    """A site's base.html.j2 can extend terradoc's and add to a block the pages leave alone."""
+    d = project / "config" / "templates" / "v2"
     d.mkdir(parents=True)
     (d / "base.html.j2").write_text(
-        '{% extends "terradoc/base.html.j2" %}{% block footer %}<footer>SITE-FOOTER</footer>{% endblock %}')
+        '{% extends "terradoc/base.html.j2" %}{% block head %}<meta name="site-base" content="1">{% endblock %}')
     result = build(project)
     assert result.exit_code == 0, result.output
-    assert "SITE-FOOTER" in (Path("site") / "pt" / "dictionary.html").read_text()
+    assert '<meta name="site-base" content="1">' in (Path("site") / "pt" / "about.html").read_text()
 
 
 # ── an independent renderer ──────────────────────────────────────────────
@@ -211,27 +199,7 @@ def test_bundle_consumer_renders_the_dictionary(project, tmp_path):
 
 
 def test_block_contract():
-    """The blocks docs/motifs.md promises to sites must exist in base.html.j2."""
-    base = (ROOT / "src" / "terradoc" / "templates" / "base.html.j2").read_text()
-    for block in ("title", "extra_styles", "content", "footer", "scripts"):
+    """The blocks docs/packs.md promises to sites must exist in the v2 base.html.j2."""
+    base = (ROOT / "src" / "terradoc" / "templates_v2" / "base.html.j2").read_text()
+    for block in ("title", "head", "main"):
         assert f"{{% block {block} %}}" in base, block
-
-
-@pytest.mark.skipif(not __import__("shutil").which("node"), reason="needs node")
-def test_alphabet_sorting_in_the_browser_code(project):
-    """Run the page's ALPHA in node: digraphs, and accented letters outside the alphabet."""
-    import re
-
-    edit_config(project, alphabet=["a", "ã", "b", "k", "kw", "o", "u", "w"])
-    assert build(project).exit_code == 0
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    code = re.search(r"var ALPHA = \(function\(letters\) \{.*?\}\)\(\[.*?\]\);", html, re.S).group(0)
-    words = ["wo", "kudógó", "kwa", "ku", "ãb", "ab", "bó", "ba", "óa"]
-    js = code + ("\nvar w = %s; w.sort(ALPHA.compareWords);"
-                 "\nconsole.log(JSON.stringify([w, ALPHA.letterOf('óa'), ALPHA.letterOf('kwa')]));"
-                 % __import__("json").dumps(words))
-    out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
-    order, first_o, first_kw = __import__("json").loads(out)
-    # ã is its own letter (after a); ó sorts as o; kw after every k-word
-    assert order == ["ab", "ãb", "ba", "bó", "ku", "kudógó", "kwa", "óa", "wo"]
-    assert [first_o, first_kw] == ["O", "KW"]

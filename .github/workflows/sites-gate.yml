@@ -1,15 +1,11 @@
-# The release gate, automated. Three jobs:
+# The release gate, automated. Two jobs (the v1-frozen job went with v1 in 0.23.0):
 #
-# - v1-frozen: the v1 templates are frozen while v2 is built. Each platform, at the commit
-#   fixed in gate/v1/sites.txt, is built with this commit and compared byte for byte with
-#   gate/v1/<site>.sha256. Any difference fails. A deliberate v1 fix runs
-#   `gate/v1.sh freeze <site>` and commits the new manifest with the fix.
 # - gate: build every platform as it is today with the terradoc it pins and with this commit,
 #   and report what changed. A failed build fails the job; differences only go to the summary,
 #   since many are intended (read them before releasing).
-# - v2: build every platform's branch in gate/v2/sites.txt with --templates v2, twice (the
-#   bytes must match), check links, page weight, the sitemap and the file count, and keep a
-#   screenshot of the font specimen (gate/v2.sh).
+# - v2: build every platform's branch in gate/v2/sites.txt (master), twice (the bytes must
+#   match), check links, page weight, the sitemap and the file count, and keep a screenshot of
+#   the font specimen (gate/v2.sh).
 #
 # Sites are public and fetched anonymously; nothing is published from here.
 
@@ -25,28 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  v1-frozen:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        site: [boeenomoto, enawenenawe, makurap]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version: "3.12"
-
-      - name: Build at the frozen commit and compare with the manifest
-        env:
-          SITE: ${{ matrix.site }}
-          PYTHON: python
-        run: gate/v1.sh check "$SITE"
-
   v2:
     runs-on: ubuntu-latest
     timeout-minutes: 20

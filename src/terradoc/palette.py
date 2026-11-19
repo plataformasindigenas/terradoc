@@ -8,8 +8,8 @@
         fill:    {color: "#D4A03A", material: "pena amarela"}     # bands, highlights (ink text only)
         muted:   {color: "#6B6F5A"}                               # secondary text
 
-A role may also be a bare colour string. Without a palette, v2 derives one from the v1
-colours (bg, text, primary, accent, text_muted) and `check` says so.
+A role may also be a bare colour string. Without a palette, a site uses DEFAULT, the
+project's neutral colours (also the fallbacks in td.css), and `check` says so.
 """
 from __future__ import annotations
 
@@ -57,15 +57,12 @@ def parse(raw: object) -> dict[str, Role]:
     return out
 
 
-def from_v1(colors) -> dict[str, Role]:
-    """A palette from the v1 colours, for sites that have not written one yet."""
-    pairs = {"ground": colors.bg, "ink": colors.text, "primary": colors.primary,
-             "fill": colors.accent, "muted": colors.text_muted}
-    bad = [f"{role} ({value!r})" for role, value in pairs.items() if not HEX.match(str(value).strip())]
-    if bad:
-        raise ValueError("theme.palette is not set and the v1 colours cannot stand in for it: "
-                         + ", ".join(bad) + " are not #rrggbb colours; write theme.palette")
-    return {role: Role(str(value).strip().upper()) for role, value in pairs.items()}
+# The project's neutral colours: no people's materials (D21). Same values as the fallbacks
+# at the top of static_v2/td.css.
+DEFAULT = {
+    "ground": Role("#F7F4EE"), "ink": Role("#1D1B18"), "primary": Role("#8A3B12"),
+    "fill": Role("#D9B36C"), "muted": Role("#625B52"),
+}
 
 
 def _channel(c: int) -> float:

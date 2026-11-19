@@ -6,9 +6,8 @@
 #
 #   gate/v2.sh [site ...]
 #
-# Each site is built from the branch named in gate/v2/sites.txt (its `v2` preview branch while
-# the migration runs; master once a site has moved), so this follows the sites, unlike the
-# frozen v1 gate.
+# Each site is built from the branch named in gate/v2/sites.txt (master: every site is on v2
+# since 2026-11-19, and v2 is terradoc's only template set since 0.23.0).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"

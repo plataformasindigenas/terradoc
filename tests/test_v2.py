@@ -87,10 +87,12 @@ def test_v2_keys_are_known_and_switch_template_dirs(project):
     assert cfg.bundled_template_dir.name == "templates_v2"
 
 
-def test_v1_dirs_unchanged(project):
+def test_v2_is_the_default(project):
+    """Since 0.23.0 v2 is the only set: no `templates` key needed."""
     cfg = load_config(project / "terradoc.yaml")
-    assert cfg.local_template_dir == project / "config" / "templates"
-    assert cfg.bundled_template_dir.name == "templates"
+    assert cfg.theme.templates == "v2"
+    assert cfg.local_template_dir == project / "config" / "templates" / "v2"
+    assert cfg.bundled_template_dir.name == "templates_v2"
 
 
 # ── packs ────────────────────────────────────────────────────────────────
@@ -334,7 +336,7 @@ def test_v2_check_errors(project):
 @pytest.mark.parametrize("theme, message", [
     ({"hero_image": "images/logo.svg"}, "a photograph"),
     ({"hero_image": "../../etc/passwd"}, "inside static/"),
-    ({"colors": {"bg": "#fff"}}, "cannot stand in"),
+    ({"colors": {"bg": "#fff"}}, "a setting of the v1 templates, removed in terradoc 0.23.0"),
 ])
 def test_v2_check_refuses_bad_settings(project, theme, message):
     set_theme(project, templates="v2", **theme)

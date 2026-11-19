@@ -6,54 +6,8 @@ from pathlib import Path
 
 import click
 
-from terradoc.config import THEME_PRESETS, load_config
+from terradoc.config import load_config
 
-
-STARTER_PAGE_CONFIGS = {
-    "index.yaml": """input: ../data/index.json
-template: templates/index.html.j2
-output: ../docs/index.html
-""",
-    "dictionary.yaml": """input: ../data/dictionary.json
-template: templates/dictionary.html.j2
-output: ../docs/dictionary.html
-""",
-    "fauna.yaml": """input: ../data/fauna.json
-template: templates/fauna.html.j2
-output: ../docs/fauna.html
-""",
-    "ethnobotany.yaml": """input: ../data/ethnobotany.json
-template: templates/ethnobotany.html.j2
-output: ../docs/ethnobotany.html
-""",
-    "encyclopedia.yaml": """input: ../data/encyclopedia_index.json
-template: templates/encyclopedia.html.j2
-output: ../docs/encyclopedia.html
-""",
-    "bibliography.yaml": """input: ../data/bibliography.json
-template: templates/bibliography.html.j2
-output: ../docs/bibliography.html
-""",
-    "recordings.yaml": """input: ../data/recordings.json
-template: templates/recordings.html.j2
-output: ../docs/recordings.html
-""",
-    "corpus.yaml": """input: ../data/corpus.json
-template: templates/corpus.html.j2
-output: ../docs/corpus.html
-""",
-    "videos.yaml": """input: ../data/videos.json
-template: templates/videos.html.j2
-output: ../docs/videos.html
-""",
-}
-
-DEFAULT_LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Project logo">
-  <rect width="128" height="128" rx="24" fill="#3D352F"/>
-  <circle cx="64" cy="52" r="24" fill="#C75B39"/>
-  <path d="M32 94h64" stroke="#F9F6F2" stroke-width="10" stroke-linecap="round"/>
-</svg>
-"""
 
 DEFAULT_FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#3D352F"/>
@@ -89,8 +43,9 @@ def _load(config_path: str, out: str | None = None, bundle_dir: str | None = Non
     from terradoc.config import TEMPLATE_SETS
     if cfg.theme.templates not in TEMPLATE_SETS:  # render runs no checks: refuse here too
         raise click.ClickException(
-            f"template set '{cfg.theme.templates}' is not available in this terradoc "
-            f"(it has: {', '.join(TEMPLATE_SETS)})")
+            f"template set '{cfg.theme.templates}' is not available in this terradoc"
+            + (" (v1 was removed in terradoc 0.23.0)" if cfg.theme.templates == "v1" else "")
+            + f" (it has: {', '.join(TEMPLATE_SETS)})")
     return cfg
 
 
@@ -106,7 +61,7 @@ def _bundle_option(f):
 
 def _out_options(f):
     f = click.option("--templates", default=None,
-                     help="Template set to render with (overrides theme.templates), e.g. v1")(f)
+                     help="Template set to render with (overrides theme.templates); only v2 since 0.23.0")(f)
     f = click.option("--clean", is_flag=True,
                      help="Empty the output directory first (only with --out)")(f)
     return click.option("--out", default=None, type=click.Path(file_okay=False),
@@ -220,7 +175,7 @@ def export(config_path: str, bundle_dir: str | None):
 def render(config_path: str, bundle_dir: str | None, out: str | None, clean: bool,
            templates: str | None):
     """Render the site from an existing export bundle."""
-    from terradoc.build_site import render_site
+    from terradoc.render import render_site
 
     cfg = _load(config_path, out=out, bundle_dir=bundle_dir, templates=templates)
     with _friendly_errors():
@@ -237,7 +192,7 @@ def render(config_path: str, bundle_dir: str | None, out: str | None, clean: boo
 def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool, fmt: str,
           templates: str | None):
     """Build the complete site: check, export, render."""
-    from terradoc.build_site import render_site
+    from terradoc.render import render_site
     from terradoc.export import export_bundle
 
     cfg = _load(config_path, out=out, bundle_dir=bundle_dir, templates=templates)
@@ -247,7 +202,7 @@ def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool
     click.echo()
     with _friendly_errors():
         if clean:  # refuse before doing any work
-            from terradoc.build_site import assert_safe_to_clean
+            from terradoc.render import assert_safe_to_clean
             assert_safe_to_clean(cfg)
         export_bundle(cfg, run_checks=False)  # just checked above
         render_site(cfg, clean=clean)
@@ -256,57 +211,43 @@ def build(config_path: str, bundle_dir: str | None, out: str | None, clean: bool
 
 @main.command()
 @click.argument("name", default="my-project")
-@click.option("--theme", "theme_preset", default="terra",
-              type=click.Choice(list(THEME_PRESETS.keys())),
-              help="Theme preset to use (default: terra)")
 @click.option("--eject-templates", is_flag=True,
-              help="Copy the bundled templates into config/templates/ for local "
+              help="Copy terradoc's templates into config/templates/v2/ for local "
                    "customisation. A local copy shadows every terradoc template "
-                   "update, so prefer config options and locale keys.")
-def init(name: str, theme_preset: str, eject_templates: bool):
-    """Scaffold a new terradoc project."""
+                   "update, so prefer config options, locale keys and single-file overrides.")
+def init(name: str, eject_templates: bool):
+    """Scaffold a new terradoc project (v2 templates, the neutral `weave` pack)."""
     project_dir = Path(name)
     if project_dir.exists():
         click.echo(f"Directory '{name}' already exists", err=True)
         raise SystemExit(1)
 
     project_dir.mkdir()
-    (project_dir / "config").mkdir()
-    (project_dir / "data").mkdir()
-    (project_dir / "data" / "encyclopedia").mkdir()
+    (project_dir / "data" / "encyclopedia").mkdir(parents=True)
     (project_dir / "locales").mkdir()
     # static/ is copied verbatim into the site root by `terradoc build`
     (project_dir / "static" / "images").mkdir(parents=True)
 
     if eject_templates:
-        (project_dir / "config" / "templates").mkdir(parents=True)
-        templates_src = importlib.resources.files("terradoc.templates")
-        for template_src in templates_src.iterdir():
-            if template_src.name.endswith(".j2"):
-                shutil.copy2(
-                    str(template_src),
-                    str(project_dir / "config" / "templates" / template_src.name),
-                )
+        dest = project_dir / "config" / "templates" / "v2"
+        src = Path(str(importlib.resources.files("terradoc.templates_v2")))
+        shutil.copytree(src, dest, ignore=shutil.ignore_patterns("__init__.py", "__pycache__"))
 
-    # Create starter page configs
-    for filename, content in STARTER_PAGE_CONFIGS.items():
-        (project_dir / "config" / filename).write_text(content, encoding="utf-8")
-
-    (project_dir / "static" / "images" / "logo.svg").write_text(
-        DEFAULT_LOGO_SVG, encoding="utf-8"
-    )
     (project_dir / "static" / "images" / "favicon.svg").write_text(
         DEFAULT_FAVICON_SVG, encoding="utf-8"
     )
 
-    # Create default config
-    preset = THEME_PRESETS[theme_preset]
     config_content = f"""project_name: "{name}"
 project_subtitle: ""
 site_title: "{name}"
 site_tagline: ""
 culture_name: ""
 meta_prefix: "{name.lower().replace(' ', '_').replace('-', '_')}"
+# BCP 47 code of the language the site documents (e.g. bor, unk, mpu): vernacular text
+# gets it as its lang attribute.
+language_code: ""
+# The site's public address, e.g. https://example.terradoc.org (canonical links, sitemap).
+base_url: ""
 locales: ["pt", "en"]
 locale_labels:
   pt: "Português"
@@ -336,70 +277,37 @@ module_labels:
   videos: "Videos"
 
 theme:
-  preset: "{theme_preset}"
-  logo: "images/logo.svg"
+  templates: v2
+  # The neutral pack: no people's patterns. A people's own pack (band, texture, emblem) lives
+  # in config/templates/v2/motifs/<name>/ and is recorded, with sources, in CULTURA.md.
+  pack: weave
+  # Five colour roles, each named after a material (terradoc.palette). These are the
+  # project's neutral colours; `terradoc check` refuses combinations that are hard to read.
+  palette:
+    ground: {{color: "#F7F4EE"}}
+    ink: {{color: "#1D1B18"}}
+    primary: {{color: "#8A3B12"}}
+    fill: {{color: "#D9B36C"}}
+    muted: {{color: "#625B52"}}
   favicon: "images/favicon.svg"
-  colors:
-    primary: "{preset['colors']['primary']}"
-    accent: "{preset['colors']['accent']}"
-  # module_intensity:
-  #   dictionary: "minimal"
-  #   encyclopedia: "balanced"
-  #   fauna: "rich"
-  # term_color: ""
-  # term_weight: "600"
+  # hero_image: "images/home.jpg"   # in static/
+  # hero_credit: ""
+  # hero_alt: ""
 """
-
     (project_dir / "terradoc.yaml").write_text(config_content, encoding="utf-8")
 
-    # Create minimal locale files
-    pt_locale = """html_lang: pt-BR
-nav_brand: "{name}"
-nav_dictionary: Dicionário
-nav_encyclopedia: Enciclopédia
-nav_about: Sobre
-index_title: Início
-index_hero_title: "{name}"
-about_title: "Sobre"
-about_subtitle: ""
-about_mission_heading: "Missão"
-about_mission: ""
-about_partners_heading: "Equipe e Parceiros"
-about_partners: ""
-about_contact_heading: "Contato"
-about_contact: ""
-about_citation_heading: "Como Citar"
-about_citation: ""
-about_tools_heading: "Construído Com"
-"""
-    (project_dir / "locales" / "pt.yaml").write_text(
-        pt_locale.format(name=name), encoding="utf-8"
-    )
+    # terradoc brings the interface strings; a site's locale files hold its own texts.
+    for loc in ("pt", "en"):
+        (project_dir / "locales" / f"{loc}.yaml").write_text(
+            "# The site's own texts (HTML allowed in about_*); terradoc brings the interface.\n"
+            'home_sentence: ""\n'
+            'about_mission: ""\n'
+            'about_partners: ""\n'
+            'about_contact: ""\n',
+            encoding="utf-8",
+        )
 
-    en_locale = """html_lang: en
-nav_brand: "{name}"
-nav_dictionary: Dictionary
-nav_encyclopedia: Encyclopedia
-nav_about: About
-index_title: Home
-index_hero_title: "{name}"
-about_title: "About"
-about_subtitle: ""
-about_mission_heading: "Mission"
-about_mission: ""
-about_partners_heading: "Team & Partners"
-about_partners: ""
-about_contact_heading: "Contact"
-about_contact: ""
-about_citation_heading: "How to Cite"
-about_citation: ""
-about_tools_heading: "Built With"
-"""
-    (project_dir / "locales" / "en.yaml").write_text(
-        en_locale.format(name=name), encoding="utf-8"
-    )
-
-    click.echo(f"Created new terradoc project in '{name}/' (theme: {theme_preset})")
+    click.echo(f"Created new terradoc project in '{name}/'")
     click.echo(f"  Edit {name}/terradoc.yaml to configure your project")
     click.echo(f"  Add data to {name}/data/")
     click.echo(f"  Run: cd {name} && terradoc build")
@@ -448,18 +356,3 @@ def categories(config_path: str, output_path: str | None):
         click.echo(content.rstrip())
 
     click.echo(f"  Total unique category paths: {len(sorted_cats)}", err=True)
-
-
-@main.command()
-def themes():
-    """List available theme presets."""
-    click.echo("Available theme presets:\n")
-    for name, preset in THEME_PRESETS.items():
-        desc = preset.get("description", "")
-        default = " (default)" if name == "terra" else ""
-        click.echo(f"  {name}{default}")
-        if desc:
-            click.echo(f"    {desc}")
-        click.echo(f"    Style: {preset.get('style', name)}")
-        click.echo(f"    Primary: {preset['colors']['primary']}  Accent: {preset['colors']['accent']}")
-        click.echo()

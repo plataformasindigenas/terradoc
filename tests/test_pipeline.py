@@ -81,11 +81,11 @@ def test_static_copied_verbatim(project):
     result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
     assert result.exit_code == 0, result.output
     assert (Path("site") / "audio" / "song.webm").read_bytes() == b"\x1aE\xdf\xa3"
-    assert (Path("site") / "images" / "logo.svg").exists()
+    assert (Path("site") / "images" / "favicon.svg").exists()
 
 
-@pytest.mark.parametrize("name", ["robots.txt", ".release.json", "css/terradoc.css",
-                                  "pt/index.html", "dictionary-data.json"])
+@pytest.mark.parametrize("name", ["robots.txt", ".release.json", "assets/site.css",
+                                  "pt/index.html", "sw.js", "offline.html"])
 def test_static_clobbering_generated_path_is_a_check_error(project, name):
     target = project / "static" / name
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -162,19 +162,17 @@ def test_clean_refuses_unmarked_directory(project):
     assert keep.read_bytes() == b"only copy"
 
 
-def test_clean_refuses_old_layout_docs_after_plain_build(project, monkeypatch):
-    """Reviewer repro: images only in docs/, a plain build, then --out docs --clean."""
+def test_clean_refuses_docs_with_files_terradoc_did_not_make(project, monkeypatch):
+    """Reviewer repro (0.11): a docs/ holding someone's own file, a plain build into it, then
+    --out docs --clean must refuse and keep the file."""
     monkeypatch.chdir(project)
-    (project / "docs").mkdir()
-    (project / "static" / "images").rename(project / "docs" / "images")
-    (project / "static").rmdir()
+    (project / "docs" / "images").mkdir(parents=True)
     (project / "docs" / "images" / "photo.jpg").write_bytes(b"only copy")
     assert run("build").exit_code == 0
     result = run("build", "--out", "docs", "--clean")
     assert result.exit_code == 1
     assert "--clean refused" in result.output
     assert (project / "docs" / "images" / "photo.jpg").read_bytes() == b"only copy"
-    assert (project / "docs" / "images" / "logo.svg").exists()
 
 
 def test_render_rechecks_consent_against_sources(project):
@@ -288,10 +286,10 @@ def test_media_found_in_static(project):
 
 
 def test_missing_theme_media_reported(project):
-    (project / "static" / "images" / "logo.svg").unlink()
+    (project / "static" / "images" / "favicon.svg").unlink()
     result = run("check", "-c", str(project / "terradoc.yaml"))
     assert result.exit_code == 1
-    assert "theme references missing file 'images/logo.svg'" in result.output
+    assert "theme references missing file 'images/favicon.svg'" in result.output
 
 
 def test_schema_error_has_tsv_line(project):
@@ -353,18 +351,6 @@ def test_check_writes_nothing(project):
 
 # ── templates ────────────────────────────────────────────────────────────
 
-def test_videos_oral_template_renders(project):
-    enable(project, "videos")
-    (project / "static" / "audio").mkdir()
-    (project / "static" / "audio" / "story.mp4").write_bytes(b"x")
-    write_videos(project, VIDEO.format(extra="  consent: approved\n  source_url: audio/story.mp4\n"))
-    (project / "config" / "videos.yaml").write_text(
-        "input: ../data/videos.json\ntemplate: templates/videos_oral.html.j2\noutput: ../docs/videos.html\n")
-    result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
-    assert result.exit_code == 0, result.output
-    html = (Path("site") / "pt" / "videos.html").read_text()
-    assert "oc-header" in html
-    assert "A story" in html
 
 
 def test_about_credits_only_with_locale_key(project):
@@ -401,14 +387,15 @@ def write_plants(project: Path, link="images/p.jpg", extra=""):
 
 
 def test_photo_credit_rendered_with_safe_link(project):
-    write_plants(project, extra="  pic_credit: \"© Ana, CC BY-NC, via iNaturalist\"\n"
-                                "  pic_source: https://www.inaturalist.org/observations/1\n")
+    write_plants(project, link="https://static.inaturalist.org/photos/1/medium.jpg",
+                 extra="  pic_credit: \"© Ana, CC BY-NC, via iNaturalist\"\n"
+                       "  pic_source: https://www.inaturalist.org/observations/1\n")
     result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
     assert result.exit_code == 0, result.output
-    page = (Path("site") / "pt" / "ethnobotany.html").read_text()
-    assert "detail-photo-credit" in page
-    assert "https://www.inaturalist.org/observations/1" in page
-    assert "/^https?:\\/\\//.test(entry.pic_link)" in page  # web-address photos are not prefixed
+    (page,) = [p.read_text() for p in (Path("site") / "pt" / "ethnobotany").glob("*.html")]
+    assert '<a href="https://www.inaturalist.org/observations/1" rel="noopener">© Ana, CC BY-NC, via iNaturalist</a>' in page
+    assert 'href="https://static.inaturalist.org/photos/1/medium.jpg"' in page
+    assert 'src="https://' not in page  # another site's picture is a link, never loaded
 
 
 @pytest.mark.parametrize("link,extra,message", [
@@ -427,6 +414,6 @@ def test_404_links_are_root_relative(project):
     result = run("build", "-c", str(project / "terradoc.yaml"), "--out", "site")
     assert result.exit_code == 0, result.output
     page = (Path("site") / "404.html").read_text()
-    assert 'href="/css/terradoc.css"' in page
+    assert "<style>" in page and 'rel="stylesheet"' not in page  # CSS inline: works at any depth
     assert 'href="/pt/about.html"' in page
     assert 'href="about.html"' not in page

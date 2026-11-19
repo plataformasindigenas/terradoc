@@ -16,10 +16,11 @@ def test_homonym_column(project):
     assert result.exit_code == 0, result.output
     data = json.loads((Path("bundle") / "dictionary.json").read_text())["data"]
     assert [(e["entry"], e["homonym"]) for e in data] == [("aka", 2), ("aka", 1), ("ba", None)]
-    html = (Path("site") / "pt" / "dictionary.html").read_text()
-    assert 'aka<sup class="homonym">2</sup>' in html  # the page without JavaScript
-    assert "function headwordHtml(e)" in html
-    assert "(a.homonym || 0) - (b.homonym || 0)" in html  # homonyms sort by number
+    page = (Path("site") / "pt" / "dictionary" / "a.html").read_text()
+    first = page.index('aka</span><sup class="td-homonym">1</sup>')
+    second = page.index('aka</span><sup class="td-homonym">2</sup>')
+    assert first < second  # homonyms sort by number
+    assert (Path("site") / "pt" / "dictionary" / "2-aka.html").is_file()
 
 
 def test_homonyms_get_no_automatic_encyclopedia_link():

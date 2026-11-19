@@ -1,9 +1,8 @@
 """v2 site build: routes in code, people layer (palette, fonts, pack), pages.
 
-v1 (build_site.build_site) renders pages listed in each site's config/*.yaml; v2 does not
-read those. Its routes are defined here, so every page knows its depth, its locale
-switches and its canonical address. Pages that v2 does not have yet are rendered from
-`pages/pending.html.j2`, so links and the sitemap stay complete while P2/P3 replace them.
+Routes are defined here (no page configs), so every page knows its depth, its locale
+switches and its canonical address. Since 0.23.0 this is terradoc's only template set (v1 was
+removed); render.py calls it.
 
 Output layout:
     index.html                 language redirect
@@ -84,11 +83,23 @@ def static_v2(name: str) -> bytes:
     return (importlib.resources.files("terradoc.static_v2") / name).read_bytes()
 
 
+def format_number(value, locale: str = "pt") -> str:
+    """A number as the interface language writes it: 4.865 and 7,0 in Portuguese, 4,865 and 7.0
+    in English. Languages other than English use the Portuguese convention."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    decimals = 0 if number == int(number) and not isinstance(value, float) else 1
+    text = f"{number:,.{decimals}f}"
+    if str(locale).split("-")[0].lower() == "en":
+        return text
+    return text.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+
+
 def environment(config: TerradocConfig) -> Environment:
     """Site overrides (config/templates/v2/) first, then terradoc's v2 set; `terradoc/<name>`
     always means terradoc's own v2 template, so an override can extend it."""
-    from terradoc._kodudo.rendering import format_number
-
     dirs = [str(p) for p in (config.local_template_dir,) if p.is_dir()] + [str(bundled_dir())]
     env = Environment(
         loader=ChoiceLoader([FileSystemLoader(dirs),
@@ -131,7 +142,7 @@ def load_strings(locale: str, config: TerradocConfig) -> Strings:
 def site_palette(config: TerradocConfig) -> dict[str, palette_mod.Role]:
     if config.theme.palette:
         return palette_mod.parse(config.theme.palette)
-    return palette_mod.from_v1(config.theme.colors)
+    return dict(palette_mod.DEFAULT)
 
 
 def _hashed(data: bytes, stem: str, ext: str) -> str:
@@ -597,7 +608,7 @@ def write_service_worker(out: Path, assets: Assets) -> None:
 
 def build_site_v2(config: TerradocConfig) -> dict:
     """Render the v2 site into config.docs_dir; returns a small report (sizes, counts)."""
-    from terradoc.build_site import copy_audio_files, write_robots_txt
+    from terradoc.render import copy_audio_files, write_robots_txt
 
     print("=== Building site (templates v2) ===\n")
     out = config.docs_dir

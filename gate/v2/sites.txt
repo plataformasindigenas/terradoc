@@ -1,4 +1,4 @@
 # site branch: what the v2 gate builds (gate/v2.sh)
-boeenomoto v2
-enawenenawe v2
-makurap v2
+boeenomoto master
+enawenenawe master
+makurap master

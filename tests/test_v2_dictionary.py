@@ -57,19 +57,16 @@ def test_python_alphabet_order():
     assert a.first_letter("casa") is None and a.first_letter("-ka") == "k"
 
 
-@pytest.mark.skipif(not __import__("shutil").which("node"), reason="needs node")
-def test_python_and_v1_page_order_agree_on_real_words():
-    """The v1 page script and the v2 letter pages must list words in the same order."""
-    src = (Path(__file__).resolve().parent.parent / "src" / "terradoc" / "templates" / "dictionary.html.j2").read_text()
-    code = re.search(r"var ALPHA = \(function\(letters\) \{.*?\n        \}\)\(", src, re.S).group(0)
+def test_order_with_digraphs_and_nasal_vowels():
+    """Makurap's alphabet (digraph letters, nasal vowels as letters). Until 0.23.0 this was
+    checked against the v1 page script, which agreed; the order is now fixed here."""
     letters = ["a", "ã", "e", "ẽ", "g", "i", "ĩ", "k", "l", "m", "mb", "n", "nd", "ng", "nj", "o", "õ",
                "p", "r", "t", "u", "ũ", "w", "x", "y"]
     words = ["mbore", "mamõap yãpet", "ãto", "ndutnda", "nga", "na", "-ka", "kõ", "ko", "óra", "o'a",
              "ẽpe", "epe", "x-ray", "yã", "ũen", "uen", "wã", "ming", "mito"]
-    js = code + json.dumps(letters) + ");\nvar w = " + json.dumps(words) + \
-        "; w.sort(ALPHA.compareWords); console.log(JSON.stringify(w));"
-    out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
-    assert json.loads(out) == sorted(words, key=Alphabet(letters).sort_key)
+    assert sorted(words, key=Alphabet(letters).sort_key) == [
+        "ãto", "epe", "ẽpe", "-ka", "ko", "kõ", "mamõap yãpet", "ming", "mito", "mbore", "na",
+        "ndutnda", "nga", "o'a", "óra", "uen", "ũen", "wã", "x-ray", "yã"]
 
 
 # ── names ────────────────────────────────────────────────────────────────

@@ -4,6 +4,69 @@ All notable changes to terradoc are documented here.
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-11-19
+
+**v2 is terradoc's only template set; v1 is removed** (meta REDESIGN-PLAN.md P6). All three
+platforms moved to v2 on 2026-11-19 and build byte-identical output with this release.
+
+### Removed
+
+- The v1 templates, styles, scripts and fonts (`templates/`, `static/`), the inlined kodudo
+  renderer (`_kodudo/`), `build_site.py` and the v1 data files `*-data.json`
+  (`index_builder.copy_data_to_docs`). The render step's shared parts moved to `render.py`
+  (`render_site`, static copy, `.release.json`, the `--clean` guard, audio, robots.txt);
+  `format_number` moved to `build_v2`.
+- v1 theme settings: `preset`, `colors`, `colors_dark`, `module_intensity`, `logo`,
+  `font_family`, `font_family_headings`, `font_family_mono`, `font_family_ipa`,
+  `border_radius`, `style`, `term_color`, `term_weight`, `hero_background`, `hero_motif`,
+  `hero_divider`, `hero_height`, `page_badge`, `grain_pattern`, `hero_images`, `hero_stats`,
+  `extra_css`. `terradoc check` reports each as "a setting of the v1 templates, removed in
+  terradoc 0.23.0" (an error, like any unknown setting since 0.17.0).
+- `terradoc themes` and `terradoc init --theme` (theme presets); `THEME_PRESETS`, `ThemeColors`,
+  `ThemeConfig.to_dict`, `TerradocConfig.find_template` and `template_dir`.
+- The v1 font check (`font_coverage.json`, `tools/font_coverage.py`: Inter, Sora, Plex).
+- The `docs/` fallback for media in pre-0.11 projects: theme and data files must be in `static/`.
+- The `v1-frozen` gate job, `gate/v1.sh` and `gate/v1/`.
+- `docs/motifs.md` (v1 packs; see `docs/packs.md`) and `docs/theme-system-v2-spec.md` (an
+  early v1 layering spec).
+
+### Changed
+
+- `theme.templates` defaults to `v2`; `v2` is still accepted. `v1` (in the config or as
+  `--templates v1`) is refused with a message naming this release.
+- `terradoc init` scaffolds a v2 project: a neutral palette, `pack: weave`, no page configs,
+  locale files with only the site's own texts. `--eject-templates` copies the v2 set into
+  `config/templates/v2/`.
+- `terradoc check`: v1 page configs (`config/<page>.yaml`) and v1 patterns
+  (`config/templates/motifs/`) are errors ("no longer read; delete"). The text face
+  (`theme.font_vernacular`) must cover the data's characters (an error: the build would stop
+  on it anyway). Without a palette a site uses `palette.DEFAULT`, the project's neutral
+  colours (the v1-colours fallback is gone). Reserved names in `static/` are now v2's root
+  files (`sw.js`, `offline.html`, `specimen.html`, `assets/`, …) instead of v1's.
+- `gate/v2.sh` builds each site's `master` (`gate/v2/sites.txt`).
+
+### Tests
+
+443 → 373. Removed with what they tested (v1 only):
+- `test_decor.py` (18, v1 decoration macros), `test_gallery_spotlight.py` (2, v1 gallery and
+  spotlight card), `test_motifs.py` (12, v1 motif packs; v2 packs are in `test_v2.py`),
+  `test_build_site.py` (16, v1 language picker, styles, sitemap writer).
+- `test_config.py`: 16 tests of presets, `ThemeColors`, `module_intensity`, `term_*`, `to_dict`.
+- `test_index_builder.py`: 10 `copy_data_*` tests.
+- `test_orthography.py`: the v1 font checks (Sora, Plex, `font_family_ipa`, `extra_css`), the
+  v1 page's in-browser sorting script and its footer block.
+- `test_pipeline.py`: `test_videos_oral_template_renders` (v1 page; v2 audio is in
+  `test_v2_content.py`).
+- `test_v2.py::test_v1_dirs_unchanged`; `test_v2_dictionary.py`'s comparison with the v1 page
+  script (it agreed; its cases are now fixed in `test_order_with_digraphs_and_nasal_vowels`).
+
+Kept by moving or porting: `format_number`, robots.txt, unknown theme setting, unavailable
+template set (`test_render.py`); alphabet pages, digraph order, template override by block,
+the block contract (`test_orthography.py`); `--clean` refusal, missing theme media, static
+collisions, credit links (`test_pipeline.py`); homonym order (`test_homonym.py`). New: v2
+article gallery, text-face coverage error, `init` + `build` with zero errors, v1 refusal and
+v1 leftovers in `check`.
+
 ## [0.22.1] — 2026-11-19
 
 ### Fixed

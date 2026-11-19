@@ -1,7 +1,7 @@
 """Configuration for terradoc projects."""
 
 import importlib.resources
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -14,174 +14,23 @@ class ModuleConfig:
 
 
 @dataclass
-class ThemeColors:
-    primary: str = "#C81F2D"
-    accent: str = "#D4A03A"
-    accent_muted: str = "#A01924"
-    bg: str = "#F4F1EA"
-    bg_light: str = "#EDE9E0"
-    bg_infobox: str = "#FAF8F4"
-    border: str = "#DDD8CE"
-    border_dark: str = "#B8AFA2"
-    text: str = "#111827"
-    text_muted: str = "#6B6F5A"
-    highlight: str = "#FFF9DB"
-    warning_bg: str = "#FFF8E1"
-    surface: str = "#FFFFFF"
-    border_light: str = "#ECEAE5"
-    text_secondary: str = "#6B6F5A"
-    accent_light: str = "#FDECEA"
-    success: str = "#4A7C59"
-    error: str = "#C44536"
-    accent_ring: str = "rgba(200, 31, 45, 0.2)"
-    dark: str = "#0B0F17"
-
-    def to_dict(self) -> dict:
-        return {f.name: getattr(self, f.name) for f in fields(self)}
-
-
-THEME_PRESETS: dict[str, dict] = {
-    "terra": {
-        "style": "terra",
-        "colors": {
-            "primary": "#C81F2D",
-            "accent": "#D4A03A",
-            "accent_muted": "#A01924",
-            "bg": "#F4F1EA",
-            "bg_light": "#EDE9E0",
-            "bg_infobox": "#FAF8F4",
-            "border": "#DDD8CE",
-            "border_dark": "#B8AFA2",
-            "text": "#111827",
-            "text_muted": "#6B6F5A",
-            "highlight": "#FFF9DB",
-            "warning_bg": "#FFF8E1",
-            "surface": "#FFFFFF",
-            "border_light": "#ECEAE5",
-            "text_secondary": "#6B6F5A",
-            "accent_light": "#FDECEA",
-            "success": "#4A7C59",
-            "error": "#C44536",
-            "accent_ring": "rgba(200, 31, 45, 0.2)",
-            "dark": "#0B0F17",
-        },
-        "font_family": (
-            "'Inter', -apple-system, BlinkMacSystemFont, "
-            "'Segoe UI', sans-serif"
-        ),
-        "font_family_headings": "'Sora', 'Inter', sans-serif",
-        "font_family_mono": "'IBM Plex Mono', 'Consolas', monospace",
-        "border_radius": "28px",
-        "module_intensity": {},
-        "term_color": "",
-        "term_weight": "600",
-        "description": "Warm, organic theme with nature-inspired palette",
-    },
-    "classic": {
-        "style": "classic",
-        "colors": {
-            "primary": "#3D352F",
-            "accent": "#B7522C",
-            "accent_muted": "#9A4427",
-            "bg": "#F9F6F2",
-            "bg_light": "#F5EDE8",
-            "bg_infobox": "#FAF8F5",
-            "border": "#E8E4DF",
-            "border_dark": "#C8B8A8",
-            "text": "#333333",
-            "text_muted": "#6B6B6B",
-            "highlight": "#fff59d",
-            "warning_bg": "#fff8e1",
-            "surface": "#FFFFFF",
-            "border_light": "#EEEEEE",
-            "text_secondary": "#555555",
-            "accent_light": "#FDF0EB",
-            "success": "#5B8C5A",
-            "error": "#CC0000",
-            "accent_ring": "rgba(183, 82, 44, 0.2)",
-        },
-        "font_family": (
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "
-            "Oxygen, Ubuntu, sans-serif"
-        ),
-        "font_family_headings": "",
-        "font_family_mono": "'Lucida Sans Unicode', 'DejaVu Sans', monospace",
-        "border_radius": "4px",
-        "module_intensity": {},
-        "term_color": "",
-        "term_weight": "600",
-        "description": "Classic utilitarian dashboard look",
-    },
-}
-
-
-@dataclass
 class ThemeConfig:
-    colors: ThemeColors = field(default_factory=ThemeColors)
-    colors_dark: ThemeColors | None = None
-    logo: str = "images/logo.svg"
-    favicon: str = "images/favicon.svg"
-    font_family: str = (
-        "'Inter', -apple-system, BlinkMacSystemFont, "
-        "'Segoe UI', sans-serif"
-    )
-    font_family_headings: str = "'Sora', 'Inter', sans-serif"
-    font_family_mono: str = "'IBM Plex Mono', 'Consolas', monospace"
-    font_family_ipa: str = ""  # IPA fields; empty = the body font, which has IPA
-    extra_css: list[str] = field(default_factory=list)  # site stylesheets from static/, e.g. css/site.css
-    border_radius: str = "28px"
-    hero_image: str = ""
-    hero_images: list[str] = field(default_factory=list)
-    hero_stats: list[str] = field(default_factory=list)
-    style: str = "terra"
-    module_intensity: dict[str, str] = field(default_factory=dict)
-    term_color: str = ""
-    term_weight: str = "600"
-    hero_background: str = "weave"
-    hero_motif: str = "weave"
-    hero_divider: str = "weave"
-    hero_height: str = ""
-    page_badge: str = "weave"
-    grain_pattern: str = "dots"
-    templates: str = "v1"  # template set; see TEMPLATE_SETS
-    # v2 only (ignored by v1); see terradoc.palette and meta REDESIGN-PLAN.md.
-    palette: dict = field(default_factory=dict)  # role -> {color, material}; validated by check
+    """`theme:` in terradoc.yaml (the v2 people layer; see meta REDESIGN-PLAN.md)."""
+    templates: str = "v2"  # template set; see TEMPLATE_SETS
+    palette: dict = field(default_factory=dict)  # role -> {color, material}; terradoc.palette
     pack: str = "weave"  # motif pack: config/templates/v2/motifs/<pack>/ or bundled; "none"
+    hero_image: str = ""  # the home photograph, in static/
     hero_credit: str = ""  # who took the hero photograph (shown under it)
     hero_alt: str = ""  # what the hero photograph shows, for screen readers
-    hero_people: bool = True  # False: the hero shows a landscape or object (D25); recorded
-    # now, used by later checks on withdrawn images
-    # The v2 text face (vernacular, Portuguese and IPA alike): gentium (default), charis,
+    hero_people: bool = True  # False: the hero shows a landscape or object (D25)
+    favicon: str = "images/favicon.svg"  # in static/; without it, the pack's emblem
+    # The text face (vernacular, Portuguese and IPA alike): gentium (default), charis,
     # andika. Charis was D16's choice, but its tilde reads as a macron at text sizes.
     font_vernacular: str = "gentium"
 
-    def to_dict(self) -> dict:
-        result = {
-            "colors": self.colors.to_dict(),
-            "colors_dark": self.colors_dark.to_dict() if self.colors_dark else None,
-            "logo": self.logo,
-            "favicon": self.favicon,
-            "font_family": self.font_family,
-            "font_family_headings": self.font_family_headings,
-            "font_family_mono": self.font_family_mono,
-            "font_family_ipa": self.font_family_ipa,
-            "extra_css": self.extra_css,
-            "border_radius": self.border_radius,
-            "hero_image": self.hero_image,
-            "hero_images": self.hero_images,
-            "hero_stats": self.hero_stats,
-            "style": self.style,
-            "module_intensity": self.module_intensity,
-            "term_color": self.term_color,
-            "term_weight": self.term_weight,
-            "hero_background": self.hero_background,
-            "hero_motif": self.hero_motif,
-            "hero_divider": self.hero_divider,
-            "hero_height": self.hero_height,
-            "page_badge": self.page_badge,
-            "grain_pattern": self.grain_pattern,
-        }
-        return result
+    def media(self) -> dict[str, str]:
+        """Files in static/ that the theme names, by key (checked by `terradoc check`)."""
+        return {k: v for k, v in (("hero_image", self.hero_image), ("favicon", self.favicon)) if v}
 
 
 @dataclass
@@ -287,38 +136,13 @@ class TerradocConfig:
 
     @property
     def bundled_template_dir(self) -> Path:
-        """terradoc's own templates for the active set (`theme.templates`)."""
-        package = "terradoc.templates_v2" if self.theme.templates == "v2" else "terradoc.templates"
-        return Path(str(importlib.resources.files(package)))
+        """terradoc's own templates."""
+        return Path(str(importlib.resources.files("terradoc.templates_v2")))
 
     @property
     def local_template_dir(self) -> Path:
-        """The site's own templates for the active set: `config/templates/` for v1,
-        `config/templates/v2/` for v2. May not exist."""
-        if self.theme.templates == "v2":
-            return self.config_dir / "templates" / "v2"
-        return self.config_dir / "templates"
-
-    @property
-    def template_dirs(self) -> tuple[Path, ...]:
-        """Where templates are looked up, site first: a site overrides one file
-        (a page, a partial, a motif pack) and inherits the rest from terradoc."""
-        local = self.local_template_dir
-        if local.is_dir():
-            return (local.resolve(), self.bundled_template_dir)
-        return (self.bundled_template_dir,)
-
-    def find_template(self, name: str) -> Path | None:
-        """The first `name` along `template_dirs`, or None."""
-        for d in self.template_dirs:
-            if (d / name).is_file():
-                return d / name
-        return None
-
-    @property
-    def template_dir(self) -> Path:
-        """Deprecated: the first template directory (kept for callers outside terradoc)."""
-        return self.template_dirs[0]
+        """The site's own templates, `config/templates/v2/` (may not exist)."""
+        return self.config_dir / "templates" / "v2"
 
     def is_module_enabled(self, name: str) -> bool:
         mod = self.modules.get(name)
@@ -372,20 +196,21 @@ class TerradocConfig:
         return ctx
 
 
-# Template sets this version ships. v2 arrives with the redesign (meta REDESIGN-PLAN.md).
-TEMPLATE_SETS = ("v1", "v2")
+# Template sets this version ships. v1 was removed in 0.23.0 (meta REDESIGN-PLAN.md P6).
+TEMPLATE_SETS = ("v2",)
 
 # Every key `theme:` may hold; anything else is reported by `terradoc check`.
 THEME_KEYS = frozenset({
-    "preset", "colors", "colors_dark", "module_intensity", "templates",
-    "logo", "favicon", "font_family", "font_family_headings",
-    "font_family_mono", "font_family_ipa", "border_radius", "hero_image", "style",
-    "term_color", "term_weight",
-    "hero_background", "hero_motif", "hero_divider",
-    "hero_height", "page_badge", "grain_pattern",
-    "hero_images", "hero_stats", "extra_css",
-    # v2
-    "palette", "pack", "hero_credit", "hero_alt", "hero_people", "font_vernacular",
+    "templates", "palette", "pack", "hero_image", "hero_credit", "hero_alt", "hero_people",
+    "favicon", "font_vernacular",
+})
+
+# Keys of the v1 template set, removed in 0.23.0: `check` names the release in its error.
+REMOVED_THEME_KEYS = frozenset({
+    "preset", "colors", "colors_dark", "module_intensity", "logo", "font_family",
+    "font_family_headings", "font_family_mono", "font_family_ipa", "border_radius", "style",
+    "term_color", "term_weight", "hero_background", "hero_motif", "hero_divider",
+    "hero_height", "page_badge", "grain_pattern", "hero_images", "hero_stats", "extra_css",
 })
 
 
@@ -440,54 +265,9 @@ def load_config(config_path: Path | None = None) -> TerradocConfig:
                 raise ValueError(
                     "Invalid 'theme' in terradoc.yaml: expected a YAML mapping/object"
                 )
-            preset_name = theme_raw.get("preset", "terra")
-            preset = THEME_PRESETS.get(preset_name, THEME_PRESETS["terra"])
-
-            # Apply preset base values
-            preset_colors = dict(preset["colors"])
-            if "colors" in theme_raw:
-                if not isinstance(theme_raw["colors"], dict):
-                    raise ValueError(
-                        "Invalid 'theme.colors' in terradoc.yaml: expected a YAML mapping/object"
-                    )
-                preset_colors.update(theme_raw["colors"])
-            config.theme.colors = ThemeColors(**preset_colors)
-
-            if "colors_dark" in theme_raw:
-                if not isinstance(theme_raw["colors_dark"], dict):
-                    raise ValueError(
-                        "Invalid 'theme.colors_dark' in terradoc.yaml: expected a YAML mapping/object"
-                    )
-                config.theme.colors_dark = ThemeColors(**theme_raw["colors_dark"])
-
-            config.theme.style = preset.get("style", "terra")
-            for theme_key in (
-                "font_family", "font_family_headings",
-                "font_family_mono", "border_radius",
-                "term_color", "term_weight",
-            ):
-                setattr(config.theme, theme_key, preset.get(theme_key, getattr(config.theme, theme_key)))
-
-            # Module intensity: start from preset, merge YAML on top
-            preset_intensity = dict(preset.get("module_intensity", {}))
-            preset_intensity.update(theme_raw.get("module_intensity", {}))
-            config.theme.module_intensity = preset_intensity
-
-            # YAML overrides on top of preset
-            for theme_key in (
-                "logo", "favicon", "font_family", "font_family_headings",
-                "font_family_mono", "font_family_ipa", "border_radius", "hero_image", "style",
-                "term_color", "term_weight",
-                "hero_background", "hero_motif", "hero_divider",
-                "hero_height", "page_badge", "grain_pattern",
-            ):
+            for theme_key in ("hero_image", "favicon"):
                 if theme_key in theme_raw:
-                    setattr(config.theme, theme_key, theme_raw[theme_key])
-
-            # List overrides
-            for list_key in ("hero_images", "hero_stats", "extra_css"):
-                if list_key in theme_raw and isinstance(theme_raw[list_key], list):
-                    setattr(config.theme, list_key, theme_raw[list_key])
+                    setattr(config.theme, theme_key, str(theme_raw[theme_key] or ""))
 
             if "templates" in theme_raw:
                 config.theme.templates = str(theme_raw["templates"])

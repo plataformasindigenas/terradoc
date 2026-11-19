@@ -27,6 +27,6 @@ in CI it is kept as a build artifact.
 
 A renderer also needs, today, things terradoc reads straight from the project:
 `terradoc.yaml` (site identity, theme, module labels and order), `locales/*.yaml`
-(all interface strings), the page configs in `config/`, and `static/`. Folding
+(the site's own texts on top of terradoc's interface strings), and `static/`. Folding
 these in (or documenting them as part of the contract) is the main open question
 before the format can be frozen.

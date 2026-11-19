@@ -45,18 +45,9 @@ def test_cli_init():
             assert project_dir.exists()
             assert (project_dir / "data").exists()
             assert (project_dir / "data" / "encyclopedia").exists()
-            assert (project_dir / "config").exists()
-            # templates are bundled; no local copy unless --eject-templates
-            assert not (project_dir / "config" / "templates").exists()
-            assert (project_dir / "config" / "index.yaml").exists()
-            assert (project_dir / "config" / "dictionary.yaml").exists()
-            assert (project_dir / "config" / "fauna.yaml").exists()
-            assert (project_dir / "config" / "encyclopedia.yaml").exists()
-            assert (project_dir / "config" / "bibliography.yaml").exists()
-            assert (project_dir / "config" / "recordings.yaml").exists()
-            assert (project_dir / "config" / "videos.yaml").exists()
+            # templates and pages are bundled (v2): no config/ unless --eject-templates
+            assert not (project_dir / "config").exists()
             assert (project_dir / "locales").exists()
-            assert (project_dir / "static" / "images" / "logo.svg").exists()
             assert (project_dir / "static" / "images" / "favicon.svg").exists()
             assert (project_dir / "terradoc.yaml").exists()
             assert (project_dir / "locales" / "pt.yaml").exists()
@@ -70,7 +61,9 @@ def test_cli_init_eject_templates():
         with runner.isolated_filesystem(temp_dir=tmp):
             result = runner.invoke(main, ["init", "p", "--eject-templates"])
             assert result.exit_code == 0
-            assert (Path("p") / "config" / "templates" / "base.html.j2").exists()
+            assert (Path("p") / "config" / "templates" / "v2" / "base.html.j2").exists()
+            assert (Path("p") / "config" / "templates" / "v2" / "pages" / "home.html.j2").exists()
+            assert not list((Path("p") / "config" / "templates" / "v2").rglob("__init__.py"))
 
 
 def test_cli_init_existing_dir():
@@ -93,16 +86,45 @@ def test_cli_init_then_build_smoke():
             assert init_result.exit_code == 0
 
             build_result = runner.invoke(main, ["build", "-c", "demo/terradoc.yaml"])
-            assert build_result.exit_code == 0
+            assert build_result.exit_code == 0, build_result.output
+            assert "0 error(s)" in build_result.output
 
             project_dir = Path("demo")
             assert (project_dir / "docs" / "index.html").exists()
             assert (project_dir / "docs" / "pt" / "index.html").exists()
             assert (project_dir / "docs" / "en" / "index.html").exists()
-            assert (project_dir / "docs" / "pt" / "dictionary.html").exists()
+            assert (project_dir / "docs" / "pt" / "dictionary" / "index.html").exists()
             assert (project_dir / "docs" / "pt" / "encyclopedia.html").exists()
-            assert (project_dir / "docs" / "dictionary-data.json").exists()
-            assert (project_dir / "docs" / "encyclopedia-data.json").exists()
+            assert (project_dir / "docs" / "sw.js").exists()
+            assert not list((project_dir / "docs").glob("*-data.json"))
+
+
+def test_cli_v1_is_refused_with_the_release_that_removed_it():
+    """A site still asking for v1 gets a clear message, not a traceback."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            assert runner.invoke(main, ["init", "demo"]).exit_code == 0
+            result = runner.invoke(main, ["build", "-c", "demo/terradoc.yaml", "--templates", "v1"])
+            assert result.exit_code != 0
+            assert "v1 was removed in terradoc 0.23.0" in result.output
+
+
+def test_cli_v1_leftovers_are_check_errors():
+    """v1 theme keys, page configs and patterns are named as v1 leftovers to delete."""
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmp:
+        with runner.isolated_filesystem(temp_dir=tmp):
+            assert runner.invoke(main, ["init", "demo"]).exit_code == 0
+            cfg = Path("demo/terradoc.yaml")
+            cfg.write_text(cfg.read_text().replace("  pack: weave\n", "  pack: weave\n  hero_background: weave\n"))
+            (Path("demo/config/templates/motifs/x")).mkdir(parents=True)
+            Path("demo/config/dictionary.yaml").write_text("input: x\n")
+            result = runner.invoke(main, ["check", "-c", "demo/terradoc.yaml"])
+            assert result.exit_code == 1
+            assert "theme.hero_background: a setting of the v1 templates, removed in terradoc 0.23.0" in result.output
+            assert "config/ has v1 page configs (dictionary.yaml)" in result.output
+            assert "config/templates/motifs/ holds v1 patterns" in result.output
 
 
 def test_cli_categories_no_encyclopedia():

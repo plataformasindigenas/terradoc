@@ -82,9 +82,8 @@ If you are integrating Terradoc into a larger documentation workflow, the main e
 - Modular site generation for dictionary, encyclopedia, fauna, ethnobotany, bibliography, recordings, and videos content
 - Multilingual rendering with locale-based navigation and page generation
 - Static-site output that can be hosted on GitHub Pages, institutional servers, or any basic web host
-- Bundled templates that can be overridden per project
-- Theme presets (`terra`, `classic`) with full color palettes, font stacks, and decorative macro system
-- Per-module decoration intensity (`minimal`, `balanced`, `rich`) and indigenous-language term emphasis
+- Bundled templates (one page per dictionary word, works without JavaScript and offline) that a project can override file by file
+- A people layer per site: a palette of five colour roles named after materials, an optional pack (band, texture, emblem) owned by the site, and the text face (Gentium, Charis or Andika)
 - Data validation: ID format enforcement, filename consistency, `see_also` referential integrity, bibliography key resolution, and optional category vocabulary
 - Data completeness reporting after conversion
 - Cross-linking between datasets to improve navigation across related entries
@@ -108,15 +107,7 @@ Terradoc uses a project directory with a predictable structure:
 ```text
 my-project/
   terradoc.yaml
-  config/
-    index.yaml
-    dictionary.yaml
-    fauna.yaml
-    ethnobotany.yaml
-    encyclopedia.yaml
-    bibliography.yaml
-    recordings.yaml
-    videos.yaml
+  config/templates/v2/   # optional: the site's pack (motifs/<name>/) and template overrides
   data/
     encyclopedia/        # Markdown articles with YAML front matter
     categories.yaml      # Optional: controlled category vocabulary
@@ -131,9 +122,10 @@ my-project/
   docs/                 # generated site (default output; git-ignore it)
 ```
 
-Templates are bundled with terradoc. A project may shadow them with its own
-`config/templates/` (`terradoc init --eject-templates`), but a local copy stops
-receiving terradoc's template fixes, so prefer configuration and locale keys.
+Templates are bundled with terradoc. A project may override one file, or shadow them all
+with `config/templates/v2/` (`terradoc init --eject-templates`), but a local copy stops
+receiving terradoc's template fixes, so prefer configuration, locale keys and single-block
+overrides (`docs/packs.md`). The v1 templates were removed in 0.23.0.
 
 The standard workflow is:
 
@@ -161,11 +153,10 @@ pip install -e .[dev]
 
 ## Quick Start
 
-Create a new project (optionally choose a theme preset):
+Create a new project:
 
 ```bash
 terradoc init my-project
-terradoc init my-project --theme classic
 ```
 
 Move into the project and edit the main configuration:
@@ -184,7 +175,7 @@ The generated site will be written to `docs/`.
 
 ## Command-Line Interface
 
-- `terradoc init <name> [--theme PRESET] [--eject-templates]`: scaffold a new project with starter configuration, locales, and asset placeholders in `static/`
+- `terradoc init <name> [--eject-templates]`: scaffold a new project with starter configuration, locales, and asset placeholders in `static/`
 - `terradoc check [-c CONFIG] [--format text|github|json]`: validate everything (see *Data Validation*) without writing anything; exit 1 on errors. `--format github` prints GitHub Actions annotations
 - `terradoc export [-c CONFIG] [--bundle-dir DIR]`: write the normalised, cross-linked JSON bundle (format still experimental, see `docs/bundle.md`)
 - `terradoc render [-c CONFIG] [--bundle-dir DIR] [--out DIR] [--clean]`: render the site from an existing bundle
@@ -193,7 +184,6 @@ The generated site will be written to `docs/`.
 - `check` and `guard` also take `--format markdown [--codeowners FILE] [--run-url URL]` for issue bodies
 - Publishing from GitHub (every branch, previews, failure issues): see `docs/publishing.md`
 - `terradoc categories [-o FILE]`: dump all unique category paths from encyclopedia entries (use `-o data/categories.yaml` to bootstrap a controlled vocabulary)
-- `terradoc themes`: list available theme presets with their color palettes
 
 ## Configuration
 
@@ -229,22 +219,25 @@ module_order:
   - recordings
   - videos
 
+language_code: "bor"            # BCP 47: the lang attribute of vernacular text
+alphabet: [a, b, c, d, e, g, i, j, k, m, n, o, p, r, t, u, w]   # docs/orthography.md
+
 theme:
-  preset: "terra"               # or "classic"
-  logo: "images/logo.svg"
+  palette:                      # five roles, each named after a material (docs/packs.md)
+    ground:  {color: "#F4F1EA", material: "argila branca"}
+    ink:     {color: "#111827", material: "carvão e resina"}
+    primary: {color: "#C81F2D", material: "urucum"}
+    fill:    {color: "#D4A03A", material: "pena amarela"}
+    muted:   {color: "#6B6F5A"}
+  pack: "weave"                 # neutral; a people's own pack lives in config/templates/v2/motifs/
+  hero_image: "images/home.jpg" # in static/
+  hero_credit: "Photo: A. B."
+  hero_alt: "What the photograph shows"
   favicon: "images/favicon.svg"
-  colors:                       # override individual preset colors
-    primary: "#3D352F"
-    accent: "#C75B39"
-  module_intensity:             # decoration density per page
-    dictionary: "minimal"
-    encyclopedia: "balanced"
-    fauna: "rich"
-  # term_color: "#A85D33"       # color for .td-term spans
-  # term_weight: "600"          # font-weight for .td-term spans
+  font_vernacular: "gentium"    # or charis, andika
 ```
 
-Local templates in `config/templates/` take precedence over the bundled defaults, which makes it straightforward to adapt Terradoc to different communities, institutions, and visual identities without forking the package.
+Local templates in `config/templates/v2/` take precedence over the bundled defaults, file by file (`docs/packs.md`).
 
 ### Data Validation
 
@@ -253,7 +246,7 @@ with its file and line. **Errors block the build; warnings do not.**
 
 - **Schemas**: every row of every enabled tabular module is validated against its schema (all errors, not just the first)
 - **Consent**: every `videos` and `recordings` row must state `consent: approved` (community consent to publish it) or `consent: external` (someone else's public media that the site only embeds). Anything else, including a missing field, blocks the build
-- **Media**: every `images/...` / `audio/...` path referenced by the data, the encyclopedia front matter or the theme must exist in `static/` (or, for older projects, `docs/`)
+- **Media**: every `images/...` / `audio/...` path referenced by the data, the encyclopedia front matter or the theme must exist in `static/`
 - **Dry export**: the real export runs into a throwaway directory, so anything the build would trip on is caught here
 
 Encyclopedia entries are also checked:

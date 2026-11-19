@@ -2,7 +2,7 @@
 
 A platform is used by speakers of the language. How words are ordered, which letters the
 dictionary is browsed by, and whether every letter renders in one typeface are part of the
-site's twist (see `motifs.md`). They are set per site, and nothing here assumes Portuguese.
+site's twist (see `packs.md`). They are set per site, and nothing here assumes Portuguese.
 
 ## The alphabet
 
@@ -19,8 +19,8 @@ alphabet: [a, ã, e, ẽ, g, i, ĩ, k, l, m, mb, n, nd, ng, nj, o, õ, p, r, t, 
 - **Matching is NFC**, so a decomposed `e` + U+0303 counts as `ẽ`. Case is ignored.
 - Spaces, hyphens, apostrophes, full stops and brackets are ignored when sorting. A leading `-`
   (an affix) is ignored for the letter too.
-- **Without `alphabet`**, the dictionary behaves as before: the first character of each word,
-  and Portuguese collation.
+- **Without `alphabet`**, each word is listed under its first character (accents ignored),
+  in plain order with accents ignored.
 
 `terradoc check` rejects a letter listed twice, and warns about a headword whose first letter
 is not in the alphabet. Warnings do not block publication; such a word is listed after the
@@ -30,35 +30,16 @@ Use the community's own published alphabet, and say where it comes from in `CULT
 
 ## Fonts
 
-terradoc bundles three typefaces:
-- **Inter** (body): Latin, Latin Extended, IPA, and the tilde vowels (ẽ, ỹ, the combining tilde);
-- **Sora** (headings): basic Latin and Latin Extended; **no IPA, no ẽ**;
-- **IBM Plex Mono** (code): no IPA.
+terradoc bundles two families, subset for each site at build time:
+- the **text face**, for the language, Portuguese and IPA alike: Gentium (the default),
+  Charis or Andika (`theme.font_vernacular: gentium|charis|andika`). Andika is made for
+  learners; Charis's tilde reads as a macron at text sizes, which is why Gentium is the
+  default. All three cover Latin, IPA, Greek and the combining marks;
+- **Source Sans 3** for the interface (menus, labels, buttons).
 
-IPA fields (`ipa`) render in the body font unless the site sets `theme.font_family_ipa`.
-
-`terradoc check` warns when the data uses a letter that the font for that kind of text lacks.
-The browser would then draw that one letter in another typeface, mid-word. It checks three
-kinds of text:
-- dictionary headwords and encyclopedia titles, against the headings font;
-- `ipa` fields, against the IPA font;
-- everything else, against the body font.
-
-It only checks the bundled fonts.
-
-**To use a font of your own:**
-1. put the files and a stylesheet with `@font-face` rules in `static/`;
-2. list the stylesheet in `theme.extra_css`;
-3. name the font in the theme.
-
-```yaml
-theme:
-  extra_css: ["css/site-fonts.css"]          # static/css/site-fonts.css
-  font_family_headings: "'Charis SIL', 'Inter', serif"
-  font_family_ipa: "'Charis SIL', serif"
-```
-
-Check the font's license allows redistribution (SIL OFL fonts do).
+`terradoc check` reports, as an error, any character the data uses that the text face lacks
+in those ranges: the build would stop on it. Other scripts (a title in Malayalam in the
+bibliography) come from the reader's own fonts. Sites cannot add fonts of their own.
 
 ## Interface languages
 
